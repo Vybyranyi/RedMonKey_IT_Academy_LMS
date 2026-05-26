@@ -1,0 +1,37 @@
+name: "📋 Нова задача (Task)"
+description: "Створити задачу для розробки нового функціоналу згідно ТЗ"
+title: "[Task]: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: "Компонент (Стек)"
+      description: "Якої частини проекту стосується ця задача?"
+      options:
+        - "🎨 Frontend (React, ShadCN, Zustand)"
+        - "⚙️ Backend (Express, Node.js)"
+        - "🗄️ Database (MongoDB Schemas)"
+        - "🪙 RedCoins / Гейміфікація"
+        - "🛠 Інфраструктура (Налаштування, CI/CD)"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: "Опис задачі"
+      description: "Що саме потрібно зробити? Посилайтеся на розділи з IT_Academy_LMS_ТЗ.md"
+      placeholder: "Наприклад: Реалізувати ендпоінт POST /grades/bulk для масового виставлення оцінок..."
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: "Критерії прийомки (Acceptance Criteria)"
+      description: "Що має бути виконано, щоб задача вважалася закритою?"
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ]
+    validations:
+      required: true

@@ -1,0 +1,31 @@
+name: "🐛 Баг-репорт (Bug)"
+description: "Повідомити про помилку в роботі додатку"
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: "Кроки для відтворення (Steps to reproduce)"
+      description: "Як саме викликати цю помилку?"
+      value: |
+        1. Зайти на сторінку...
+        2. Натиснути кнопку...
+        3. Ввести дані...
+        4. Побачити помилку...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Очікувана поведінка"
+      description: "Як це мало б працювати згідно ТЗ?"
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: "Скріншоти / Логи помилки"
+      description: "Додайте скріншоти або скопіюйте текст помилки з консолі браузера/терміналу"
+    validations:
+      required: false
