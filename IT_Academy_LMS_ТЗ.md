@@ -108,7 +108,7 @@ const LessonSchema = new Schema({
   teacher:     { type: Schema.Types.ObjectId, ref: 'User', required: true },
   group:       { type: Schema.Types.ObjectId, ref: 'Group', required: true },
   date:        { type: Date, required: true },
-  duration:    { type: Number, default: 90 },              // хвилини
+  duration:    { type: Number, default: 80 },              // хвилини
   type:        { type: String, enum: ['lecture', 'practice', 'exam', 'consultation'] },
   status:      { type: String, enum: ['scheduled', 'completed', 'cancelled'], default: 'scheduled' },
   materials:   [{ title: String, url: String }],
@@ -165,16 +165,31 @@ AttendanceSchema.index({ lesson: 1, student: 1 }, { unique: true });
 
 ### Діаграма зв'язків
 
-```
-User (student) ──────┐
-                      ├──> Grade ──────> Lesson
-User (teacher) ──────┤                    │
-                      └──> CoinTransaction │
-                                           │
-Group ────────────────────────────────────>┘
-Group ──> User[] (students)
-Group ──> User[] (teachers)
-Lesson ──> Attendance[] (через окрему Schema)
+```mermaid
+flowchart TD
+    %% Entities
+    User["User\n(Admin/Teacher/Student)"]
+    Group["Group\n(students[], teachers[])"]
+    Lesson["Lesson"]
+    Grade["Grade\n(student, teacher, lesson)"]
+    CoinTransaction["CoinTransaction\n(student, issuedBy, lesson)"]
+    Attendance["Attendance\n(student, lesson)"]
+
+    %% Relationships
+    Group -->|students / teachers| User
+    Lesson -->|teacher| User
+    Lesson -->|group| Group
+    
+    Grade -->|student| User
+    Grade -->|teacher| User
+    Grade -->|lesson| Lesson
+    
+    CoinTransaction -->|student| User
+    CoinTransaction -->|issuedBy| User
+    CoinTransaction -->|relatedLesson| Lesson
+    
+    Attendance -->|student| User
+    Attendance -->|lesson| Lesson
 ```
 
 ---
@@ -606,32 +621,11 @@ Bottom Navigation (mobile):
 
 ## 8. Розподіл задач у команді
 
-### Ролі студентів
-
-| Студент | Роль | Відповідальність |
-|---------|------|-----------------|
-| **Student 1** | Tech Lead / Fullstack | Архітектура, Auth, Deploy, Code Review |
-| **Student 2** | Backend Dev | API routes, Mongoose schemas, middleware |
-| **Student 3** | Frontend Dev | Layout, компоненти, routing, ShadCN |
-| **Student 4** | Frontend Dev | GradeJournal, Calendar, форми |
-| **Student 5** | Fullstack / QA | Coins система, тестові дані, README, баги |
-
-### Щотижневий ритм команди
-
-```
-Понеділок:   Planning (30 хв) — розподіл задач тижня
-Середа:      Sync (15 хв) — статус, блокери
-П'ятниця:    Demo + Merge — показ зробленого, злиття в main
-```
-
 ### Git Flow
 
 ```
-main              — стабільна версія (тільки через PR)
-dev               — основна розробка
-feature/auth      — гілки функцій (від dev)
-feature/grades
-feature/calendar
+main              — основна розробка
+task/...          — гілки завдань (на кожне завдання нова гілка)
 ```
 
 ### Пріоритети MVP (Мінімально Життєздатний Продукт)
