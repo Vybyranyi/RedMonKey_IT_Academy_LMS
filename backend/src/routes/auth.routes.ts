@@ -1,15 +1,10 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middlewares/auth.middleware.js';
+import { login, refresh, logout } from '../controllers/auth.controller.js';
 
 const router = Router();
 
-router.post(
-  '/register',
-  authenticate,
-  authorize(['admin']),
-  async (req, res) => {
-    res.status(201).json({ message: 'Користувач успішно зареєстрований (заглушка)' });
-  }
-);
+router.post('/login', login);
+router.post('/refresh', refresh);
+router.post('/logout', logout);
 
 export default router;
