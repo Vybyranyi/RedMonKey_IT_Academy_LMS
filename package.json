@@ -1,0 +1,9 @@
+{
+  "name": "redmonkey-it-academy-lms",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ]
+}

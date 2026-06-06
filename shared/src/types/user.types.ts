@@ -1,15 +1,19 @@
 import { UserRole } from '../enums';
-export interface IUser {
-    _id: string;
+
+export interface IUserBase {
     firstName: string;
     lastName: string;
     email: string;
     role: UserRole;
-    avatar: string | null;
-    phone: string | null;
+    avatar?: string | null;
+    phone?: string | null;
     redCoins: number;
-    group: string | null; // ID групи
     isActive: boolean;
-    createdAt: string;
-    updatedAt: string;
+}
+
+export interface IUser extends IUserBase {
+    _id: string;
+    group?: string | null; // ID групи
+    createdAt: string | Date;
+    updatedAt: string | Date;
 }

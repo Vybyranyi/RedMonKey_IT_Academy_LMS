@@ -1,20 +1,11 @@
 import { create } from 'zustand';
-
-export interface UserInfo {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: 'admin' | 'teacher' | 'student';
-    avatar?: string | null;
-    redCoins: number;
-}
+import type { IUser } from '@redmonkey/shared';
 
 interface AuthState {
-    user: UserInfo | null;
+    user: IUser | null;
     accessToken: string | null;
     isAuthenticated: boolean;
-    setAuth: (user: UserInfo, accessToken: string) => void;
+    setAuth: (user: IUser, accessToken: string) => void;
     clearAuth: () => void;
     updateAccessToken: (token: string) => void;
 }
