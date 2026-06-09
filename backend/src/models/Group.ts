@@ -1,18 +1,14 @@
 import { Schema, model, Document } from 'mongoose';
+import { IGroup } from '@redmonkey/shared';
 
-export interface IGroup extends Document {
-  name: string;
-  description: string;
+export interface IGroupDocument extends Document, Omit<IGroup, '_id' | 'createdAt' | 'updatedAt' | 'teachers' | 'students'> {
   teachers: Schema.Types.ObjectId[];
   students: Schema.Types.ObjectId[];
-  startDate?: Date;
-  endDate?: Date;
-  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const GroupSchema = new Schema<IGroup>(
+const GroupSchema = new Schema<IGroupDocument>(
   {
     name: { type: String, required: true, unique: true, trim: true },
     description: { type: String, default: '' },
@@ -25,4 +21,4 @@ const GroupSchema = new Schema<IGroup>(
   { timestamps: true }
 );
 
-export const Group = model<IGroup>('Group', GroupSchema);
+export const Group = model<IGroupDocument>('Group', GroupSchema);

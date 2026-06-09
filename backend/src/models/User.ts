@@ -1,14 +1,14 @@
 import { Schema, model, Document } from 'mongoose';
-import { IUserBase, UserRole } from '@redmonkey/shared';
+import { IUser, UserRole } from '@redmonkey/shared';
 
-export interface IUser extends Document, IUserBase {
+export interface IUserDocument extends Document, Omit<IUser, '_id' | 'createdAt' | 'updatedAt' | 'group'> {
   passwordHash: string;
   group?: Schema.Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const UserSchema = new Schema<IUser>(
+const UserSchema = new Schema<IUserDocument>(
   {
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
@@ -27,4 +27,4 @@ const UserSchema = new Schema<IUser>(
 
 UserSchema.index({ role: 1 });
 
-export const User = model<IUser>('User', UserSchema);
+export const User = model<IUserDocument>('User', UserSchema);

@@ -1,32 +1,12 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
-import { User } from '../models/User.js';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
-import jwt from 'jsonwebtoken';
-import { TokenPayload } from '../utils/jwt.js';
+import { authService } from '../services/auth.service.js';
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
+    const result = await authService.login(email, password);
 
-    const user = await User.findOne({ email });
-    if (!user || !user.isActive) {
-      res.status(401).json({ message: 'Невірний email або пароль' });
-      return;
-    }
-
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      res.status(401).json({ message: 'Невірний email або пароль' });
-      return;
-    }
-
-    const payload: TokenPayload = { userId: user._id.toString(), role: user.role };
-    const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(payload);
-
-    
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie('refreshToken', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -34,53 +14,31 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     });
 
     res.status(200).json({
-      accessToken,
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar,
-        redCoins: user.redCoins,
-      },
+      accessToken: result.accessToken,
+      user: result.user,
     });
-  } catch (error) {
-    res.status(500).json({ message: 'Помилка сервера при вході', error });
+  } catch (error: any) {
+    if (error.message === 'Невірний email або пароль') {
+      res.status(401).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Помилка сервера при вході', error });
+    }
   }
 };
 
 export const refresh = async (req: Request, res: Response): Promise<void> => {
   try {
     const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) {
-      res.status(401).json({ message: 'Відсутній refresh token' });
-      return;
+    const result: any = await authService.refresh(refreshToken);
+    res.status(200).json({ accessToken: result.accessToken });
+  } catch (error: any) {
+    if (error.message === 'Відсутній refresh token' || error.message === 'Користувач не активний або не існує') {
+      res.status(401).json({ message: error.message });
+    } else if (error.message === 'Невалідний refresh token') {
+      res.status(403).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Помилка при оновленні токену' });
     }
-
-    jwt.verify(
-      refreshToken,
-      process.env.JWT_REFRESH_SECRET || '',
-      async (err: any, decoded: any) => {
-        if (err) {
-          res.status(403).json({ message: 'Невалідний refresh token' });
-          return;
-        }
-
-        const user = await User.findById(decoded.userId);
-        if (!user || !user.isActive) {
-          res.status(401).json({ message: 'Користувач не активний або не існує' });
-          return;
-        }
-
-        const payload: TokenPayload = { userId: user._id.toString(), role: user.role };
-        const accessToken = generateAccessToken(payload);
-
-        res.status(200).json({ accessToken });
-      }
-    );
-  } catch (error) {
-    res.status(500).json({ message: 'Помилка при оновленні токену' });
   }
 };
 
