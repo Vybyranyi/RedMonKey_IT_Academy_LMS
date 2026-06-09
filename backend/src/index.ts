@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
+import groupRoutes from './routes/group.routes.js';
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(cookieParser());
 
 // Маршрути
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/groups", groupRoutes);
 
 app.get("/api/v1/health", (req: Request, res: Response) => {
   res.status(200).json({ status: "ok", message: "Server is healthy" });
