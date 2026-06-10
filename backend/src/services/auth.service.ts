@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { userRepository } from '../repositories/user.repository.js';
 import { generateAccessToken, generateRefreshToken, TokenPayload } from '../utils/jwt.js';
 
-class AuthService {
+export const authService = {
   async login(email: string, password: string) {
     const user = await userRepository.findByEmail(email);
     if (!user || !user.isActive) {
@@ -32,7 +32,7 @@ class AuthService {
         redCoins: user.redCoins,
       },
     };
-  }
+  },
 
   async refresh(refreshToken: string) {
     if (!refreshToken) {
@@ -61,6 +61,4 @@ class AuthService {
       );
     });
   }
-}
-
-export const authService = new AuthService();
+};
