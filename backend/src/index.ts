@@ -1,11 +1,9 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
+import express from "express";
 import { connectDB } from "./config/db.js";
-import authRoutes from "./routes/auth.routes.js";
-import groupRoutes from './routes/group.routes.js';
-import userRoutes from './routes/user.routes.js';
+import apiRoutes from "./routes/index.routes.js";
 
 dotenv.config();
 
@@ -20,13 +18,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Маршрути
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/groups", groupRoutes);
-app.use('/api/v1/users', userRoutes);
-
-app.get("/api/v1/health", (req: Request, res: Response) => {
-  res.status(200).json({ status: "ok", message: "Server is healthy" });
-});
+app.use("/api/v1", apiRoutes);
 
 const startServer = async () => {
   await connectDB();
