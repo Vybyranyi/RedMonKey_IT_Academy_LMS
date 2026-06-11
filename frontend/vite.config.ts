@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@redmonkey/shared': path.resolve(__dirname, '../shared/src'),
     },
   },
 })
