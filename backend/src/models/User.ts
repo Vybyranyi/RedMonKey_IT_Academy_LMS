@@ -1,9 +1,9 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 import { IUser, UserRole } from '@redmonkey/shared';
 
 export interface IUserDocument extends Document, Omit<IUser, '_id' | 'createdAt' | 'updatedAt' | 'group'> {
   passwordHash: string;
-  group?: Schema.Types.ObjectId | null;
+  group?: Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }

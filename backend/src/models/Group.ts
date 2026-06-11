@@ -1,9 +1,9 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 import { IGroup } from '@redmonkey/shared';
 
 export interface IGroupDocument extends Document, Omit<IGroup, '_id' | 'createdAt' | 'updatedAt' | 'teachers' | 'students'> {
-  teachers: Schema.Types.ObjectId[];
-  students: Schema.Types.ObjectId[];
+  teachers: Types.ObjectId[];
+  students: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
