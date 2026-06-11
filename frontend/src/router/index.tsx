@@ -4,11 +4,13 @@ import ProtectedRoute from '../components/features/auth/ProtectedRoute';
 import LoginPage from '../pages/LoginPage';
 import { UserRole } from '@redmonkey/shared';
 import GroupsPage from '@/pages/GroupsPage';
-
-// Тимчасові компоненти для тестування сторінок
-const Dashboard = () => <div className="text-2xl font-bold">Dashboard (Всім доступно)</div>;
-const Students = () => <div className="text-2xl font-bold">Студенти (Доступно Admin та Teacher)</div>;
-const Settings = () => <div className="text-2xl font-bold">Налаштування (Тільки для Admin)</div>;
+import DashboardPage from '@/pages/DashboardPage';
+import StudentsPage from '@/pages/StudentsPage';
+import TeachersPage from '@/pages/TeachersPage';
+import SchedulePage from '@/pages/SchedulePage';
+import GradesPage from '@/pages/GradesPage';
+import CoinsPage from '@/pages/CoinsPage';
+import SettingsPage from '@/pages/SettingsPage';
 
 export default function AppRouter() {
   return (
@@ -19,18 +21,22 @@ export default function AppRouter() {
         {/* Захищені сторінки системи */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/groups" element={<GroupsPage />} />
-            
+            {/* Спільні роути (Admin, Teacher, Student) */}
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/schedule" element={<SchedulePage />} />
+            <Route path="/grades" element={<GradesPage />} />
+            <Route path="/coins" element={<CoinsPage />} />
 
             {/* Роути для адміна та викладача */}
             <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.TEACHER]} />}>
-              <Route path="/students" element={<Students />} />
+              <Route path="/students" element={<StudentsPage />} />
             </Route>
 
             {/* Роути тільки для адміна */}
             <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/teachers" element={<TeachersPage />} />
+              <Route path="/groups" element={<GroupsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
         </Route>
