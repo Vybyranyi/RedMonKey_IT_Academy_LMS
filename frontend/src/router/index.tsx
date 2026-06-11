@@ -3,6 +3,7 @@ import AppLayout from '../components/layout/AppLayout';
 import ProtectedRoute from '../components/features/auth/ProtectedRoute';
 import LoginPage from '../pages/LoginPage';
 import { UserRole } from '@redmonkey/shared';
+import GroupsPage from '@/pages/GroupsPage';
 
 // Тимчасові компоненти для тестування сторінок
 const Dashboard = () => <div className="text-2xl font-bold">Dashboard (Всім доступно)</div>;
@@ -19,7 +20,9 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/groups" element={<GroupsPage />} />
             
+
             {/* Роути для адміна та викладача */}
             <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.TEACHER]} />}>
               <Route path="/students" element={<Students />} />
