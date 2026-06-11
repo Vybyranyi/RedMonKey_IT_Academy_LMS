@@ -46,3 +46,31 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   res.clearCookie('refreshToken');
   res.status(200).json({ message: 'Успішний вихід із системи' });
 };
+
+import { userRepository } from '../repositories/user.repository.js';
+
+export const getMe = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = (req as any).user?.userId;
+    if (!userId) {
+      res.status(401).json({ message: 'Не авторизовано' });
+      return;
+    }
+    const user = await userRepository.findById(userId);
+    if (!user || !user.isActive) {
+      res.status(401).json({ message: 'Користувача не знайдено або він не активний' });
+      return;
+    }
+    res.status(200).json({
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      redCoins: user.redCoins,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Помилка сервера' });
+  }
+};
