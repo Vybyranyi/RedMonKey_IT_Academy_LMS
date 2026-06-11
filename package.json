@@ -7,7 +7,8 @@
     "shared"
   ],
   "scripts": {
-    "dev": "concurrently -c 'cyan.bold,blue.bold,green.bold' -n 'SHARED,BACKEND,FRONTEND' 'npm run dev -w @redmonkey/shared' 'npm run dev -w backend' 'npm run dev -w frontend'",
+    "predev": "npm run build -w @redmonkey/shared",
+    "dev": "concurrently -c \"cyan.bold,blue.bold,green.bold\" -n \"SHARED,BACKEND,FRONTEND\" \"npm run dev -w @redmonkey/shared\" \"npm run dev -w backend\" \"npm run dev -w frontend\"",
     "build": "npm run build --workspaces --if-present"
   },
   "devDependencies": {
