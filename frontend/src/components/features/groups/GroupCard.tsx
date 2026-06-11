@@ -1,9 +1,9 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar, Users, BookOpen } from 'lucide-react';
+import { Calendar, BookOpen } from 'lucide-react';
 import type { IPopulatedGroup } from '@redmonkey/shared';
+import { UserAvatarGroup } from '@/components/ui/user-avatar-group';
 
 interface GroupCardProps {
   group: IPopulatedGroup;
@@ -46,32 +46,13 @@ export default function GroupCard({ group, onViewDetails }: GroupCardProps) {
           </div>
         </div>
 
-        {/* Накладання аватарів студентів */}
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center -space-x-2 overflow-hidden">
-            {group.students.slice(0, 5).map((student) => (
-              <Avatar key={student._id} className="inline-block border-2 border-white h-8 w-8">
-                <AvatarImage src={student.avatar || undefined} />
-                <AvatarFallback className="bg-slate-200 text-[10px] font-bold text-slate-700">
-                  {student.firstName[0]}
-                  {student.lastName[0]}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {group.students.length > 5 && (
-              <div className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 border-2 border-white text-[10px] font-bold text-slate-600">
-                +{group.students.length - 5}
-              </div>
-            )}
-            {group.students.length === 0 && (
-              <span className="text-xs text-slate-400 pl-2">Студентів немає</span>
-            )}
-          </div>
-          <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
-            <Users className="h-4 w-4" />
-            <span>{group.students.length} студ.</span>
-          </div>
-        </div>
+        <UserAvatarGroup 
+          users={group.students} 
+          maxCount={5} 
+          emptyMessage="Студентів немає" 
+          countLabel="студ." 
+          className="pt-2" 
+        />
       </CardContent>
       <CardFooter className="bg-slate-50/50 rounded-b-lg border-t border-slate-100 py-3 flex justify-end">
         <Button 
