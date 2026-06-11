@@ -6,7 +6,7 @@ import { validateWithZod } from '@/utils/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { GroupData } from '@/api/groups';
+import type { IGroupDto } from '@redmonkey/shared';
 import { apiGetUsers } from '@/api/users';
 import  { UserRole } from '@redmonkey/shared';
 import type { IUser } from '@redmonkey/shared';
@@ -20,12 +20,12 @@ const groupSchema = z.object({
 });
 
 interface GroupFormProps {
-  initialValues?: GroupData;
-  onSubmit: (values: GroupData) => void;
+  initialValues?: IGroupDto;
+  onSubmit: (values: IGroupDto) => void;
   isSubmitting: boolean;
 }
 
-const defaultValues: GroupData = {
+const defaultValues: IGroupDto = {
   name: '',
   description: '',
   startDate: '',

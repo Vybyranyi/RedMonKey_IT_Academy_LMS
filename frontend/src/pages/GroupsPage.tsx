@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { UserRole } from '@redmonkey/shared';
-import { apiGetGroups, apiCreateGroup, type GroupData, type GroupItem } from '@/api/groups';
+import type { IGroupDto, IPopulatedGroup } from '@redmonkey/shared';
+import { apiGetGroups, apiCreateGroup } from '@/api/groups';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,7 @@ import { Plus } from 'lucide-react';
 
 export default function GroupsPage() {
   const { user } = useAuthStore();
-  const [groups, setGroups] = useState<GroupItem[]>([]);
+  const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
@@ -28,7 +29,7 @@ export default function GroupsPage() {
     fetchGroups();
   }, []);
 
-  const handleCreateGroup = async (values: GroupData) => {
+  const handleCreateGroup = async (values: IGroupDto) => {
     setIsSubmitLoading(true);
     try {
       await apiCreateGroup(values);
