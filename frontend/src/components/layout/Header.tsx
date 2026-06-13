@@ -1,54 +1,41 @@
+import { useLocation } from 'react-router-dom';
+import { format } from 'date-fns';
+import { uk } from 'date-fns/locale';
 import { useAuthStore } from '@/store/authStore';
-import axiosInstance from '@/api/axios';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 
 export default function Header() {
-  const { user, clearAuth } = useAuthStore();
-
-  const handleLogout = async () => {
-    try {
-      await axiosInstance.post('/auth/logout');
-      clearAuth();
-    } catch (error) {
-      console.error('Помилка при виході', error);
+  const location = useLocation();
+  const { user } = useAuthStore();
+  
+  const getPageTitle = (path: string) => {
+    if (path === '/') {
+      return user?.role === 'admin' ? 'Панель адміністратора' : 
+             user?.role === 'teacher' ? 'Панель викладача' : 'Особистий кабінет';
     }
+    if (path.startsWith('/students')) return 'Студенти';
+    if (path.startsWith('/teachers')) return 'Викладачі';
+    if (path.startsWith('/groups')) return 'Групи';
+    if (path.startsWith('/schedule')) return 'Розклад';
+    if (path.startsWith('/grades')) return 'Журнал оцінок';
+    if (path.startsWith('/coins')) return 'RedCoins';
+    if (path.startsWith('/settings')) return 'Налаштування';
+    return 'Панель керування';
   };
 
-  if (!user) return null;
+  const title = getPageTitle(location.pathname);
+  const today = format(new Date(), "eeee, d MMMM", { locale: uk });
+  const dateText = `Сьогодні, ${today}`;
 
   return (
-    <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6">
+    <header className="px-8 pt-10 pb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-700">IT Academy Portal</h2>
+        <h1 className="text-[28px] leading-tight font-extrabold text-[#1A2645] tracking-tight">{title}</h1>
+        <p className="text-[14px] font-medium text-slate-500 mt-1">
+          {dateText}
+        </p>
       </div>
-      <div className="flex items-center gap-6">
-        {user.role === 'student' && (
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
-            <span className="text-sm font-semibold text-amber-700">🪙 {user.redCoins} RedCoins</span>
-          </div>
-        )}
-        <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={user.avatar || undefined} />
-            <AvatarFallback className="bg-slate-200 text-slate-700">
-              {user.firstName[0]}
-              {user.lastName[0]}
-            </AvatarFallback>
-          </Avatar>
-          <div className="text-left leading-none">
-            <p className="text-sm font-medium text-slate-800">
-              {user.firstName} {user.lastName}
-            </p>
-            <span className="text-xs text-slate-500 uppercase font-semibold tracking-wider">
-              {user.role}
-            </span>
-          </div>
-        </div>
-        <Button variant="ghost" size="icon" onClick={handleLogout} className="text-slate-500 hover:text-destructive">
-          <LogOut className="h-5 w-5" />
-        </Button>
+      <div id="header-actions" className="flex items-center gap-3">
+        {/* Placeholder for page-specific actions (e.g. Buttons) that can be injected via React Portal by individual pages */}
       </div>
     </header>
   );
