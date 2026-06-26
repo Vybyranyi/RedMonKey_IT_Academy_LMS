@@ -17,3 +17,13 @@ export interface IUser extends IUserBase {
     createdAt: string | Date;
     updatedAt: string | Date;
 }
+
+export interface IUserDto {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password?: string;
+    role: UserRole;
+    phone?: string | null;
+    group?: string | null;
+}
