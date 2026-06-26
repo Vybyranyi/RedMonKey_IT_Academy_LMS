@@ -58,6 +58,7 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
   return (
     <Formik
       initialValues={mergedValues}
+      validateOnBlur={false}
       validate={validateWithZod(userSchema)}
       onSubmit={(values) => {
         const submitValues = { ...values };
