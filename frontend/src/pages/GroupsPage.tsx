@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { UserRole } from '@redmonkey/shared';
 import type { IGroupDto, IPopulatedGroup } from '@redmonkey/shared';
@@ -16,18 +16,18 @@ export default function GroupsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     try {
       const data = await apiGetGroups();
       setGroups(data);
     } catch (error) {
       console.error('Помилка завантаження груп:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchGroups();
-  }, []);
+  }, [fetchGroups]);
 
   const handleCreateGroup = async (values: IGroupDto) => {
     setIsSubmitLoading(true);
