@@ -16,6 +16,8 @@
 - AppLayout: Sidebar з колапсом, Header із динамічним заголовком
 - LoginPage з брендовим фоном і валідацією форми (Zod + Formik)
 - GroupsPage: сітка карток груп, модалка створення (тільки admin)
+- StudentsPage: таблиця студентів з можливістю пошуку, фільтрації, модалка створення (тільки admin)
+- TeachersPage: сітка карток викладачів, модалка створення (тільки admin)
 - `README.md`, `CONTRIBUTING.md`, `DESIGN.md`
 - `.vscode/extensions.json` та `.vscode/settings.json`
 
