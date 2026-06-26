@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { UserRole } from '@redmonkey/shared';
 import type { IUserDto } from '@redmonkey/shared';
 import { apiGetGroups } from '@/api/groups';
+import { RefreshCw, Wand2 } from 'lucide-react';
+import { transliterate, generateRandomPassword } from '@/utils/stringUtils';
 
 const userSchema = z.object({
   firstName: z.string().min(2, "Ім'я має містити не менше 2 символів"),
@@ -72,80 +74,112 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
       }}
     >
       {({ values, errors, touched, setFieldValue }) => (
-        <Form className="space-y-4 pt-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="firstName">Ім'я *</Label>
+        <Form className="space-y-6 pt-2">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="firstName" className="text-sm font-medium">Ім'я *</Label>
               <Field name="firstName">
                 {({ field }: FieldProps) => (
                   <Input
                     {...field}
                     id="firstName"
                     placeholder="Іван"
-                    className={errors.firstName && touched.firstName ? 'border-destructive' : ''}
+                    className={`h-11 ${errors.firstName && touched.firstName ? 'border-destructive' : ''}`}
                   />
                 )}
               </Field>
-              {errors.firstName && touched.firstName && <p className="text-xs text-destructive">{errors.firstName as string}</p>}
+              {errors.firstName && touched.firstName && <p className="text-xs text-destructive mt-1">{errors.firstName as string}</p>}
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="lastName">Прізвище *</Label>
+            <div className="space-y-2">
+              <Label htmlFor="lastName" className="text-sm font-medium">Прізвище *</Label>
               <Field name="lastName">
                 {({ field }: FieldProps) => (
                   <Input
                     {...field}
                     id="lastName"
                     placeholder="Шевченко"
-                    className={errors.lastName && touched.lastName ? 'border-destructive' : ''}
+                    className={`h-11 ${errors.lastName && touched.lastName ? 'border-destructive' : ''}`}
                   />
                 )}
               </Field>
-              {errors.lastName && touched.lastName && <p className="text-xs text-destructive">{errors.lastName as string}</p>}
+              {errors.lastName && touched.lastName && <p className="text-xs text-destructive mt-1">{errors.lastName as string}</p>}
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="email">Email *</Label>
-            <Field name="email">
-              {({ field }: FieldProps) => (
-                <Input
-                  {...field}
-                  id="email"
-                  type="email"
-                  placeholder="ivan@example.com"
-                  className={errors.email && touched.email ? 'border-destructive' : ''}
-                />
-              )}
-            </Field>
-            {errors.email && touched.email && <p className="text-xs text-destructive">{errors.email as string}</p>}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="password">Пароль</Label>
-              <Field name="password">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-sm font-medium">Email *</Label>
+            <div className="flex gap-2">
+              <Field name="email">
                 {({ field }: FieldProps) => (
                   <Input
                     {...field}
-                    id="password"
-                    type="password"
-                    placeholder="Мінімум 6 символів"
-                    className={errors.password && touched.password ? 'border-destructive' : ''}
+                    id="email"
+                    type="email"
+                    placeholder="ivan.shevchenko@academy.com"
+                    className={`h-11 ${errors.email && touched.email ? 'border-destructive' : ''}`}
                   />
                 )}
               </Field>
-              {errors.password && touched.password && <p className="text-xs text-destructive">{errors.password as string}</p>}
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 w-11 px-0 shrink-0"
+                title="Згенерувати email автоматично"
+                onClick={() => {
+                  if (values.firstName && values.lastName) {
+                    const generatedEmail = `${transliterate(values.firstName)}.${transliterate(values.lastName)}@academy.com`;
+                    setFieldValue('email', generatedEmail);
+                  }
+                }}
+              >
+                <RefreshCw className="h-4 w-4 text-slate-500" />
+                <span className="sr-only">Генерувати Email</span>
+              </Button>
+            </div>
+            {errors.email && touched.email && <p className="text-xs text-destructive mt-1">{errors.email as string}</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">Пароль</Label>
+              <div className="flex gap-2">
+                <Field name="password">
+                  {({ field }: FieldProps) => (
+                    <Input
+                      {...field}
+                      id="password"
+                      type="text"
+                      placeholder="Мінімум 6 символів"
+                      className={`h-11 ${errors.password && touched.password ? 'border-destructive' : ''}`}
+                    />
+                  )}
+                </Field>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-11 px-0 shrink-0"
+                  title="Згенерувати надійний пароль"
+                  onClick={() => {
+                    setFieldValue('password', generateRandomPassword());
+                  }}
+                >
+                  <Wand2 className="h-4 w-4 text-slate-500" />
+                  <span className="sr-only">Генерувати Пароль</span>
+                </Button>
+              </div>
+              {errors.password && touched.password && <p className="text-xs text-destructive mt-1">{errors.password as string}</p>}
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="phone">Телефон</Label>
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm font-medium">Телефон</Label>
               <Field name="phone">
                 {({ field }: FieldProps) => (
                   <Input
                     {...field}
                     id="phone"
                     placeholder="+380..."
+                    className="h-11"
                   />
                 )}
               </Field>
@@ -153,10 +187,10 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
           </div>
 
           {!hideRoleSelect && (
-            <div className="space-y-1">
-              <Label htmlFor="role">Роль *</Label>
+            <div className="space-y-2">
+              <Label htmlFor="role" className="text-sm font-medium">Роль *</Label>
               <Select value={values.role} onValueChange={(val) => setFieldValue('role', val)}>
-                <SelectTrigger id="role" className="bg-white">
+                <SelectTrigger id="role" className="bg-white h-11">
                   <SelectValue placeholder="Оберіть роль" />
                 </SelectTrigger>
                 <SelectContent>
@@ -169,10 +203,10 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
           )}
 
           {(values.role === UserRole.STUDENT) && (
-            <div className="space-y-1">
-              <Label htmlFor="group">Група (необов'язково)</Label>
+            <div className="space-y-2">
+              <Label htmlFor="group" className="text-sm font-medium">Група (необов'язково)</Label>
               <Select value={values.group || "none"} onValueChange={(val) => setFieldValue('group', val === 'none' ? '' : val)}>
-                <SelectTrigger id="group" className="bg-white">
+                <SelectTrigger id="group" className="bg-white h-11">
                   <SelectValue placeholder="Оберіть групу" />
                 </SelectTrigger>
                 <SelectContent>
@@ -185,8 +219,8 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
             </div>
           )}
 
-          <div className="pt-2">
-            <Button type="submit" className="w-full bg-[#BA0000] hover:bg-[#A00000] text-white" disabled={isSubmitting}>
+          <div className="pt-4">
+            <Button type="submit" className="w-full h-12 text-base font-medium bg-[#C10000] hover:bg-[#A00000] text-white transition-colors" disabled={isSubmitting}>
               {isSubmitting ? 'Збереження...' : 'Зберегти'}
             </Button>
           </div>

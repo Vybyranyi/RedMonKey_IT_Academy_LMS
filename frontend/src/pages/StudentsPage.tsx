@@ -89,9 +89,9 @@ export default function StudentsPage() {
                 <Plus className="h-4 w-4" /> Додати студента
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-xl">
               <DialogHeader>
-                <DialogTitle>Створення картки студента</DialogTitle>
+                <DialogTitle className="text-xl">Створення картки студента</DialogTitle>
               </DialogHeader>
               <UserForm onSubmit={handleCreateStudent} isSubmitting={isSubmitLoading} hideRoleSelect />
             </DialogContent>

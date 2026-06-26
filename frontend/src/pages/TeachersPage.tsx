@@ -63,9 +63,9 @@ export default function TeachersPage() {
                 <Plus className="h-4 w-4" /> Додати викладача
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-xl">
               <DialogHeader>
-                <DialogTitle>Додати викладача в систему</DialogTitle>
+                <DialogTitle className="text-xl">Створення картки викладача</DialogTitle>
               </DialogHeader>
               <UserForm onSubmit={handleCreateTeacher} isSubmitting={isSubmitLoading} hideRoleSelect initialValues={{
                 firstName: '',
