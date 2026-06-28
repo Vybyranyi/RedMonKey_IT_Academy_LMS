@@ -133,7 +133,7 @@ export default function StudentsPage() {
                   email: editingStudent.email,
                   phone: editingStudent.phone || '',
                   role: editingStudent.role,
-                  group: typeof editingStudent.group === 'object' ? (editingStudent.group as any)._id : editingStudent.group
+                  group: editingStudent.group && typeof editingStudent.group === 'object' ? (editingStudent.group as any)._id : editingStudent.group || ''
                 }}
                 onSubmit={handleUpdateStudent} 
                 isSubmitting={isSubmitLoading} 

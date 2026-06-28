@@ -1,13 +1,17 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Eye, Pencil } from 'lucide-react';
 import type { IUser } from '@redmonkey/shared';
 
 interface TeacherCardProps {
   teacher: IUser;
+  onViewDetails?: (id: string) => void;
+  onEdit?: (teacher: IUser) => void;
 }
 
-export default function TeacherCard({ teacher }: TeacherCardProps) {
+export default function TeacherCard({ teacher, onViewDetails, onEdit }: TeacherCardProps) {
   // Replace with actual data when available from backend
   const subjects = (teacher as any).subjects || [];
   const groups = (teacher as any).groups || [];
@@ -19,7 +23,20 @@ export default function TeacherCard({ teacher }: TeacherCardProps) {
   const colorClass = avatarColors[(teacher.firstName.length + teacher.lastName.length) % avatarColors.length];
 
   return (
-    <Card className="hover:shadow-md transition-all border border-slate-100 rounded-[20px] shadow-sm bg-white">
+    <Card className="hover:shadow-md transition-all border border-slate-100 rounded-[20px] shadow-sm bg-white relative group">
+      <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {onViewDetails && (
+          <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 shadow-sm" onClick={() => onViewDetails(teacher._id)}>
+            <Eye className="h-4 w-4" />
+          </Button>
+        )}
+        {onEdit && (
+          <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 shadow-sm" onClick={() => onEdit(teacher)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
       <CardHeader className="flex flex-col items-center pb-2 pt-8 text-center">
         <Avatar className={`h-20 w-20 shadow-sm border-0 ${colorClass} text-white`}>
           <AvatarFallback className={`${colorClass} text-2xl font-bold text-white`}>

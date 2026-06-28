@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
-import { apiGetUsers, apiCreateUser } from '@/api/users';
+import { apiGetUsers, apiCreateUser, apiUpdateUser } from '@/api/users';
 import { UserRole, type IUser, type IUserDto } from '@redmonkey/shared';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import TeacherCard from '@/components/features/users/TeacherCard';
 import UserForm from '@/components/features/users/UserForm';
+import TeacherDetailsModal from '@/components/features/users/TeacherDetailsModal';
 import { useAuthStore } from '@/store/authStore';
 import { Plus } from 'lucide-react';
 
@@ -14,6 +15,8 @@ export default function TeachersPage() {
   const [teachers, setTeachers] = useState<IUser[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<IUser | null>(null);
+  const [editingTeacher, setEditingTeacher] = useState<IUser | null>(null);
 
   const fetchTeachers = useCallback(async () => {
     try {
@@ -38,6 +41,27 @@ export default function TeachersPage() {
       console.error(error);
     } finally {
       setIsSubmitLoading(false);
+    }
+  };
+
+  const handleUpdateTeacher = async (values: IUserDto) => {
+    if (!editingTeacher) return;
+    setIsSubmitLoading(true);
+    try {
+      await apiUpdateUser(editingTeacher._id, values);
+      setEditingTeacher(null);
+      fetchTeachers();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitLoading(false);
+    }
+  };
+
+  const handleViewDetails = (id: string) => {
+    const teacher = teachers.find(t => t._id === id);
+    if (teacher) {
+      setSelectedTeacher(teacher);
     }
   };
 
@@ -79,11 +103,47 @@ export default function TeachersPage() {
         )}
       </div>
 
+      {isAdmin && (
+        <Dialog open={!!editingTeacher} onOpenChange={(open) => !open && setEditingTeacher(null)}>
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl">Редагування картки викладача</DialogTitle>
+            </DialogHeader>
+            {editingTeacher && (
+              <UserForm 
+                initialValues={{
+                  firstName: editingTeacher.firstName,
+                  lastName: editingTeacher.lastName,
+                  email: editingTeacher.email,
+                  phone: editingTeacher.phone || '',
+                  role: editingTeacher.role,
+                  group: editingTeacher.group && typeof editingTeacher.group === 'object' ? (editingTeacher.group as any)._id : editingTeacher.group || ''
+                }}
+                onSubmit={handleUpdateTeacher} 
+                isSubmitting={isSubmitLoading} 
+                hideRoleSelect 
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {teachers.map((teacher) => (
-          <TeacherCard key={teacher._id} teacher={teacher} />
+          <TeacherCard 
+            key={teacher._id} 
+            teacher={teacher} 
+            onViewDetails={handleViewDetails}
+            onEdit={isAdmin ? setEditingTeacher : undefined}
+          />
         ))}
       </div>
+
+      <TeacherDetailsModal 
+        teacher={selectedTeacher} 
+        isOpen={!!selectedTeacher} 
+        onClose={() => setSelectedTeacher(null)} 
+      />
     </div>
   );
 }
