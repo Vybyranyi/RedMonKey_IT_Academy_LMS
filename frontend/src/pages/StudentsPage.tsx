@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import UserFilters from '@/components/features/users/UserFilters';
 import StudentTable from '@/components/features/users/StudentTable';
 import UserForm from '@/components/features/users/UserForm';
+import StudentDetailsModal from '@/components/features/users/StudentDetailsModal';
 import { useAuthStore } from '@/store/authStore';
 import { Plus } from 'lucide-react';
 
@@ -19,6 +20,7 @@ export default function StudentsPage() {
   const [selectedGroup, setSelectedGroup] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<IUser | null>(null);
 
   const fetchStudents = useCallback(async () => {
     try {
@@ -64,7 +66,10 @@ export default function StudentsPage() {
   };
 
   const handleViewDetails = (id: string) => {
-    console.log('Перегляд профілю студента з ID:', id);
+    const student = students.find(s => s._id === id);
+    if (student) {
+      setSelectedStudent(student);
+    }
   };
 
   const isAdmin = currentUser?.role === UserRole.ADMIN;
@@ -110,6 +115,12 @@ export default function StudentsPage() {
       <StudentTable
         students={students}
         onViewDetails={handleViewDetails}
+      />
+
+      <StudentDetailsModal 
+        student={selectedStudent} 
+        isOpen={!!selectedStudent} 
+        onClose={() => setSelectedStudent(null)} 
       />
     </div>
   );
