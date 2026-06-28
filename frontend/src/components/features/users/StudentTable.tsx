@@ -2,15 +2,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Eye, Pencil } from 'lucide-react';
 import type { IUser } from '@redmonkey/shared';
 
 interface StudentTableProps {
   students: IUser[];
   onViewDetails: (id: string) => void;
+  onEdit?: (student: IUser) => void;
 }
 
-export default function StudentTable({ students, onViewDetails }: StudentTableProps) {
+export default function StudentTable({ students, onViewDetails, onEdit }: StudentTableProps) {
   const getGradeStyles = (score: number) => {
     if (score >= 10) return 'bg-emerald-100 text-emerald-700';
     if (score >= 7) return 'bg-blue-100 text-blue-700';
@@ -29,7 +30,7 @@ export default function StudentTable({ students, onViewDetails }: StudentTablePr
             <TableHead>RedCoins</TableHead>
             <TableHead>Відвідуваність</TableHead>
             <TableHead>Статус</TableHead>
-            <TableHead className="w-[80px] text-center">Дія</TableHead>
+            <TableHead className="w-[100px] text-center">Дія</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -106,14 +107,26 @@ export default function StudentTable({ students, onViewDetails }: StudentTablePr
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-slate-500 hover:text-slate-900"
-                      onClick={() => onViewDetails(student._id)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-500 hover:text-slate-900"
+                        onClick={() => onViewDetails(student._id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      {onEdit && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-500 hover:text-slate-900"
+                          onClick={() => onEdit(student)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               );

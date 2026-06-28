@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { apiGetUsers, apiCreateUser } from '@/api/users';
+import { apiGetUsers, apiCreateUser, apiUpdateUser } from '@/api/users';
 import { apiGetGroups } from '@/api/groups';
 import { UserRole, type IUser, type IUserDto } from '@redmonkey/shared';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ export default function StudentsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<IUser | null>(null);
+  const [editingStudent, setEditingStudent] = useState<IUser | null>(null);
 
   const fetchStudents = useCallback(async () => {
     try {
@@ -57,6 +58,20 @@ export default function StudentsPage() {
     try {
       await apiCreateUser({ ...values, role: UserRole.STUDENT });
       setIsCreateOpen(false);
+      fetchStudents();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSubmitLoading(false);
+    }
+  };
+
+  const handleUpdateStudent = async (values: IUserDto) => {
+    if (!editingStudent) return;
+    setIsSubmitLoading(true);
+    try {
+      await apiUpdateUser(editingStudent._id, values);
+      setEditingStudent(null);
       fetchStudents();
     } catch (error) {
       console.error(error);
@@ -104,6 +119,31 @@ export default function StudentsPage() {
         )}
       </div>
 
+      {isAdmin && (
+        <Dialog open={!!editingStudent} onOpenChange={(open) => !open && setEditingStudent(null)}>
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl">Редагування картки студента</DialogTitle>
+            </DialogHeader>
+            {editingStudent && (
+              <UserForm 
+                initialValues={{
+                  firstName: editingStudent.firstName,
+                  lastName: editingStudent.lastName,
+                  email: editingStudent.email,
+                  phone: editingStudent.phone || '',
+                  role: editingStudent.role,
+                  group: typeof editingStudent.group === 'object' ? (editingStudent.group as any)._id : editingStudent.group
+                }}
+                onSubmit={handleUpdateStudent} 
+                isSubmitting={isSubmitLoading} 
+                hideRoleSelect 
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
+
       <UserFilters
         search={search}
         onSearchChange={setSearch}
@@ -115,6 +155,7 @@ export default function StudentsPage() {
       <StudentTable
         students={students}
         onViewDetails={handleViewDetails}
+        onEdit={isAdmin ? setEditingStudent : undefined}
       />
 
       <StudentDetailsModal 
