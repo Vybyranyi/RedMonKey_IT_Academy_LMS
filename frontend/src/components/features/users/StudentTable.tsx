@@ -40,10 +40,10 @@ export default function StudentTable({ students, onViewDetails }: StudentTablePr
               </TableCell>
             </TableRow>
           ) : (
-            students.map((student: any, index: number) => {
-              const mockAvgScore = Number((((index % 5) + 7) + 0.2).toFixed(1));
-              const mockAttendance = 80 + (index % 20);
-              const displayCoins = student.redCoins || (50 + (index * 15) % 150);
+            students.map((student: any) => {
+              const avgScore = student.averageScore || 0;
+              const attendance = student.attendance || 0;
+              const displayCoins = student.redCoins || 0;
 
               return (
                 <TableRow key={student._id} className="hover:bg-slate-50/50">
@@ -70,17 +70,17 @@ export default function StudentTable({ students, onViewDetails }: StudentTablePr
                         {student.group.name}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-600 border-none rounded-full px-3 font-semibold text-xs">
-                        JS-2024-A
+                      <Badge variant="outline" className="bg-slate-100 text-slate-600 border-none rounded-full px-3 font-semibold text-xs">
+                        Без групи
                       </Badge>
                     )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded flex items-center justify-center font-bold text-xs ${getGradeStyles(mockAvgScore)}`}>
-                        {Math.round(mockAvgScore)}
+                      <div className={`w-7 h-7 rounded flex items-center justify-center font-bold text-xs ${getGradeStyles(avgScore)}`}>
+                        {Math.round(avgScore)}
                       </div>
-                      <span className="text-sm font-medium text-slate-600">{mockAvgScore}</span>
+                      <span className="text-sm font-medium text-slate-600">{avgScore}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -93,11 +93,11 @@ export default function StudentTable({ students, onViewDetails }: StudentTablePr
                     <div className="flex items-center gap-3 w-32">
                       <div className="w-full bg-slate-100 rounded-full h-1.5">
                         <div
-                          className="bg-emerald-600 h-1.5 rounded-full"
-                          style={{ width: `${mockAttendance}%` }}
+                          className={`${attendance > 0 ? 'bg-emerald-600' : 'bg-slate-300'} h-1.5 rounded-full`}
+                          style={{ width: `${attendance}%` }}
                         />
                       </div>
-                      <span className="text-xs font-semibold text-slate-600">{mockAttendance}%</span>
+                      <span className="text-xs font-semibold text-slate-600">{attendance}%</span>
                     </div>
                   </TableCell>
                   <TableCell>
