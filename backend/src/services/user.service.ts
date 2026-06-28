@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { userRepository } from '../repositories/user.repository.js';
 import { UserRole } from '@redmonkey/shared';
+import { Group } from '../models/Group.js';
 
 export const userService = {
   async getUsers(query: { role?: any; groupId?: any; q?: any }, currentUserRole?: string) {
@@ -66,6 +67,10 @@ export const userService = {
       redCoins: 0,
     } as any);
 
+    if (role === UserRole.STUDENT && group) {
+      await Group.findByIdAndUpdate(group, { $push: { students: newUser._id } });
+    }
+
     // Не повертаємо хеш пароля у відповіді
     const userResponse = newUser.toObject();
     delete (userResponse as any).passwordHash;
@@ -75,6 +80,11 @@ export const userService = {
 
   async updateUser(id: string, updateBody: any) {
     const { password, ...updateData } = updateBody;
+
+    const oldUser = await userRepository.findById(id);
+    if (!oldUser) {
+      throw new Error('Користувача не знайдено');
+    }
 
     // Якщо адміністратор хоче оновити пароль користувачу
     if (password) {
@@ -87,6 +97,27 @@ export const userService = {
       throw new Error('Користувача не знайдено');
     }
 
+    if (updateBody.hasOwnProperty('group') || updateBody.hasOwnProperty('role')) {
+      const oldGroupId = oldUser.group?.toString();
+      const newGroupId = updatedUser.group?.toString();
+
+      if (oldGroupId !== newGroupId) {
+        if (oldGroupId) {
+          await Group.findByIdAndUpdate(oldGroupId, { $pull: { students: updatedUser._id } });
+        }
+        if (newGroupId && updatedUser.role === UserRole.STUDENT) {
+          await Group.findByIdAndUpdate(newGroupId, { $push: { students: updatedUser._id } });
+        }
+      } else if (oldUser.role !== updatedUser.role) {
+        // Handle role change but same group
+        if (oldUser.role === UserRole.STUDENT && updatedUser.role !== UserRole.STUDENT && oldGroupId) {
+          await Group.findByIdAndUpdate(oldGroupId, { $pull: { students: updatedUser._id } });
+        } else if (oldUser.role !== UserRole.STUDENT && updatedUser.role === UserRole.STUDENT && newGroupId) {
+          await Group.findByIdAndUpdate(newGroupId, { $push: { students: updatedUser._id } });
+        }
+      }
+    }
+
     return updatedUser;
   },
 
@@ -95,6 +126,11 @@ export const userService = {
     if (!user) {
       throw new Error('Користувача не знайдено');
     }
+    
+    if (user.group) {
+      await Group.findByIdAndUpdate(user.group, { $pull: { students: user._id } });
+    }
+
     return user;
   }
 };
