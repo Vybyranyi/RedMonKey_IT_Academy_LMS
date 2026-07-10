@@ -3,6 +3,7 @@ import { IUser, UserRole } from '@redmonkey/shared';
 
 export interface IUserDocument extends Document, Omit<IUser, '_id' | 'createdAt' | 'updatedAt' | 'group'> {
   passwordHash: string;
+  tokenVersion: number;
   group?: Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
@@ -14,6 +15,8 @@ const UserSchema = new Schema<IUserDocument>(
     lastName: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
+    // Інкрементується на logout — усі раніше видані refresh-токени стають невалідними.
+    tokenVersion: { type: Number, default: 0 },
     role: { type: String, enum: Object.values(UserRole), required: true },
     avatar: { type: String, default: null },
     phone: { type: String, default: null },

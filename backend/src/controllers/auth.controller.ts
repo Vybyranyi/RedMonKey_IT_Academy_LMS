@@ -1,66 +1,69 @@
-import { Request, Response } from 'express';
+import { CookieOptions, Request, Response } from 'express';
+import { env } from '../config/env.js';
+import { userRepository } from '../repositories/user.repository.js';
 import { authService } from '../services/auth.service.js';
+import { UnauthorizedError, handleError } from '../utils/errors.js';
+
+const REFRESH_COOKIE = 'refreshToken';
+
+/** clearCookie спрацює лише якщо опції збігаються з тими, з якими куку виставили. */
+const refreshCookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: env.isProduction,
+  sameSite: 'strict',
+  path: '/',
+};
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
     const result = await authService.login(email, password);
 
-    res.cookie('refreshToken', result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 днів
+    res.cookie(REFRESH_COOKIE, result.refreshToken, {
+      ...refreshCookieOptions,
+      maxAge: env.jwt.refreshExpiresInSeconds * 1000,
     });
 
     res.status(200).json({
       accessToken: result.accessToken,
       user: result.user,
     });
-  } catch (error: any) {
-    if (error.message === 'Невірний email або пароль') {
-      res.status(401).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: 'Помилка сервера при вході', error });
-    }
+  } catch (error) {
+    handleError(res, error, 'Помилка сервера при вході');
   }
 };
 
 export const refresh = async (req: Request, res: Response): Promise<void> => {
   try {
-    const refreshToken = req.cookies.refreshToken;
-    const result: any = await authService.refresh(refreshToken);
+    const result = await authService.refresh(req.cookies?.[REFRESH_COOKIE]);
     res.status(200).json({ accessToken: result.accessToken });
-  } catch (error: any) {
-    if (error.message === 'Відсутній refresh token' || error.message === 'Користувач не активний або не існує') {
-      res.status(401).json({ message: error.message });
-    } else if (error.message === 'Невалідний refresh token') {
-      res.status(403).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: 'Помилка при оновленні токену' });
-    }
+  } catch (error) {
+    handleError(res, error, 'Помилка при оновленні токену');
   }
 };
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
-  res.clearCookie('refreshToken');
-  res.status(200).json({ message: 'Успішний вихід із системи' });
+  try {
+    await authService.logout(req.cookies?.[REFRESH_COOKIE]);
+    res.clearCookie(REFRESH_COOKIE, refreshCookieOptions);
+    res.status(200).json({ message: 'Успішний вихід із системи' });
+  } catch (error) {
+    handleError(res, error, 'Помилка при виході із системи');
+  }
 };
-
-import { userRepository } from '../repositories/user.repository.js';
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = (req as any).user?.userId;
+    const userId = req.user?.userId;
     if (!userId) {
-      res.status(401).json({ message: 'Не авторизовано' });
-      return;
+      throw new UnauthorizedError('Не авторизовано');
     }
+
     const user = await userRepository.findById(userId);
     if (!user || !user.isActive) {
-      res.status(401).json({ message: 'Користувача не знайдено або він не активний' });
-      return;
+      throw new UnauthorizedError('Користувача не знайдено або він не активний');
     }
+
     res.status(200).json({
       id: user._id,
       firstName: user.firstName,
@@ -71,6 +74,6 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
       redCoins: user.redCoins,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Помилка сервера' });
+    handleError(res, error, 'Помилка сервера');
   }
 };

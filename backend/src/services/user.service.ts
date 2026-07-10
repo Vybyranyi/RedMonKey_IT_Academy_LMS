@@ -2,9 +2,19 @@ import bcrypt from 'bcryptjs';
 import { userRepository } from '../repositories/user.repository.js';
 import { UserRole } from '@redmonkey/shared';
 import { Group } from '../models/Group.js';
+import { accessPolicy } from './access.policy.js';
+import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.js';
+import { TokenPayload } from '../utils/jwt.js';
+
+/** Поле group приходить або як ObjectId, або як populated-документ. */
+const toGroupId = (group: unknown): string | null => {
+  if (!group) return null;
+  if (typeof group === 'object' && '_id' in (group as any)) return String((group as any)._id);
+  return String(group);
+};
 
 export const userService = {
-  async getUsers(query: { role?: any; groupId?: any; q?: any }, currentUserRole?: string) {
+  async getUsers(query: { role?: any; groupId?: any; q?: any }, currentUserRole?: UserRole) {
     const { role, groupId, q } = query;
     const filter: any = { isActive: true };
 
@@ -36,11 +46,21 @@ export const userService = {
     return userRepository.findAll(filter);
   },
 
-  async getUserById(id: string) {
+  async getUserById(id: string, actor: TokenPayload) {
     const user = await userRepository.findByIdActive(id);
     if (!user) {
-      throw new Error('Користувача не знайдено');
+      throw new NotFoundError('Користувача не знайдено');
     }
+
+    const allowed = await accessPolicy.canViewUser(actor, {
+      id: String(user._id),
+      role: user.role,
+      groupId: toGroupId(user.group),
+    });
+    if (!allowed) {
+      throw new ForbiddenError('У вас немає доступу до цього профілю');
+    }
+
     return user;
   },
 
@@ -49,7 +69,7 @@ export const userService = {
 
     const existingUser = await userRepository.findByEmail(email);
     if (existingUser) {
-      throw new Error('Користувач з таким email вже існує');
+      throw new BadRequestError('Користувач з таким email вже існує');
     }
 
     // Хешування пароля
@@ -71,9 +91,10 @@ export const userService = {
       await Group.findByIdAndUpdate(group, { $push: { students: newUser._id } });
     }
 
-    // Не повертаємо хеш пароля у відповіді
+    // Не повертаємо приватні поля у відповіді
     const userResponse = newUser.toObject();
     delete (userResponse as any).passwordHash;
+    delete (userResponse as any).tokenVersion;
 
     return userResponse;
   },
@@ -83,7 +104,7 @@ export const userService = {
 
     const oldUser = await userRepository.findById(id);
     if (!oldUser) {
-      throw new Error('Користувача не знайдено');
+      throw new NotFoundError('Користувача не знайдено');
     }
 
     // Якщо адміністратор хоче оновити пароль користувачу
@@ -94,7 +115,7 @@ export const userService = {
 
     const updatedUser = await userRepository.update(id, updateData);
     if (!updatedUser) {
-      throw new Error('Користувача не знайдено');
+      throw new NotFoundError('Користувача не знайдено');
     }
 
     if (updateBody.hasOwnProperty('group') || updateBody.hasOwnProperty('role')) {
@@ -124,7 +145,7 @@ export const userService = {
   async deleteUser(id: string) {
     const user = await userRepository.deactivate(id);
     if (!user) {
-      throw new Error('Користувача не знайдено');
+      throw new NotFoundError('Користувача не знайдено');
     }
     
     if (user.group) {

@@ -13,6 +13,7 @@ const router = Router();
 
 // Доступно адміну та викладачу (викладач бачить лише обмежені дані через фільтр у контролері)
 router.get('/', authenticate, authorize([UserRole.ADMIN, UserRole.TEACHER]), getUsers);
+// Доступ до конкретного профілю перевіряється на рівні запису в userService.getUserById
 router.get('/:id', authenticate, getUserById);
 
 // Створення, зміна та видалення користувачів доступні лише адміну

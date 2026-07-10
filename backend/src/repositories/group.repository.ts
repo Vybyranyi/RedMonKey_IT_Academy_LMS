@@ -17,6 +17,14 @@ export const groupRepository = {
     return Group.findOne({ name });
   },
 
+  /** Id активних груп, у яких користувач числиться викладачем. */
+  async findIdsByTeacher(teacherId: string): Promise<string[]> {
+    const groups = await Group.find({ teachers: teacherId, isActive: true })
+      .select('_id')
+      .lean();
+    return groups.map((group) => String(group._id));
+  },
+
   async create(groupData: Partial<IGroupDocument>): Promise<IGroupDocument> {
     const newGroup = new Group(groupData);
     return newGroup.save();

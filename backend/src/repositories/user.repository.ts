@@ -1,5 +1,8 @@
 import { User, IUserDocument } from '../models/User.js';
 
+/** Поля, які ніколи не залишають бекенд. */
+const PRIVATE_FIELDS = '-passwordHash -tokenVersion';
+
 export const userRepository = {
   async findByEmail(email: string): Promise<IUserDocument | null> {
     return User.findOne({ email });
@@ -11,13 +14,13 @@ export const userRepository = {
 
   async findAll(filter: any): Promise<IUserDocument[]> {
     return User.find(filter)
-      .select('-passwordHash')
+      .select(PRIVATE_FIELDS)
       .populate('group', 'name');
   },
 
   async findByIdActive(id: string): Promise<IUserDocument | null> {
     return User.findOne({ _id: id, isActive: true })
-      .select('-passwordHash')
+      .select(PRIVATE_FIELDS)
       .populate('group', 'name');
   },
 
@@ -31,10 +34,15 @@ export const userRepository = {
       id,
       updateData,
       { new: true, runValidators: true }
-    ).select('-passwordHash');
+    ).select(PRIVATE_FIELDS);
   },
 
   async deactivate(id: string): Promise<IUserDocument | null> {
     return User.findByIdAndUpdate(id, { isActive: false }, { new: true });
+  },
+
+  /** Відкликає всі раніше видані refresh-токени користувача. */
+  async incrementTokenVersion(id: string): Promise<void> {
+    await User.findByIdAndUpdate(id, { $inc: { tokenVersion: 1 } });
   }
 };
