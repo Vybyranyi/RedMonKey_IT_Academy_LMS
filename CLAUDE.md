@@ -85,6 +85,59 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 - `router/index.tsx` — React Router з захищеними маршрутами.
 - Типи ролей/enum'ів (`UserRole`, `GradeType` тощо) і спільні інтерфейси (`IUser`, ...) імпортуються з `@redmonkey/shared`, а не дублюються локально.
 
+## Дизайн-система (стисло — повна версія в [DESIGN.md](./DESIGN.md))
+
+**Стиль:** Clean Professional Dark-Accent — світлий main-контент + темно-синій sidebar + червоні брендові акценти.
+
+**Ключові кольори:**
+
+| Роль | HEX / клас |
+|---|---|
+| Brand Red (primary CTA, активний nav) | `#C10000` (hover `#A00000`/`#BA0000`) |
+| Sidebar BG | `#29425D` (hover `#1A3150`, deeper `#152744`) |
+| Page BG | `#F8F9FA` |
+| Card BG | `white` |
+| Page title (H1 у Header) | `text-[#1A2645]` |
+| Body text | `text-slate-600` / `text-slate-700` |
+| Muted text | `text-slate-400` / `text-slate-500` |
+| Success/Active badge | `bg-emerald-50 text-emerald-700 border-emerald-200` |
+| Inactive badge | `bg-slate-100 text-slate-600` |
+| Avatar fallback BG | `#0070F3` |
+| Оцінки: 10–12 зелений · 7–9 синій · 4–6 жовтий · 1–3 червоний | |
+
+**Типографіка:** шрифт `Geist Variable` (`@fontsource-variable/geist`), ніколи системний sans. H1 сторінки — `text-3xl font-bold tracking-tight text-slate-900`; заголовок у Header — `text-[28px] font-extrabold text-[#1A2645]`.
+
+**Border radius:** чим більший елемент — тим більший radius. Badge/Input — `rounded-md`. Card — `rounded-lg`/`rounded-xl`. Модалки — `rounded-[20px]`. Nav items у Sidebar — `rounded-[12px]`.
+
+**Іконки:** тільки `lucide-react`. Nav items — `h-4.5 w-4.5 strokeWidth={2.5}`, у кнопках/картках — `h-4 w-4`.
+
+**Патерн list-сторінки (еталон — `GroupsPage`):**
+```tsx
+<div className="space-y-6">
+  <div className="flex items-center justify-between">
+    <div>
+      <div className="flex items-center gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Назва</h1>
+        <Badge variant="secondary" className="mt-1">N записів</Badge>
+      </div>
+      <p className="text-slate-500">Підзаголовок</p>
+    </div>
+    <Button>Дія</Button> {/* тільки для admin — ховай за роллю */}
+  </div>
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {/* картки */}
+  </div>
+</div>
+```
+
+**Card:** `border-t-2 border-t-slate-200`, іконка-плашка в хедері `p-3 bg-red-50 text-primary rounded-xl`, `hover:shadow-md transition-shadow`, footer `bg-slate-50/50`.
+
+**Input:** `h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000]`.
+
+**Стани:** loading → ShadCN `Skeleton` (не спінер) + кнопка disabled з текстом `"Збереження..."`; error форми → `text-xs text-destructive`; server error → `bg-red-50 text-red-600 border border-red-200`; сповіщення → `Sonner` toast; порожні списки — текстовий empty state з CTA, не голий екран.
+
+**Чекліст перед здачею UI-задачі:** кольори з палітри, шрифт Geist, radius за розміром елемента, стани loading/empty/error реалізовані, адаптивність (`sm`/`md`/`lg`) перевірена, іконки з lucide-react, admin-only кнопки приховані для інших ролей, форми — Zod + Formik з видимими помилками.
+
 ## Поточний стан реалізації
 
 Реалізовано (backend + frontend): **auth** (login/refresh/logout/me), **users** CRUD, **groups** CRUD.
