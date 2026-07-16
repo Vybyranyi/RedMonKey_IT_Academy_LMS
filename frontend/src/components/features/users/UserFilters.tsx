@@ -29,7 +29,7 @@ export default function UserFilters({ search, onSearchChange, selectedGroup, onG
         <SelectContent>
           <SelectItem value="all">Всі групи</SelectItem>
           {groups.map((g) => (
-            <SelectItem key={g._id} value={g._id}>{g.name}</SelectItem>
+            <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
           ))}
         </SelectContent>
       </Select>

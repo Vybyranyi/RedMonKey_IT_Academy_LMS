@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { TokenPayload } from '../utils/jwt.js';
+import { UserRole } from '@redmonkey/shared';
+import { verifyAccessToken } from '../utils/jwt.js';
 
 export const authenticate = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
@@ -9,18 +9,17 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
     return;
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(' ')[1] as string;
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET || '') as TokenPayload;
-    req.user = decoded;
+    req.user = verifyAccessToken(token);
     next();
-  } catch (error) {
+  } catch {
     res.status(401).json({ message: 'Недійсний або прострочений токен доступу' });
   }
 };
 
-export const authorize = (allowedRoles: ('admin' | 'teacher' | 'student')[]) => {
+export const authorize = (allowedRoles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({ message: 'Авторизація обовʼязкова' });

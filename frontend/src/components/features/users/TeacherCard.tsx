@@ -26,7 +26,7 @@ export default function TeacherCard({ teacher, onViewDetails, onEdit }: TeacherC
     <Card className="hover:shadow-md transition-all border border-slate-100 rounded-[20px] shadow-sm bg-white relative group">
       <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         {onViewDetails && (
-          <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 shadow-sm" onClick={() => onViewDetails(teacher._id)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 shadow-sm" onClick={() => onViewDetails(teacher.id)}>
             <Eye className="h-4 w-4" />
           </Button>
         )}

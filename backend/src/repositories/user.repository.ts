@@ -1,40 +1,60 @@
-import { User, IUserDocument } from '../models/User.js';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
+
+/** Публічна проєкція: усі поля, крім passwordHash і tokenVersion. */
+const publicUserSelect = {
+  id: true,
+  academyId: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  role: true,
+  avatar: true,
+  phone: true,
+  redCoins: true,
+  groupId: true,
+  isActive: true,
+  createdAt: true,
+  updatedAt: true,
+  group: { select: { id: true, name: true } },
+} satisfies Prisma.UserSelect;
 
 export const userRepository = {
-  async findByEmail(email: string): Promise<IUserDocument | null> {
-    return User.findOne({ email });
+  /** Повний запис (з passwordHash/tokenVersion) — лише для внутрішньої логіки auth. */
+  async findByEmail(email: string) {
+    return prisma.user.findFirst({ where: { email } });
   },
 
-  async findById(id: string): Promise<IUserDocument | null> {
-    return User.findById(id);
+  async findById(id: string) {
+    return prisma.user.findUnique({ where: { id } });
   },
 
-  async findAll(filter: any): Promise<IUserDocument[]> {
-    return User.find(filter)
-      .select('-passwordHash')
-      .populate('group', 'name');
+  async findAll(where: Prisma.UserWhereInput) {
+    return prisma.user.findMany({
+      where,
+      select: publicUserSelect,
+      orderBy: { createdAt: 'desc' },
+    });
   },
 
-  async findByIdActive(id: string): Promise<IUserDocument | null> {
-    return User.findOne({ _id: id, isActive: true })
-      .select('-passwordHash')
-      .populate('group', 'name');
+  async findByIdActive(id: string) {
+    return prisma.user.findFirst({ where: { id, isActive: true }, select: publicUserSelect });
   },
 
-  async create(userData: Partial<IUserDocument>): Promise<IUserDocument> {
-    const newUser = new User(userData);
-    return newUser.save();
+  async create(data: Prisma.UserUncheckedCreateInput) {
+    return prisma.user.create({ data, select: publicUserSelect });
   },
 
-  async update(id: string, updateData: any): Promise<IUserDocument | null> {
-    return User.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
-    ).select('-passwordHash');
+  async update(id: string, data: Prisma.UserUncheckedUpdateInput) {
+    return prisma.user.update({ where: { id }, data, select: publicUserSelect });
   },
 
-  async deactivate(id: string): Promise<IUserDocument | null> {
-    return User.findByIdAndUpdate(id, { isActive: false }, { new: true });
-  }
+  async deactivate(id: string) {
+    return prisma.user.update({ where: { id }, data: { isActive: false }, select: publicUserSelect });
+  },
+
+  /** Відкликає всі раніше видані refresh-токени користувача. */
+  async incrementTokenVersion(id: string) {
+    await prisma.user.update({ where: { id }, data: { tokenVersion: { increment: 1 } } });
+  },
 };

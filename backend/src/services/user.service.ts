@@ -1,46 +1,57 @@
 import bcrypt from 'bcryptjs';
-import { userRepository } from '../repositories/user.repository.js';
+import { Prisma } from '@prisma/client';
 import { UserRole } from '@redmonkey/shared';
-import { Group } from '../models/Group.js';
+import { userRepository } from '../repositories/user.repository.js';
+import { academyRepository } from '../repositories/academy.repository.js';
+import { accessPolicy } from './access.policy.js';
+import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.js';
+import { TokenPayload } from '../utils/jwt.js';
+
+const SALT_ROUNDS = 10;
 
 export const userService = {
-  async getUsers(query: { role?: any; groupId?: any; q?: any }, currentUserRole?: string) {
+  async getUsers(query: { role?: any; groupId?: any; q?: any }, currentUserRole?: UserRole) {
     const { role, groupId, q } = query;
-    const filter: any = { isActive: true };
+    const where: Prisma.UserWhereInput = { isActive: true };
 
-    // Фільтрація за роллю
-    if (role && Object.values(UserRole).includes(role as UserRole)) {
-      filter.role = role;
+    // Викладач бачить лише студентів — це обмеження перекриває будь-який фільтр role.
+    if (currentUserRole === UserRole.TEACHER) {
+      where.role = UserRole.STUDENT;
+    } else if (role && Object.values(UserRole).includes(role as UserRole)) {
+      where.role = role as UserRole;
     }
 
-    // Фільтрація за групою
     if (groupId) {
-      filter.group = groupId;
+      where.groupId = String(groupId);
     }
 
-    // Текстовий пошук за ім'ям, прізвищем або поштою
     if (q) {
-      const searchRegex = new RegExp(q as string, 'i');
-      filter.$or = [
-        { firstName: searchRegex },
-        { lastName: searchRegex },
-        { email: searchRegex }
+      const term = String(q);
+      where.OR = [
+        { firstName: { contains: term, mode: 'insensitive' } },
+        { lastName: { contains: term, mode: 'insensitive' } },
+        { email: { contains: term, mode: 'insensitive' } },
       ];
     }
 
-    // Якщо запит робить викладач, він може бачити лише студентів (безпека)
-    if (currentUserRole === UserRole.TEACHER) {
-      filter.role = UserRole.STUDENT;
-    }
-
-    return userRepository.findAll(filter);
+    return userRepository.findAll(where);
   },
 
-  async getUserById(id: string) {
+  async getUserById(id: string, actor: TokenPayload) {
     const user = await userRepository.findByIdActive(id);
     if (!user) {
-      throw new Error('Користувача не знайдено');
+      throw new NotFoundError('Користувача не знайдено');
     }
+
+    const allowed = await accessPolicy.canViewUser(actor, {
+      id: user.id,
+      role: user.role as UserRole,
+      groupId: user.groupId ?? null,
+    });
+    if (!allowed) {
+      throw new ForbiddenError('У вас немає доступу до цього профілю');
+    }
+
     return user;
   },
 
@@ -49,88 +60,55 @@ export const userService = {
 
     const existingUser = await userRepository.findByEmail(email);
     if (existingUser) {
-      throw new Error('Користувач з таким email вже існує');
+      throw new BadRequestError('Користувач з таким email вже існує');
     }
 
-    // Хешування пароля
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password || 'TemporaryPassword123!', salt);
+    const academyId = await academyRepository.getDefaultId();
+    const passwordHash = await bcrypt.hash(password || 'TemporaryPassword123!', SALT_ROUNDS);
 
-    const newUser = await userRepository.create({
+    // Членство в групі — це FK users.group_id. Жодних масивів для синхронізації.
+    return userRepository.create({
+      academyId,
       firstName,
       lastName,
       email,
       passwordHash,
       role,
-      phone,
-      group: role === UserRole.STUDENT ? group : null,
+      phone: phone ?? null,
+      groupId: role === UserRole.STUDENT ? group || null : null,
       redCoins: 0,
-    } as any);
-
-    if (role === UserRole.STUDENT && group) {
-      await Group.findByIdAndUpdate(group, { $push: { students: newUser._id } });
-    }
-
-    // Не повертаємо хеш пароля у відповіді
-    const userResponse = newUser.toObject();
-    delete (userResponse as any).passwordHash;
-
-    return userResponse;
+    });
   },
 
   async updateUser(id: string, updateBody: any) {
-    const { password, ...updateData } = updateBody;
+    const { password, group, role, ...rest } = updateBody;
 
     const oldUser = await userRepository.findById(id);
     if (!oldUser) {
-      throw new Error('Користувача не знайдено');
+      throw new NotFoundError('Користувача не знайдено');
     }
 
-    // Якщо адміністратор хоче оновити пароль користувачу
-    if (password) {
-      const salt = await bcrypt.genSalt(10);
-      updateData.passwordHash = await bcrypt.hash(password, salt);
+    const data: Prisma.UserUncheckedUpdateInput = { ...rest };
+    if (role !== undefined) data.role = role;
+    if (password) data.passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+    // Перепризначення групи — одне поле FK. Не-студент групи не має.
+    if ('group' in updateBody || role !== undefined) {
+      const finalRole = (role ?? oldUser.role) as UserRole;
+      data.groupId = finalRole === UserRole.STUDENT ? group ?? null : null;
     }
 
-    const updatedUser = await userRepository.update(id, updateData);
-    if (!updatedUser) {
-      throw new Error('Користувача не знайдено');
-    }
-
-    if (updateBody.hasOwnProperty('group') || updateBody.hasOwnProperty('role')) {
-      const oldGroupId = oldUser.group?.toString();
-      const newGroupId = updatedUser.group?.toString();
-
-      if (oldGroupId !== newGroupId) {
-        if (oldGroupId) {
-          await Group.findByIdAndUpdate(oldGroupId, { $pull: { students: updatedUser._id } });
-        }
-        if (newGroupId && updatedUser.role === UserRole.STUDENT) {
-          await Group.findByIdAndUpdate(newGroupId, { $push: { students: updatedUser._id } });
-        }
-      } else if (oldUser.role !== updatedUser.role) {
-        // Handle role change but same group
-        if (oldUser.role === UserRole.STUDENT && updatedUser.role !== UserRole.STUDENT && oldGroupId) {
-          await Group.findByIdAndUpdate(oldGroupId, { $pull: { students: updatedUser._id } });
-        } else if (oldUser.role !== UserRole.STUDENT && updatedUser.role === UserRole.STUDENT && newGroupId) {
-          await Group.findByIdAndUpdate(newGroupId, { $push: { students: updatedUser._id } });
-        }
-      }
-    }
-
-    return updatedUser;
+    return userRepository.update(id, data);
   },
 
   async deleteUser(id: string) {
-    const user = await userRepository.deactivate(id);
-    if (!user) {
-      throw new Error('Користувача не знайдено');
+    try {
+      return await userRepository.deactivate(id);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundError('Користувача не знайдено');
+      }
+      throw error;
     }
-    
-    if (user.group) {
-      await Group.findByIdAndUpdate(user.group, { $pull: { students: user._id } });
-    }
-
-    return user;
-  }
+  },
 };

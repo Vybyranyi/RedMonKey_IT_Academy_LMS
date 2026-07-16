@@ -41,7 +41,7 @@ const defaultValues: IUserDto = {
 };
 
 export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRoleSelect = false }: UserFormProps) {
-  const [groups, setGroups] = useState<{_id: string, name: string}[]>([]);
+  const [groups, setGroups] = useState<{id: string, name: string}[]>([]);
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -212,7 +212,7 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
                 <SelectContent>
                   <SelectItem value="none">Без групи</SelectItem>
                   {groups.map(g => (
-                    <SelectItem key={g._id} value={g._id}>{g.name}</SelectItem>
+                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

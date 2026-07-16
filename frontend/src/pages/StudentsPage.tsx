@@ -70,7 +70,7 @@ export default function StudentsPage() {
     if (!editingStudent) return;
     setIsSubmitLoading(true);
     try {
-      await apiUpdateUser(editingStudent._id, values);
+      await apiUpdateUser(editingStudent.id, values);
       setEditingStudent(null);
       fetchStudents();
     } catch (error) {
@@ -81,7 +81,7 @@ export default function StudentsPage() {
   };
 
   const handleViewDetails = (id: string) => {
-    const student = students.find(s => s._id === id);
+    const student = students.find(s => s.id === id);
     if (student) {
       setSelectedStudent(student);
     }
@@ -133,7 +133,7 @@ export default function StudentsPage() {
                   email: editingStudent.email,
                   phone: editingStudent.phone || '',
                   role: editingStudent.role,
-                  group: editingStudent.group && typeof editingStudent.group === 'object' ? (editingStudent.group as any)._id : editingStudent.group || ''
+                  group: editingStudent.group && typeof editingStudent.group === 'object' ? (editingStudent.group as any).id : editingStudent.group || ''
                 }}
                 onSubmit={handleUpdateStudent} 
                 isSubmitting={isSubmitLoading} 

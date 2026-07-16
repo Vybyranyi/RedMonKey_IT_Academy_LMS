@@ -59,7 +59,7 @@ export default function GroupCard({ group, onViewDetails }: GroupCardProps) {
           variant="ghost" 
           size="sm" 
           className="text-slate-600 hover:text-slate-900 font-semibold"
-          onClick={() => onViewDetails(group._id)}
+          onClick={() => onViewDetails(group.id)}
         >
           Переглянути склад
         </Button>

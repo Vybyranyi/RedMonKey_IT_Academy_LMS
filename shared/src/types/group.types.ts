@@ -9,7 +9,8 @@ export interface IGroupBase {
 }
 
 export interface IGroup extends IGroupBase {
-  _id: string;
+  id: string;
+  academyId?: string;
   teachers: string[]; // IDs вчителів
   students: string[]; // IDs студентів
   createdAt: Date | string;

@@ -1,17 +1,15 @@
+// env імпортується першим: він валідує оточення і падає до того, як щось стартує.
+import { env } from "./config/env.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import dotenv from "dotenv";
 import express from "express";
 import { connectDB } from "./config/db.js";
 import apiRoutes from "./routes/index.routes.js";
 
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: env.clientUrl,
   credentials: true
 }));
 app.use(express.json());
@@ -22,8 +20,8 @@ app.use("/api/v1", apiRoutes);
 
 const startServer = async () => {
   await connectDB();
-  app.listen(PORT, () => {
-    console.log(`[server]: Server is running on port ${PORT}`);
+  app.listen(env.port, () => {
+    console.log(`[server]: Server is running on port ${env.port}`);
   });
 };
 
