@@ -2,7 +2,7 @@
 
 Навчальна LMS-система для управління навчальним процесом в IT-академії.
 
-> **Стек:** React 19 · Express 5 · MongoDB · ShadCN UI · Tailwind CSS · TypeScript
+> **Стек:** React 19 · Express 5 · PostgreSQL (Prisma) · ShadCN UI · Tailwind CSS · TypeScript
 
 ---
 
@@ -12,7 +12,7 @@
 
 - Node.js ≥ 20
 - npm ≥ 10
-- MongoDB (локально або Atlas)
+- PostgreSQL (напр. безкоштовний проєкт на [Neon](https://neon.tech))
 
 ### 1. Клонувати репозиторій
 
@@ -34,7 +34,7 @@ npm install
 **Backend:**
 ```bash
 cp backend/.env.example backend/.env
-# Відредагуй backend/.env — заповни MONGO_URL та JWT-секрети
+# Відредагуй backend/.env — заповни DATABASE_URL / DIRECT_URL (Neon) та JWT-секрети
 ```
 
 **Frontend:**
@@ -43,13 +43,12 @@ cp frontend/.env.example frontend/.env
 # Перевір VITE_API_URL (за замовчуванням http://localhost:3000/api/v1)
 ```
 
-### 4. Заповнити базу тестовими даними (опціонально)
+### 4. Застосувати схему та заповнити базу тестовими даними
 
 ```bash
-npm run seed -w backend
+npm run prisma:push -w backend   # синхронізує prisma/schema.prisma з БД (db push, без міграцій)
+npm run seed -w backend          # опціонально: тестові користувачі та групи
 ```
-
-Сід створить тестових користувачів, групи та заняття для розробки.
 
 ### 5. Запустити проект
 
@@ -71,7 +70,7 @@ npm run dev
 
 ```
 RedMonKey_IT_Academy_LMS/
-├── backend/         # Express 5 + MongoDB API
+├── backend/         # Express 5 + PostgreSQL (Prisma) API
 ├── frontend/        # React 19 + Vite + ShadCN
 ├── shared/          # Спільні типи та схеми (TypeScript)
 └── package.json     # Root workspace

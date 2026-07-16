@@ -1,7 +1,7 @@
 # Технічне Завдання: IT Academy LMS
 ### Навчальна LMS-система для управління навчальним процесом в IT-академії
 
-> **Версія:** 1.0 | **Команда:** 5 студентів | **Стек:** React · Express · MongoDB · ShadCN UI · Tailwind CSS
+> **Версія:** 1.1 | **Команда:** 5 студентів | **Стек:** React · Express · PostgreSQL (Prisma) · ShadCN UI · Tailwind CSS
 
 ---
 
@@ -9,7 +9,7 @@
 
 1. [Загальний опис проекту](#1-загальний-опис)
 2. [Ролі та права доступу](#2-ролі-та-права-доступу)
-3. [Архітектура бази даних (MongoDB Schemas)](#3-архітектура-бази-даних)
+3. [Архітектура бази даних (PostgreSQL / Prisma Schema)](#3-архітектура-бази-даних)
 4. [Backend API — Endpoints](#4-backend-api)
 5. [Frontend — Структура компонентів](#5-frontend-компоненти)
 6. [Концепція дизайну та UX](#6-концепція-дизайну)
@@ -20,20 +20,20 @@
 
 ## 1. Загальний опис
 
-**Назва:** IT Academy LMS  
+**Назва:** IT Academy LMS
 **Мета:** Єдина платформа для обліку студентів, управління розкладом, ведення журналу успішності та мотивації через внутрішню валюту **RedCoins**.
 
 ### Технологічний стек
 
 | Рівень | Технологія |
 |--------|-----------|
-| Frontend | React 18 + Vite |
+| Frontend | React 19 + Vite |
 | UI Kit | ShadCN UI + Tailwind CSS |
-| Форми | Formik + Yup |
+| Форми | Formik + Zod |
 | State | Zustand |
 | Backend | Node.js + Express 5 |
-| База даних | MongoDB + Mongoose |
-| Автентифікація | JWT (access + refresh tokens) |
+| База даних | PostgreSQL (хостинг [Neon](https://neon.tech)) + Prisma ORM |
+| Автентифікація | Власний JWT (access + refresh tokens) |
 | Хмара (опц.) | Cloudinary (аватари) |
 
 ---
@@ -61,135 +61,170 @@
 
 ## 3. Архітектура бази даних
 
-### 3.1 Schema: User
+> База даних — **PostgreSQL**, доступ через **Prisma ORM**. Джерело істини для схеми — [`backend/prisma/schema.prisma`](../backend/prisma/schema.prisma); нижче наведено спрощений опис для орієнтування. Кожна таблиця має `academy_id` (готовність до майбутньої мульти-тенантності — зараз в системі рівно одна академія) та `id uuid` замість Mongo `ObjectId`.
 
-```javascript
-// models/User.js
-const UserSchema = new Schema({
-  firstName:    { type: String, required: true, trim: true },
-  lastName:     { type: String, required: true, trim: true },
-  email:        { type: String, required: true, unique: true, lowercase: true },
-  passwordHash: { type: String, required: true },
-  role:         { type: String, enum: ['admin', 'teacher', 'student'], required: true },
-  avatar:       { type: String, default: null },          // URL або base64
-  phone:        { type: String, default: null },
-  redCoins:     { type: Number, default: 0, min: 0 },    // тільки для студентів
-  group:        { type: Schema.Types.ObjectId, ref: 'Group', default: null },
-  isActive:     { type: Boolean, default: true },
-  createdAt:    { type: Date, default: Date.now },
-}, { timestamps: true });
+### 3.1 Model: User
 
-UserSchema.index({ email: 1 });
-UserSchema.index({ role: 1 });
+```prisma
+model User {
+  id           String   @id @default(uuid())
+  academyId    String
+  firstName    String
+  lastName     String
+  email        String
+  passwordHash String
+  role         UserRole // admin | teacher | student
+  avatar       String?
+  phone        String?
+  redCoins     Int      @default(0)   // тільки для студентів
+  tokenVersion Int      @default(0)   // інкремент на logout → відкликає refresh-токени
+  groupId      String?
+  isActive     Boolean  @default(true)
+
+  @@unique([academyId, email])
+}
 ```
 
-### 3.2 Schema: Group
+### 3.2 Model: Group + GroupTeacher
 
-```javascript
-// models/Group.js
-const GroupSchema = new Schema({
-  name:        { type: String, required: true, unique: true },  // напр. "JS-2024-A"
-  description: { type: String, default: '' },
-  teachers:    [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  students:    [{ type: Schema.Types.ObjectId, ref: 'User' }],
-  startDate:   { type: Date },
-  endDate:     { type: Date },
-  isActive:    { type: Boolean, default: true },
-}, { timestamps: true });
+Студенти належать групі через `User.groupId` (1:N). Викладачі прив'язані до груп через join-таблицю `GroupTeacher` (M:N — один викладач може вести кілька груп і навпаки; у Mongo-варіанті це був масив `Group.teachers[]`).
+
+```prisma
+model Group {
+  id          String    @id @default(uuid())
+  academyId   String
+  name        String    // напр. "JS-2024-A"
+  description String    @default("")
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean   @default(true)
+
+  @@unique([academyId, name])
+}
+
+model GroupTeacher {
+  groupId   String
+  teacherId String
+  academyId String
+
+  @@id([groupId, teacherId])
+}
 ```
 
-### 3.3 Schema: Lesson
+### 3.3 Model: Lesson + LessonMaterial
 
-```javascript
-// models/Lesson.js
-const LessonSchema = new Schema({
-  title:       { type: String, required: true },
-  description: { type: String, default: '' },
-  teacher:     { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  group:       { type: Schema.Types.ObjectId, ref: 'Group', required: true },
-  date:        { type: Date, required: true },
-  duration:    { type: Number, default: 80 },              // хвилини
-  type:        { type: String, enum: ['lecture', 'practice', 'exam', 'consultation'] },
-  status:      { type: String, enum: ['scheduled', 'completed', 'cancelled'], default: 'scheduled' },
-  materials:   [{ title: String, url: String }],
-  homework:    { description: String, dueDate: Date },
-}, { timestamps: true });
+Матеріали заняття — окрема таблиця `LessonMaterial` (1:N), не вбудований масив.
+
+```prisma
+model Lesson {
+  id                  String       @id @default(uuid())
+  academyId           String
+  teacherId           String
+  groupId             String
+  title               String
+  description         String       @default("")
+  date                DateTime
+  duration            Int          @default(80)   // хвилини
+  type                LessonType   // lecture | practice | exam | consultation
+  status              LessonStatus @default(scheduled) // scheduled | completed | cancelled
+  homeworkDescription String?
+  homeworkDueDate     DateTime?
+}
+
+model LessonMaterial {
+  id       String @id @default(uuid())
+  lessonId String
+  title    String
+  url      String
+  position Int    @default(0)
+}
 ```
 
-### 3.4 Schema: Grade (Журнал успішності)
+### 3.4 Model: Grade (Журнал успішності)
 
-```javascript
-// models/Grade.js
-const GradeSchema = new Schema({
-  student: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  lesson:  { type: Schema.Types.ObjectId, ref: 'Lesson', required: true },
-  teacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  value:   { type: Number, min: 1, max: 12, required: true },  // 12-бальна шкала
-  type:    { type: String, enum: ['homework', 'classwork', 'exam', 'project'], required: true },
-  comment: { type: String, default: '' },
-  date:    { type: Date, default: Date.now },
-}, { timestamps: true });
+```prisma
+model Grade {
+  id        String    @id @default(uuid())
+  academyId String
+  studentId String
+  lessonId  String
+  teacherId String
+  value     Int       @db.SmallInt // 1..12, валідація на рівні застосунку (не CHECK у БД)
+  type      GradeType // homework | classwork | exam | project
+  comment   String?
 
-// Унікальний індекс: один тип оцінки за заняття на студента
-GradeSchema.index({ student: 1, lesson: 1, type: 1 }, { unique: true });
+  @@unique([studentId, lessonId, type]) // один тип оцінки за заняття на студента
+}
 ```
 
-### 3.5 Schema: CoinTransaction (RedCoins)
+### 3.5 Model: CoinTransaction (RedCoins)
 
-```javascript
-// models/CoinTransaction.js
-const CoinTransactionSchema = new Schema({
-  student:     { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  issuedBy:    { type: Schema.Types.ObjectId, ref: 'User', required: true },  // teacher/admin
-  amount:      { type: Number, required: true },  // + нарахування, - списання
-  reason:      { type: String, required: true },  // "Відмінна відповідь на уроці"
-  category:    { type: String, enum: ['achievement', 'homework', 'activity', 'bonus', 'penalty'] },
-  relatedLesson: { type: Schema.Types.ObjectId, ref: 'Lesson', default: null },
-  date:        { type: Date, default: Date.now },
-}, { timestamps: true });
+Append-only ledger: баланс `User.redCoins` оновлюється в тій самій транзакції, що й запис у `CoinTransaction`.
+
+```prisma
+model CoinTransaction {
+  id              String       @id @default(uuid())
+  academyId       String
+  studentId       String
+  issuedBy        String       // teacher/admin
+  amount          Int          // + нарахування, - списання (не 0, валідація на рівні застосунку)
+  reason          String       // "Відмінна відповідь на уроці"
+  category        CoinCategory // achievement | homework | activity | bonus | penalty
+  relatedLessonId String?
+  createdAt       DateTime     @default(now())
+}
 ```
 
-### 3.6 Schema: Attendance
+### 3.6 Model: Attendance
 
-```javascript
-// models/Attendance.js
-const AttendanceSchema = new Schema({
-  lesson:  { type: Schema.Types.ObjectId, ref: 'Lesson', required: true },
-  student: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  status:  { type: String, enum: ['present', 'absent', 'late', 'excused'], default: 'present' },
-  note:    { type: String, default: '' },
-}, { timestamps: true });
+```prisma
+model Attendance {
+  id        String           @id @default(uuid())
+  academyId String
+  lessonId  String
+  studentId String
+  status    AttendanceStatus @default(present) // present | absent | late | excused
+  note      String           @default("")
 
-AttendanceSchema.index({ lesson: 1, student: 1 }, { unique: true });
+  @@unique([lessonId, studentId])
+}
 ```
 
 ### Діаграма зв'язків
 
 ```mermaid
 flowchart TD
-    %% Entities
+    Academy["Academy\n(single-tenant interim)"]
     User["User\n(Admin/Teacher/Student)"]
-    Group["Group\n(students[], teachers[])"]
+    Group["Group"]
+    GroupTeacher["GroupTeacher\n(M:N join)"]
     Lesson["Lesson"]
+    LessonMaterial["LessonMaterial"]
     Grade["Grade\n(student, teacher, lesson)"]
-    CoinTransaction["CoinTransaction\n(student, issuedBy, lesson)"]
+    CoinTransaction["CoinTransaction\n(student, issuedBy, lesson?)"]
     Attendance["Attendance\n(student, lesson)"]
 
-    %% Relationships
-    Group -->|students / teachers| User
-    Lesson -->|teacher| User
-    Lesson -->|group| Group
-    
-    Grade -->|student| User
-    Grade -->|teacher| User
-    Grade -->|lesson| Lesson
-    
-    CoinTransaction -->|student| User
+    Academy -.->|academy_id| User
+    Academy -.->|academy_id| Group
+
+    User -->|groupId| Group
+    GroupTeacher -->|teacherId| User
+    GroupTeacher -->|groupId| Group
+
+    Lesson -->|teacherId| User
+    Lesson -->|groupId| Group
+    Lesson --> LessonMaterial
+
+    Grade -->|studentId| User
+    Grade -->|teacherId| User
+    Grade -->|lessonId| Lesson
+
+    CoinTransaction -->|studentId| User
     CoinTransaction -->|issuedBy| User
-    CoinTransaction -->|relatedLesson| Lesson
-    
-    Attendance -->|student| User
-    Attendance -->|lesson| Lesson
+    CoinTransaction -.->|relatedLessonId| Lesson
+
+    Attendance -->|studentId| User
+    Attendance -->|lessonId| Lesson
 ```
 
 ---
@@ -521,17 +556,17 @@ Bottom Navigation (mobile):
 ### Тиждень 1: Основа проекту
 
 **Backend:**
-- [ ] Ініціалізація Express + MongoDB + Mongoose
-- [ ] User Schema + Auth (register/login/JWT)
-- [ ] Middleware: authenticate, authorize
-- [ ] Group Schema + CRUD
+- [x] Ініціалізація Express + PostgreSQL (Neon) + Prisma
+- [x] User Model + Auth (login/JWT access+refresh)
+- [x] Middleware: authenticate, authorize
+- [x] Group Model + CRUD
 
 **Frontend:**
-- [ ] Vite + React + Tailwind + ShadCN setup
-- [ ] Роутер (React Router v6) з ProtectedRoute
-- [ ] AppLayout (Sidebar + Header)
-- [ ] LoginPage + форма (Zod validation)
-- [ ] Axios клієнт з interceptors для токенів
+- [x] Vite + React + Tailwind + ShadCN setup
+- [x] Роутер (React Router v6) з ProtectedRoute
+- [x] AppLayout (Sidebar + Header)
+- [x] LoginPage + форма (Zod validation)
+- [x] Axios клієнт з interceptors для токенів
 
 **Результат:** Можна зайти в систему, бачити sidebar.
 
@@ -612,7 +647,7 @@ Bottom Navigation (mobile):
 - [ ] Error handling (404, 403, Network errors)
 - [ ] Loading states + Skeleton UI
 - [ ] Empty states (порожні списки)
-- [ ] Оптимізація (React Query caching, індекси MongoDB)
+- [ ] Оптимізація (React Query caching, індекси PostgreSQL)
 - [ ] README.md з інструкцією запуску
 - [ ] Демо-дані для презентації
 - [ ] Код-рев'ю та фікс bagів
@@ -623,9 +658,14 @@ Bottom Navigation (mobile):
 
 ### Git Flow
 
+Детальний опис гілок, коміт-конвенцій та workflow — у [CONTRIBUTING.md](../CONTRIBUTING.md). Коротко:
+
 ```
-main              — основна розробка
-task/...          — гілки завдань (на кожне завдання нова гілка)
+main               — стабільна продакшн-версія, прямі пуші заборонені
+develop            — інтеграційна гілка, всі PR зливаються сюди
+feature/...        — новий функціонал
+fix/...            — виправлення помилки
+chore/...          — конфіги, залежності
 ```
 
 ### Пріоритети MVP (Мінімально Життєздатний Продукт)
@@ -657,8 +697,8 @@ import { z } from 'zod';
 export const createLessonSchema = z.object({
   title:       z.string().min(3, 'Мінімум 3 символи').max(100),
   description: z.string().max(500).optional(),
-  teacherId:   z.string().regex(/^[0-9a-fA-F]{24}$/, 'Невалідний ID'),
-  groupId:     z.string().regex(/^[0-9a-fA-F]{24}$/, 'Невалідний ID'),
+  teacherId:   z.string().uuid('Невалідний ID'),
+  groupId:     z.string().uuid('Невалідний ID'),
   date:        z.string().datetime('Невалідна дата'),
   duration:    z.number().min(30).max(480).default(90),
   type:        z.enum(['lecture', 'practice', 'exam', 'consultation']),
@@ -677,4 +717,4 @@ export const bulkGradeSchema = z.object({
 
 ---
 
-*Документ підготовлено для команди розробки IT Academy LMS. Версія 1.0*
+*Документ підготовлено для команди розробки IT Academy LMS. Версія 1.1 — оновлено після міграції на PostgreSQL/Prisma.*

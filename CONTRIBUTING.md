@@ -99,7 +99,7 @@ git checkout -b marian/task
 # ✅ Правильно
 feat(backend): add POST /grades/bulk endpoint
 fix(frontend): correct grade display for absent students
-chore(deps): update mongoose to 8.x
+chore(deps): update prisma to 6.x
 docs(api): add swagger annotations to auth routes
 refactor(auth): extract token validation to middleware
 style(frontend): fix indentation in GradeJournal component

@@ -11,7 +11,7 @@ body:
       options:
         - "🎨 Frontend (React, ShadCN, Zustand)"
         - "⚙️ Backend (Express, Node.js)"
-        - "🗄️ Database (MongoDB Schemas)"
+        - "🗄️ Database (PostgreSQL / Prisma Schemas)"
         - "🪙 RedCoins / Гейміфікація"
         - "🛠 Інфраструктура (Налаштування, CI/CD)"
     validations:

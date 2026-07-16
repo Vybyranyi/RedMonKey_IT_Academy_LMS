@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Технічне завдання
+    url: https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/blob/main/IT_Academy_LMS_ТЗ.md
+    about: Перевір розділи ТЗ перед створенням задачі — можливо, там вже є відповідь.
+  - name: 🤝 Правила контрибуції
+    url: https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/blob/main/CONTRIBUTING.md
+    about: Питання про гілки, коміти чи workflow? Спочатку загляни сюди.
