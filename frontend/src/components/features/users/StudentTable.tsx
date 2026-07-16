@@ -47,7 +47,7 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
               const displayCoins = student.redCoins || 0;
 
               return (
-                <TableRow key={student._id} className="hover:bg-slate-50/50">
+                <TableRow key={student.id} className="hover:bg-slate-50/50">
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9">
@@ -112,7 +112,7 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-slate-500 hover:text-slate-900"
-                        onClick={() => onViewDetails(student._id)}
+                        onClick={() => onViewDetails(student.id)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>

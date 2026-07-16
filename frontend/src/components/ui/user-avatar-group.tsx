@@ -23,7 +23,7 @@ export function UserAvatarGroup({
     <div className={`flex items-center justify-between ${className}`}>
       <div className="flex items-center -space-x-2 overflow-hidden">
         {users.slice(0, maxCount).map((user) => (
-          <Avatar key={user._id} className="inline-block border-2 border-white h-8 w-8">
+          <Avatar key={user.id} className="inline-block border-2 border-white h-8 w-8">
             <AvatarImage src={user.avatar || undefined} />
             <AvatarFallback className="bg-slate-200 text-[10px] font-bold text-slate-700">
               {user.firstName[0]}

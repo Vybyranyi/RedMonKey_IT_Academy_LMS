@@ -48,7 +48,7 @@ export default function TeachersPage() {
     if (!editingTeacher) return;
     setIsSubmitLoading(true);
     try {
-      await apiUpdateUser(editingTeacher._id, values);
+      await apiUpdateUser(editingTeacher.id, values);
       setEditingTeacher(null);
       fetchTeachers();
     } catch (error) {
@@ -59,7 +59,7 @@ export default function TeachersPage() {
   };
 
   const handleViewDetails = (id: string) => {
-    const teacher = teachers.find(t => t._id === id);
+    const teacher = teachers.find(t => t.id === id);
     if (teacher) {
       setSelectedTeacher(teacher);
     }
@@ -117,7 +117,7 @@ export default function TeachersPage() {
                   email: editingTeacher.email,
                   phone: editingTeacher.phone || '',
                   role: editingTeacher.role,
-                  group: editingTeacher.group && typeof editingTeacher.group === 'object' ? (editingTeacher.group as any)._id : editingTeacher.group || ''
+                  group: editingTeacher.group && typeof editingTeacher.group === 'object' ? (editingTeacher.group as any).id : editingTeacher.group || ''
                 }}
                 onSubmit={handleUpdateTeacher} 
                 isSubmitting={isSubmitLoading} 
@@ -131,7 +131,7 @@ export default function TeachersPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {teachers.map((teacher) => (
           <TeacherCard 
-            key={teacher._id} 
+            key={teacher.id} 
             teacher={teacher} 
             onViewDetails={handleViewDetails}
             onEdit={isAdmin ? setEditingTeacher : undefined}

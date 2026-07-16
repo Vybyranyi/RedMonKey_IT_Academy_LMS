@@ -65,7 +65,7 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
     }
 
     res.status(200).json({
-      id: user._id,
+      id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,

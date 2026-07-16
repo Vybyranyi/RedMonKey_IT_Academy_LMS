@@ -1,0 +1,247 @@
+// RedMonKey IT Academy LMS — реляційна схема (міграція з MongoDB).
+// PK — uuid; academy_id денормалізовано на кожну таблицю під майбутню мульти-тенантність / RLS.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled (Neon -pooler, порт застосунку)
+  directUrl = env("DIRECT_URL")   // direct (без -pooler, для міграцій)
+}
+
+enum UserRole {
+  admin
+  teacher
+  student
+}
+
+enum LessonType {
+  lecture
+  practice
+  exam
+  consultation
+}
+
+enum LessonStatus {
+  scheduled
+  completed
+  cancelled
+}
+
+enum GradeType {
+  homework
+  classwork
+  exam
+  project
+}
+
+enum CoinCategory {
+  achievement
+  homework
+  activity
+  bonus
+  penalty
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  late
+  excused
+}
+
+model Academy {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users            User[]
+  groups           Group[]
+  groupTeachers    GroupTeacher[]
+  lessons          Lesson[]
+  grades           Grade[]
+  attendance       Attendance[]
+  coinTransactions CoinTransaction[]
+
+  @@map("academies")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  academyId    String   @map("academy_id") @db.Uuid
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  email        String
+  passwordHash String   @map("password_hash")
+  role         UserRole
+  avatar       String?
+  phone        String?
+  redCoins     Int      @default(0) @map("red_coins")
+  tokenVersion Int      @default(0) @map("token_version")
+  groupId      String?  @map("group_id") @db.Uuid
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  academy        Academy           @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  group          Group?            @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  taughtGroups   GroupTeacher[]
+  lessonsTaught  Lesson[]          @relation("LessonTeacher")
+  gradesReceived Grade[]           @relation("GradeStudent")
+  gradesGiven    Grade[]           @relation("GradeTeacher")
+  attendance     Attendance[]
+  coinsReceived  CoinTransaction[] @relation("CoinStudent")
+  coinsIssued    CoinTransaction[] @relation("CoinIssuedBy")
+
+  @@unique([academyId, email])
+  @@index([role])
+  @@index([groupId])
+  @@index([academyId])
+  @@map("users")
+}
+
+model Group {
+  id          String    @id @default(uuid()) @db.Uuid
+  academyId   String    @map("academy_id") @db.Uuid
+  name        String
+  description String    @default("")
+  startDate   DateTime? @map("start_date")
+  endDate     DateTime? @map("end_date")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  academy  Academy        @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  students User[] // студенти: зворотний бік User.group (1:N)
+  teachers GroupTeacher[] // викладачі: M:N
+  lessons  Lesson[]
+
+  @@unique([academyId, name])
+  @@index([academyId])
+  @@map("groups")
+}
+
+// M:N викладач ↔ група (замінює масив Group.teachers[] із Mongo).
+model GroupTeacher {
+  groupId   String @map("group_id") @db.Uuid
+  teacherId String @map("teacher_id") @db.Uuid
+  academyId String @map("academy_id") @db.Uuid
+
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  teacher User    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, teacherId])
+  @@index([teacherId])
+  @@map("group_teachers")
+}
+
+model Lesson {
+  id                  String       @id @default(uuid()) @db.Uuid
+  academyId           String       @map("academy_id") @db.Uuid
+  teacherId           String       @map("teacher_id") @db.Uuid
+  groupId             String       @map("group_id") @db.Uuid
+  title               String
+  description         String       @default("")
+  date                DateTime
+  duration            Int          @default(80)
+  type                LessonType
+  status              LessonStatus @default(scheduled)
+  homeworkDescription String?      @map("homework_description")
+  homeworkDueDate     DateTime?    @map("homework_due_date")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  academy          Academy           @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  teacher          User              @relation("LessonTeacher", fields: [teacherId], references: [id])
+  group            Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  materials        LessonMaterial[]
+  grades           Grade[]
+  attendance       Attendance[]
+  coinTransactions CoinTransaction[]
+
+  @@index([groupId, date])
+  @@index([academyId])
+  @@map("lessons")
+}
+
+model LessonMaterial {
+  id       String @id @default(uuid()) @db.Uuid
+  lessonId String @map("lesson_id") @db.Uuid
+  title    String
+  url      String
+  position Int    @default(0)
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@map("lesson_materials")
+}
+
+model Grade {
+  id        String    @id @default(uuid()) @db.Uuid
+  academyId String    @map("academy_id") @db.Uuid
+  studentId String    @map("student_id") @db.Uuid
+  lessonId  String    @map("lesson_id") @db.Uuid
+  teacherId String    @map("teacher_id") @db.Uuid
+  value     Int       @db.SmallInt // 1..12 (валідація на рівні застосунку)
+  type      GradeType
+  comment   String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  student User    @relation("GradeStudent", fields: [studentId], references: [id])
+  lesson  Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  teacher User    @relation("GradeTeacher", fields: [teacherId], references: [id])
+
+  @@unique([studentId, lessonId, type]) // один тип оцінки за заняття на студента
+  @@index([studentId])
+  @@index([lessonId])
+  @@map("grades")
+}
+
+model Attendance {
+  id        String           @id @default(uuid()) @db.Uuid
+  academyId String           @map("academy_id") @db.Uuid
+  lessonId  String           @map("lesson_id") @db.Uuid
+  studentId String           @map("student_id") @db.Uuid
+  status    AttendanceStatus @default(present)
+  note      String           @default("")
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  lesson  Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student User    @relation(fields: [studentId], references: [id])
+
+  @@unique([lessonId, studentId])
+  @@index([studentId])
+  @@map("attendance")
+}
+
+// Ledger RedCoins — append-only. Баланс User.redCoins оновлюється в тій самій транзакції.
+model CoinTransaction {
+  id              String       @id @default(uuid()) @db.Uuid
+  academyId       String       @map("academy_id") @db.Uuid
+  studentId       String       @map("student_id") @db.Uuid
+  issuedBy        String       @map("issued_by") @db.Uuid
+  amount          Int
+  reason          String
+  category        CoinCategory
+  relatedLessonId String?      @map("related_lesson_id") @db.Uuid
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  academy       Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  student       User    @relation("CoinStudent", fields: [studentId], references: [id])
+  issuer        User    @relation("CoinIssuedBy", fields: [issuedBy], references: [id])
+  relatedLesson Lesson? @relation(fields: [relatedLessonId], references: [id], onDelete: SetNull)
+
+  @@index([studentId, createdAt])
+  @@index([academyId])
+  @@map("coin_transactions")
+}

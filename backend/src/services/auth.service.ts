@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { UserRole } from '@redmonkey/shared';
 import { userRepository } from '../repositories/user.repository.js';
 import { ForbiddenError, UnauthorizedError } from '../utils/errors.js';
 import {
@@ -21,13 +22,13 @@ export const authService = {
       throw new UnauthorizedError('Невірний email або пароль');
     }
 
-    const payload: TokenPayload = { userId: user._id.toString(), role: user.role };
+    const payload: TokenPayload = { userId: user.id, role: user.role as UserRole };
 
     return {
       accessToken: generateAccessToken(payload),
       refreshToken: generateRefreshToken({ ...payload, tokenVersion: user.tokenVersion }),
       user: {
-        id: user._id,
+        id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -61,7 +62,7 @@ export const authService = {
     }
 
     return {
-      accessToken: generateAccessToken({ userId: user._id.toString(), role: user.role }),
+      accessToken: generateAccessToken({ userId: user.id, role: user.role as UserRole }),
     };
   },
 

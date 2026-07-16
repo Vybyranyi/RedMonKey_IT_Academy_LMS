@@ -101,16 +101,16 @@ export default function GroupForm({ initialValues = defaultValues, onSubmit, isS
             <Label>Викладачі групи</Label>
             <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border rounded-md">
               {allTeachers.map((t) => (
-                <label key={t._id} className="flex items-center gap-2 text-sm cursor-pointer">
+                <label key={t.id} className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
-                    value={t._id}
-                    checked={values.teachers?.includes(t._id)}
+                    value={t.id}
+                    checked={values.teachers?.includes(t.id)}
                     onChange={(e) => {
                       const checked = e.target.checked;
                       const nextTeachers = checked
-                        ? [...(values.teachers || []), t._id]
-                        : (values.teachers || []).filter((id) => id !== t._id);
+                        ? [...(values.teachers || []), t.id]
+                        : (values.teachers || []).filter((id) => id !== t.id);
                       setFieldValue('teachers', nextTeachers);
                     }}
                     className="rounded border-gray-300 text-primary focus:ring-primary"

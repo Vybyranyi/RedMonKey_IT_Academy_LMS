@@ -12,8 +12,9 @@ export interface IUserBase {
 }
 
 export interface IUser extends IUserBase {
-    _id: string;
-    group?: string | null; // ID групи
+    id: string;
+    academyId?: string;
+    group?: string | { id: string; name: string } | null; // ID групи або populated { id, name }
     createdAt: string | Date;
     updatedAt: string | Date;
 }
