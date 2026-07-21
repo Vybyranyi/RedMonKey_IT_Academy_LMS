@@ -575,14 +575,14 @@ Bottom Navigation (mobile):
 ### Тиждень 2: Управління користувачами
 
 **Backend:**
-- [ ] Users API (CRUD + фільтрація)
-- [ ] Groups API (CRUD + додавання студентів)
-- [ ] Seed script (тестові дані)
+- [x] Users API (CRUD + фільтрація)
+- [x] Groups API (CRUD + додавання студентів)
+- [x] Seed script (тестові дані)
 
 **Frontend:**
-- [ ] StudentsPage + UserTable
-- [ ] UserForm (Formik/Zod)
-- [ ] GroupsPage + GroupForm
+- [x] StudentsPage + UserTable
+- [x] UserForm (Formik/Zod)
+- [x] GroupsPage + GroupForm
 - [ ] Профіль користувача
 
 **Результат:** Адмін може додавати студентів та групи.
@@ -648,7 +648,7 @@ Bottom Navigation (mobile):
 - [ ] Loading states + Skeleton UI
 - [ ] Empty states (порожні списки)
 - [ ] Оптимізація (React Query caching, індекси PostgreSQL)
-- [ ] README.md з інструкцією запуску
+- [x] README.md з інструкцією запуску
 - [ ] Демо-дані для презентації
 - [ ] Код-рев'ю та фікс bagів
 
