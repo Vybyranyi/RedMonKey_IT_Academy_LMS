@@ -20,11 +20,9 @@
     "christian-kohler.path-intellisense",
     "streetsidesoftware.code-spell-checker",
     "streetsidesoftware.code-spell-checker-ukrainian",
+    "PKief.material-icon-theme",
 
-    // ─── MongoDB ────────────────────────────────────────────
-    "mongodb.mongodb-vscode",
-
-    // ─── REST API testing ───────────────────────────────────
-    "humao.rest-client"
+    // ─── Prisma / PostgreSQL ──────────────────────────────────
+    "Prisma.prisma"
   ]
 }
