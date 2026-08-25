@@ -110,3 +110,6 @@ RedMonKey_IT_Academy_LMS/
 ## 🤝 Contributing
 
 Перед тим як починати — прочитай [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+
+test
