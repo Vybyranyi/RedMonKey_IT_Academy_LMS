@@ -14,15 +14,39 @@ const profileSchema = z.object({
   avatar: z.string().url('Некоректне посилання на зображення').optional().or(z.literal('')),
 });
 
+/**
+ * PATCH має нести лише змінені поля. Якщо слати форму цілком, кожне збереження
+ * перезаписує всі поля тим, що форма показала, — і значення, яке не доїхало з
+ * бекенда, тихо затирається порожнім рядком.
+ */
+const getChangedFields = (
+  initial: UpdateProfileDto,
+  values: UpdateProfileDto
+): Partial<UpdateProfileDto> => {
+  const changed: Partial<UpdateProfileDto> = {};
+
+  (Object.keys(values) as (keyof UpdateProfileDto)[]).forEach((key) => {
+    if (values[key] !== initial[key]) {
+      changed[key] = values[key];
+    }
+  });
+
+  return changed;
+};
+
 interface ProfileFormProps {
   initialValues: UpdateProfileDto;
-  onSubmit: (values: UpdateProfileDto) => void;
+  onSubmit: (values: Partial<UpdateProfileDto>) => void;
   isSubmitting: boolean;
 }
 
 export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: ProfileFormProps) {
   return (
-    <Formik initialValues={initialValues} validate={validateWithZod(profileSchema)} onSubmit={onSubmit}>
+    <Formik
+      initialValues={initialValues}
+      validate={validateWithZod(profileSchema)}
+      onSubmit={(values) => onSubmit(getChangedFields(initialValues, values))}
+    >
       {({ errors, touched }) => (
         <Form className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

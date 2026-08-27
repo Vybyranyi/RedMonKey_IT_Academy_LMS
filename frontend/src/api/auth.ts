@@ -13,7 +13,7 @@ export interface ChangePasswordDto {
   newPassword: string;
 }
 
-export const apiUpdateProfile = async (data: UpdateProfileDto): Promise<IUser> => {
+export const apiUpdateProfile = async (data: Partial<UpdateProfileDto>): Promise<IUser> => {
   const response = await axiosInstance.patch('/auth/me', data);
   return response.data;
 };

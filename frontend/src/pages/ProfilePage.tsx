@@ -25,7 +25,13 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  const handleUpdateProfile = async (values: UpdateProfileDto) => {
+  const handleUpdateProfile = async (values: Partial<UpdateProfileDto>) => {
+    // Бекенд відхиляє порожній PATCH — не смикаємо його, якщо нічого не змінилось
+    if (Object.keys(values).length === 0) {
+      setIsEditOpen(false);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const updatedUser = await apiUpdateProfile(values);
