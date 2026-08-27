@@ -33,6 +33,7 @@ export default function ProfilePage() {
       toast.success('Профіль оновлено');
       setIsEditOpen(false);
     } catch (error) {
+      console.error('Помилка при оновленні профілю', error);
       toast.error('Не вдалося оновити профіль');
     } finally {
       setIsSubmitting(false);
@@ -46,6 +47,7 @@ export default function ProfilePage() {
       toast.success('Пароль успішно змінено');
       setIsPasswordOpen(false);
     } catch (error) {
+      console.error('Помилка при зміні пароля', error);
       toast.error('Не вдалося змінити пароль. Перевірте поточний пароль');
     } finally {
       setIsSubmitting(false);
