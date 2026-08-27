@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
+import { getApiErrorMessage } from '@/utils/apiError';
 import { apiUpdateProfile, apiChangePassword, type UpdateProfileDto, type ChangePasswordDto } from '@/api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +41,7 @@ export default function ProfilePage() {
       setIsEditOpen(false);
     } catch (error) {
       console.error('Помилка при оновленні профілю', error);
-      toast.error('Не вдалося оновити профіль');
+      toast.error(getApiErrorMessage(error, 'Не вдалося оновити профіль'));
     } finally {
       setIsSubmitting(false);
     }
@@ -54,7 +55,7 @@ export default function ProfilePage() {
       setIsPasswordOpen(false);
     } catch (error) {
       console.error('Помилка при зміні пароля', error);
-      toast.error('Не вдалося змінити пароль. Перевірте поточний пароль');
+      toast.error(getApiErrorMessage(error, 'Не вдалося змінити пароль'));
     } finally {
       setIsSubmitting(false);
     }
