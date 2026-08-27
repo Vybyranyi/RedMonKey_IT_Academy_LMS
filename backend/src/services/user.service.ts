@@ -2,12 +2,11 @@ import bcrypt from 'bcryptjs';
 import { Prisma } from '@prisma/client';
 import { UserRole } from '@redmonkey/shared';
 import { userRepository } from '../repositories/user.repository.js';
+import { SALT_ROUNDS } from '../config/constants.js';
 import { academyRepository } from '../repositories/academy.repository.js';
 import { accessPolicy } from './access.policy.js';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.js';
 import { TokenPayload } from '../utils/jwt.js';
-
-const SALT_ROUNDS = 10;
 
 export const userService = {
   async getUsers(query: { role?: any; groupId?: any; q?: any }, currentUserRole?: UserRole) {
