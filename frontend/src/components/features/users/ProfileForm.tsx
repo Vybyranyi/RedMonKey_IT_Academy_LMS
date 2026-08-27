@@ -5,7 +5,13 @@ import { validateWithZod } from '@/utils/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { UpdateProfileDto } from '@/api/auth';
+/** Значення форми: усі поля присутні як рядки, порожній рядок = «очистити». */
+export interface ProfileFormValues {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  avatar: string;
+}
 
 /**
  * PATCH має нести лише змінені поля. Якщо слати форму цілком, кожне збереження
@@ -13,12 +19,12 @@ import type { UpdateProfileDto } from '@/api/auth';
  * бекенда, тихо затирається порожнім рядком.
  */
 const getChangedFields = (
-  initial: UpdateProfileDto,
-  values: UpdateProfileDto
-): Partial<UpdateProfileDto> => {
-  const changed: Partial<UpdateProfileDto> = {};
+  initial: ProfileFormValues,
+  values: ProfileFormValues
+): Partial<ProfileFormValues> => {
+  const changed: Partial<ProfileFormValues> = {};
 
-  (Object.keys(values) as (keyof UpdateProfileDto)[]).forEach((key) => {
+  (Object.keys(values) as (keyof ProfileFormValues)[]).forEach((key) => {
     if (values[key] !== initial[key]) {
       changed[key] = values[key];
     }
@@ -28,8 +34,8 @@ const getChangedFields = (
 };
 
 interface ProfileFormProps {
-  initialValues: UpdateProfileDto;
-  onSubmit: (values: Partial<UpdateProfileDto>) => void;
+  initialValues: ProfileFormValues;
+  onSubmit: (values: Partial<ProfileFormValues>) => void;
   isSubmitting: boolean;
 }
 
@@ -47,7 +53,7 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
               <Label htmlFor="firstName">Ім'я *</Label>
               <Field name="firstName">
                 {({ field }: FieldProps) => (
-                  <Input {...field} id="firstName" className={`h-11 ${errors.firstName && touched.firstName ? 'border-destructive' : ''}`} />
+                  <Input {...field} id="firstName" className={errors.firstName && touched.firstName ? 'border-destructive' : undefined} />
                 )}
               </Field>
               {errors.firstName && touched.firstName && <p className="text-xs text-destructive">{errors.firstName}</p>}
@@ -57,7 +63,7 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
               <Label htmlFor="lastName">Прізвище *</Label>
               <Field name="lastName">
                 {({ field }: FieldProps) => (
-                  <Input {...field} id="lastName" className={`h-11 ${errors.lastName && touched.lastName ? 'border-destructive' : ''}`} />
+                  <Input {...field} id="lastName" className={errors.lastName && touched.lastName ? 'border-destructive' : undefined} />
                 )}
               </Field>
               {errors.lastName && touched.lastName && <p className="text-xs text-destructive">{errors.lastName}</p>}
@@ -67,14 +73,14 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
           <div className="space-y-2">
             <Label htmlFor="phone">Телефон</Label>
             <Field name="phone">
-              {({ field }: FieldProps) => <Input {...field} id="phone" placeholder="+380..." className="h-11" />}
+              {({ field }: FieldProps) => <Input {...field} id="phone" placeholder="+380..." />}
             </Field>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="avatar">Посилання на аватар</Label>
             <Field name="avatar">
-              {({ field }: FieldProps) => <Input {...field} id="avatar" placeholder="https://..." className="h-11" />}
+              {({ field }: FieldProps) => <Input {...field} id="avatar" placeholder="https://..." />}
             </Field>
             {errors.avatar && touched.avatar && <p className="text-xs text-destructive">{errors.avatar}</p>}
           </div>

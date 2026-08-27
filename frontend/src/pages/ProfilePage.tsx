@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
 import { getApiErrorMessage } from '@/utils/apiError';
-import { apiUpdateProfile, apiChangePassword, type UpdateProfileDto, type ChangePasswordDto } from '@/api/auth';
+import { apiUpdateProfile, apiChangePassword } from '@/api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Pencil, KeyRound } from 'lucide-react';
-import { UserRole } from '@redmonkey/shared';
-import ProfileForm from '@/components/features/users/ProfileForm';
+import { UserRole, type IChangePasswordDto } from '@redmonkey/shared';
+import { Skeleton } from '@/components/ui/skeleton';
+import ProfileForm, { type ProfileFormValues } from '@/components/features/users/ProfileForm';
 import ChangePasswordForm from '@/components/features/users/ChangePasswordForm';
 
 const roleLabel: Record<UserRole, string> = {
@@ -19,21 +20,33 @@ const roleLabel: Record<UserRole, string> = {
 };
 
 export default function ProfilePage() {
-  const { user, setUser } = useAuthStore();
+  const { user, setUser, updateAccessToken } = useAuthStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
+        <div className="flex gap-3">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-10 w-40" />
+        </div>
+      </div>
+    );
+  }
 
-  const handleUpdateProfile = async (values: Partial<UpdateProfileDto>) => {
+  const handleUpdateProfile = async (values: Partial<ProfileFormValues>) => {
     // Бекенд відхиляє порожній PATCH — не смикаємо його, якщо нічого не змінилось
     if (Object.keys(values).length === 0) {
       setIsEditOpen(false);
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSavingProfile(true);
     try {
       const updatedUser = await apiUpdateProfile(values);
       setUser({ ...user, ...updatedUser });
@@ -43,21 +56,23 @@ export default function ProfilePage() {
       console.error('Помилка при оновленні профілю', error);
       toast.error(getApiErrorMessage(error, 'Не вдалося оновити профіль'));
     } finally {
-      setIsSubmitting(false);
+      setIsSavingProfile(false);
     }
   };
 
-  const handleChangePassword = async (values: ChangePasswordDto) => {
-    setIsSubmitting(true);
+  const handleChangePassword = async (values: IChangePasswordDto) => {
+    setIsChangingPassword(true);
     try {
-      await apiChangePassword(values);
+      // Стара пара токенів уже відкликана — без цього перший же запит
+      // після зміни пароля пішов би зі здохлим access-токеном
+      updateAccessToken(await apiChangePassword(values));
       toast.success('Пароль успішно змінено');
       setIsPasswordOpen(false);
     } catch (error) {
       console.error('Помилка при зміні пароля', error);
       toast.error(getApiErrorMessage(error, 'Не вдалося змінити пароль'));
     } finally {
-      setIsSubmitting(false);
+      setIsChangingPassword(false);
     }
   };
 
@@ -72,8 +87,8 @@ export default function ProfilePage() {
         <Avatar className="h-20 w-20 border-2 border-white/20">
           <AvatarImage src={user.avatar || undefined} />
           <AvatarFallback className="bg-[#0070F3] text-2xl font-bold text-white">
-            {user.firstName[0]}
-            {user.lastName[0]}
+            {user.firstName.charAt(0)}
+            {user.lastName.charAt(0)}
           </AvatarFallback>
         </Avatar>
         <div className="space-y-1.5 flex-1">
@@ -99,14 +114,14 @@ export default function ProfilePage() {
               <Pencil className="h-4 w-4" /> Редагувати профіль
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-xl">
             <DialogHeader>
               <DialogTitle>Редагування профілю</DialogTitle>
             </DialogHeader>
             <ProfileForm
               initialValues={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone || '', avatar: user.avatar || '' }}
               onSubmit={handleUpdateProfile}
-              isSubmitting={isSubmitting}
+              isSubmitting={isSavingProfile}
             />
           </DialogContent>
         </Dialog>
@@ -117,11 +132,11 @@ export default function ProfilePage() {
               <KeyRound className="h-4 w-4" /> Змінити пароль
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-xl">
             <DialogHeader>
               <DialogTitle>Зміна пароля</DialogTitle>
             </DialogHeader>
-            <ChangePasswordForm onSubmit={handleChangePassword} isSubmitting={isSubmitting} />
+            <ChangePasswordForm onSubmit={handleChangePassword} isSubmitting={isChangingPassword} />
           </DialogContent>
         </Dialog>
       </div>

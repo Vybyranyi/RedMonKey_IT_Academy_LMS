@@ -1,12 +1,11 @@
 import { Formik, Form, Field } from 'formik';
 import type { FieldProps } from 'formik';
 import { z } from 'zod';
-import { changePasswordSchema } from '@redmonkey/shared';
+import { changePasswordSchema, type IChangePasswordDto } from '@redmonkey/shared';
 import { validateWithZod } from '@/utils/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { ChangePasswordDto } from '@/api/auth';
 
 /**
  * Правила самих паролів беремо з shared, щоб не розходитися з бекендом.
@@ -23,7 +22,7 @@ const confirmSchema = z
 const passwordFormSchema = z.intersection(changePasswordSchema, confirmSchema);
 
 interface ChangePasswordFormProps {
-  onSubmit: (values: ChangePasswordDto) => void;
+  onSubmit: (values: IChangePasswordDto) => void;
   isSubmitting: boolean;
 }
 
@@ -43,7 +42,7 @@ export default function ChangePasswordForm({ onSubmit, isSubmitting }: ChangePas
               </Label>
               <Field name={name}>
                 {({ field }: FieldProps) => (
-                  <Input {...field} id={name} type="password" className={`h-11 ${errors[name] && touched[name] ? 'border-destructive' : ''}`} />
+                  <Input {...field} id={name} type="password" className={errors[name] && touched[name] ? 'border-destructive' : undefined} />
                 )}
               </Field>
               {errors[name] && touched[name] && <p className="text-xs text-destructive">{errors[name]}</p>}
