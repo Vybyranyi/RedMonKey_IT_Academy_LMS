@@ -583,7 +583,7 @@ Bottom Navigation (mobile):
 - [x] StudentsPage + UserTable
 - [x] UserForm (Formik/Zod)
 - [x] GroupsPage + GroupForm
-- [ ] Профіль користувача
+- [x] Профіль користувача
 
 **Результат:** Адмін може додавати студентів та групи.
 

@@ -75,6 +75,7 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
             <Field name="phone">
               {({ field }: FieldProps) => <Input {...field} id="phone" placeholder="+380..." />}
             </Field>
+            {errors.phone && touched.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
           </div>
 
           <div className="space-y-2">
