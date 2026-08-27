@@ -1,22 +1,26 @@
 import { Formik, Form, Field } from 'formik';
 import type { FieldProps } from 'formik';
 import { z } from 'zod';
+import { changePasswordSchema } from '@redmonkey/shared';
 import { validateWithZod } from '@/utils/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { ChangePasswordDto } from '@/api/auth';
 
-const passwordSchema = z
-  .object({
-    currentPassword: z.string().min(1, 'Вкажіть поточний пароль'),
-    newPassword: z.string().min(6, 'Пароль має містити не менше 6 символів'),
-    confirmPassword: z.string(),
-  })
+/**
+ * Правила самих паролів беремо з shared, щоб не розходитися з бекендом.
+ * confirmPassword — суто поле форми, бекенду воно не потрібне, тому
+ * докладаємо його зверху окремою схемою.
+ */
+const confirmSchema = z
+  .object({ newPassword: z.string(), confirmPassword: z.string() })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: 'Паролі не співпадають',
     path: ['confirmPassword'],
   });
+
+const passwordFormSchema = z.intersection(changePasswordSchema, confirmSchema);
 
 interface ChangePasswordFormProps {
   onSubmit: (values: ChangePasswordDto) => void;
@@ -27,7 +31,7 @@ export default function ChangePasswordForm({ onSubmit, isSubmitting }: ChangePas
   return (
     <Formik
       initialValues={{ currentPassword: '', newPassword: '', confirmPassword: '' }}
-      validate={validateWithZod(passwordSchema)}
+      validate={validateWithZod(passwordFormSchema)}
       onSubmit={(values) => onSubmit({ currentPassword: values.currentPassword, newPassword: values.newPassword })}
     >
       {({ errors, touched }) => (

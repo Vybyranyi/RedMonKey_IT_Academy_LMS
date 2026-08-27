@@ -1,18 +1,11 @@
 import { Formik, Form, Field } from 'formik';
 import type { FieldProps } from 'formik';
-import { z } from 'zod';
+import { updateProfileSchema } from '@redmonkey/shared';
 import { validateWithZod } from '@/utils/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { UpdateProfileDto } from '@/api/auth';
-
-const profileSchema = z.object({
-  firstName: z.string().min(2, "Ім'я має містити не менше 2 символів"),
-  lastName: z.string().min(2, 'Прізвище має містити не менше 2 символів'),
-  phone: z.string().optional(),
-  avatar: z.string().url('Некоректне посилання на зображення').optional().or(z.literal('')),
-});
 
 /**
  * PATCH має нести лише змінені поля. Якщо слати форму цілком, кожне збереження
@@ -44,7 +37,7 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
   return (
     <Formik
       initialValues={initialValues}
-      validate={validateWithZod(profileSchema)}
+      validate={validateWithZod(updateProfileSchema)}
       onSubmit={(values) => onSubmit(getChangedFields(initialValues, values))}
     >
       {({ errors, touched }) => (
