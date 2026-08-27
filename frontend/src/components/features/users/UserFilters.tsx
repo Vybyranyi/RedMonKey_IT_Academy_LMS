@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react';
+import type { IGroup } from '@redmonkey/shared';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -7,7 +8,7 @@ interface UserFiltersProps {
   onSearchChange: (value: string) => void;
   selectedGroup: string;
   onGroupChange: (value: string) => void;
-  groups: any[];
+  groups: Pick<IGroup, 'id' | 'name'>[];
 }
 
 export default function UserFilters({ search, onSearchChange, selectedGroup, onGroupChange, groups }: UserFiltersProps) {

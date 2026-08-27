@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { User, Eye, EyeOff } from 'lucide-react';
 
-interface LoginFormValues {
+export interface LoginFormValues {
   email: string;
   password: string;
 }

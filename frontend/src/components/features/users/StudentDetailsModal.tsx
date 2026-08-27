@@ -1,10 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import type { IUser } from '@redmonkey/shared';
+import type { IUserWithStats } from '@/types/userStats';
 
 interface StudentDetailsModalProps {
-  student: IUser | null;
+  student: IUserWithStats | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -12,14 +12,14 @@ interface StudentDetailsModalProps {
 export default function StudentDetailsModal({ student, isOpen, onClose }: StudentDetailsModalProps) {
   if (!student) return null;
 
-  const avgScore = (student as any).averageScore || 0;
-  const attendance = (student as any).attendance || 0;
+  const avgScore = student.averageScore || 0;
+  const attendance = student.attendance || 0;
   const redCoins = student.redCoins || 0;
   const enrollDate = student.createdAt ? new Date(student.createdAt).toLocaleDateString('uk-UA', { year: 'numeric', month: 'short' }) : '—';
   
   // Real data arrays would go here when backend supports them
-  const grades: any[] = (student as any).grades || []; 
-  const transactions: any[] = (student as any).transactions || [];
+  const grades = student.grades ?? [];
+  const transactions = student.transactions ?? [];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -49,7 +49,7 @@ export default function StudentDetailsModal({ student, isOpen, onClose }: Studen
                 <div className="flex items-center gap-2 pt-1">
                   {student.group ? (
                     <Badge className="bg-blue-500/20 text-blue-100 hover:bg-blue-500/30 border-none px-3 font-semibold">
-                      {typeof student.group === 'object' ? (student.group as any).name : 'Група'}
+                      {typeof student.group === 'object' ? student.group.name : 'Група'}
                     </Badge>
                   ) : (
                     <Badge className="bg-white/10 text-slate-300 hover:bg-white/20 border-none px-3 font-semibold">

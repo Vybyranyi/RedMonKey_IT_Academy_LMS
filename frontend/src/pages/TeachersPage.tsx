@@ -117,7 +117,7 @@ export default function TeachersPage() {
                   email: editingTeacher.email,
                   phone: editingTeacher.phone || '',
                   role: editingTeacher.role,
-                  group: editingTeacher.group && typeof editingTeacher.group === 'object' ? (editingTeacher.group as any).id : editingTeacher.group || ''
+                  group: editingTeacher.group && typeof editingTeacher.group === 'object' ? editingTeacher.group.id : editingTeacher.group || ''
                 }}
                 onSubmit={handleUpdateTeacher} 
                 isSubmitting={isSubmitLoading} 

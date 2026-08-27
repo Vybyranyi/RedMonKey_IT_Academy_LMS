@@ -4,19 +4,20 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Eye, Pencil } from 'lucide-react';
 import type { IUser } from '@redmonkey/shared';
+import type { IUserWithStats } from '@/types/userStats';
 
 interface TeacherCardProps {
-  teacher: IUser;
+  teacher: IUserWithStats;
   onViewDetails?: (id: string) => void;
   onEdit?: (teacher: IUser) => void;
 }
 
 export default function TeacherCard({ teacher, onViewDetails, onEdit }: TeacherCardProps) {
   // Replace with actual data when available from backend
-  const subjects = (teacher as any).subjects || [];
-  const groups = (teacher as any).groups || [];
+  const subjects = teacher.subjects ?? [];
+  const groups = teacher.groups ?? [];
   const groupsCount = groups.length;
-  const studentsCount = (teacher as any).studentsCount || 0;
+  const studentsCount = teacher.studentsCount || 0;
 
   // Helper for mock avatar colors based on name length or something simple
   const avatarColors = ['bg-orange-600', 'bg-emerald-600', 'bg-blue-600'];
@@ -55,7 +56,7 @@ export default function TeacherCard({ teacher, onViewDetails, onEdit }: TeacherC
       <CardContent className="space-y-6 pt-3 text-center">
         {groups.length > 0 ? (
           <div className="flex justify-center flex-wrap gap-2">
-            {groups.map((grp: string, idx: number) => (
+            {groups.map((grp, idx) => (
               <Badge key={idx} variant="outline" className={`${idx % 2 === 0 ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'} border-none rounded-full px-3 font-semibold text-xs`}>
                 {grp}
               </Badge>

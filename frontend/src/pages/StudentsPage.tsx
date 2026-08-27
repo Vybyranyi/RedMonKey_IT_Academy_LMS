@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { apiGetUsers, apiCreateUser, apiUpdateUser } from '@/api/users';
 import { apiGetGroups } from '@/api/groups';
-import { UserRole, type IUser, type IUserDto } from '@redmonkey/shared';
+import { UserRole, type IPopulatedGroup, type IUser, type IUserDto } from '@redmonkey/shared';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import { Plus } from 'lucide-react';
 export default function StudentsPage() {
   const { user: currentUser } = useAuthStore();
   const [students, setStudents] = useState<IUser[]>([]);
-  const [groups, setGroups] = useState<any[]>([]);
+  const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -133,7 +133,7 @@ export default function StudentsPage() {
                   email: editingStudent.email,
                   phone: editingStudent.phone || '',
                   role: editingStudent.role,
-                  group: editingStudent.group && typeof editingStudent.group === 'object' ? (editingStudent.group as any).id : editingStudent.group || ''
+                  group: editingStudent.group && typeof editingStudent.group === 'object' ? editingStudent.group.id : editingStudent.group || ''
                 }}
                 onSubmit={handleUpdateStudent} 
                 isSubmitting={isSubmitLoading} 
