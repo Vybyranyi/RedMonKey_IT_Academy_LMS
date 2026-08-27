@@ -11,6 +11,7 @@ import SchedulePage from '@/pages/SchedulePage';
 import GradesPage from '@/pages/GradesPage';
 import CoinsPage from '@/pages/CoinsPage';
 import SettingsPage from '@/pages/SettingsPage';
+import ProfilePage from '@/pages/ProfilePage';
 
 export default function AppRouter() {
   return (
@@ -26,6 +27,7 @@ export default function AppRouter() {
             <Route path="/schedule" element={<SchedulePage />} />
             <Route path="/grades" element={<GradesPage />} />
             <Route path="/coins" element={<CoinsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
 
             {/* Роути для адміна та викладача */}
             <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.TEACHER]} />}>
