@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { UserRole } from "@redmonkey/shared";
+import { IUpdateProfileDto, UserRole } from '@redmonkey/shared';
 import { userRepository } from "../repositories/user.repository.js";
 import { ForbiddenError, UnauthorizedError } from "../utils/errors.js";
 import {
@@ -91,15 +91,13 @@ export const authService = {
     }
   },
 
-  async updateProfile(
-    userId: string,
-    data: {
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
-      avatar?: string;
-    },
-  ) {
+  async updateProfile(userId: string, data: IUpdateProfileDto) {
+    const user = await userRepository.findById(userId);
+    if (!user || !user.isActive) {
+      throw new UnauthorizedError('Користувача не знайдено або він не активний');
+    }
+
+    // Свідомо приймаємо лише «безпечні» поля — email/role/groupId сюди не потрапляють.
     return userRepository.update(userId, {
       firstName: data.firstName,
       lastName: data.lastName,
@@ -108,25 +106,28 @@ export const authService = {
     });
   },
 
-  async changePassword(
-    userId: string,
-    currentPassword: string,
-    newPassword: string,
-  ) {
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
     const user = await userRepository.findById(userId);
-    if (!user) {
-      throw new UnauthorizedError("Користувача не знайдено");
+    if (!user || !user.isActive) {
+      throw new UnauthorizedError('Користувача не знайдено або він не активний');
     }
 
     const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!isMatch) {
-      throw new UnauthorizedError("Поточний пароль вказано невірно");
+      throw new UnauthorizedError('Поточний пароль вказано невірно');
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
-    await userRepository.update(userId, { passwordHash });
 
-    
-    await userRepository.incrementTokenVersion(userId);
+    // Як і logout, зміна пароля відкликає всі раніше видані refresh-токени.
+    const tokenVersion = await userRepository.updatePassword(userId, passwordHash);
+
+    // ...тому одразу видаємо нову пару під новою версією: решта пристроїв
+    // розлогінюється, а поточна сесія працює далі без повторного входу.
+    const payload: TokenPayload = { userId: user.id, role: user.role as UserRole };
+    return {
+      accessToken: generateAccessToken(payload),
+      refreshToken: generateRefreshToken({ ...payload, tokenVersion }),
+    };
   },
 };

@@ -2,7 +2,9 @@ import { CookieOptions, Request, Response } from 'express';
 import { env } from '../config/env.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { authService } from '../services/auth.service.js';
-import { BadRequestError, UnauthorizedError, handleError } from '../utils/errors.js';
+import { UnauthorizedError, handleError } from '../utils/errors.js';
+import { parseBody } from '../utils/validation.js';
+import { changePasswordSchema, updateProfileSchema } from '@redmonkey/shared';
 
 const REFRESH_COOKIE = 'refreshToken';
 
@@ -82,10 +84,12 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
 export const updateMe = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.userId;
-    if (!userId) throw new UnauthorizedError('Не авторизовано');
+    if (!userId) {
+      throw new UnauthorizedError('Не авторизовано');
+    }
 
-    const { firstName, lastName, phone, avatar } = req.body;
-    const updatedUser = await authService.updateProfile(userId, { firstName, lastName, phone, avatar });
+    const data = parseBody(updateProfileSchema, req.body);
+    const updatedUser = await authService.updateProfile(userId, data);
 
     res.status(200).json(updatedUser);
   } catch (error) {
@@ -96,18 +100,24 @@ export const updateMe = async (req: Request, res: Response): Promise<void> => {
 export const changePassword = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.userId;
-    if (!userId) throw new UnauthorizedError('Не авторизовано');
-
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword) {
-      throw new BadRequestError('Потрібно вказати поточний та новий пароль');
-    }
-    if (String(newPassword).length < 6) {
-      throw new BadRequestError('Новий пароль має містити не менше 6 символів');
+    if (!userId) {
+      throw new UnauthorizedError('Не авторизовано');
     }
 
-    await authService.changePassword(userId, currentPassword, newPassword);
-    res.status(200).json({ message: 'Пароль успішно змінено' });
+    const { currentPassword, newPassword } = parseBody(changePasswordSchema, req.body);
+    const tokens = await authService.changePassword(userId, currentPassword, newPassword);
+
+    // Стара refresh-кука вже недійсна — перевиставляємо її новою парою,
+    // інакше клієнт отримає 403 на найближчому /auth/refresh.
+    res.cookie(REFRESH_COOKIE, tokens.refreshToken, {
+      ...refreshCookieOptions,
+      maxAge: env.jwt.refreshExpiresInSeconds * 1000,
+    });
+
+    res.status(200).json({
+      message: 'Пароль успішно змінено',
+      accessToken: tokens.accessToken,
+    });
   } catch (error) {
     handleError(res, error, 'Помилка при зміні пароля');
   }

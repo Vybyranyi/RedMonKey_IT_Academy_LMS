@@ -53,6 +53,20 @@ export const userRepository = {
     return prisma.user.update({ where: { id }, data: { isActive: false }, select: publicUserSelect });
   },
 
+  /**
+   * Змінює пароль і тим самим запитом відкликає всі раніше видані refresh-токени.
+   * Одна транзакція — щоб не існувало вікна, у якому пароль уже новий, а старі сесії ще живі.
+   * Повертає нову tokenVersion, під якою треба випустити токени поточної сесії.
+   */
+  async updatePassword(id: string, passwordHash: string) {
+    const user = await prisma.user.update({
+      where: { id },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+      select: { tokenVersion: true },
+    });
+    return user.tokenVersion;
+  },
+
   /** Відкликає всі раніше видані refresh-токени користувача. */
   async incrementTokenVersion(id: string) {
     await prisma.user.update({ where: { id }, data: { tokenVersion: { increment: 1 } } });
