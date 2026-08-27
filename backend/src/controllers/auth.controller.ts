@@ -2,7 +2,7 @@ import { CookieOptions, Request, Response } from 'express';
 import { env } from '../config/env.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { authService } from '../services/auth.service.js';
-import { UnauthorizedError, handleError } from '../utils/errors.js';
+import { BadRequestError, UnauthorizedError, handleError } from '../utils/errors.js';
 
 const REFRESH_COOKIE = 'refreshToken';
 
@@ -72,8 +72,43 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
       role: user.role,
       avatar: user.avatar,
       redCoins: user.redCoins,
+      phone: user.phone,
     });
   } catch (error) {
     handleError(res, error, 'Помилка сервера');
+  }
+};
+
+export const updateMe = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) throw new UnauthorizedError('Не авторизовано');
+
+    const { firstName, lastName, phone, avatar } = req.body;
+    const updatedUser = await authService.updateProfile(userId, { firstName, lastName, phone, avatar });
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    handleError(res, error, 'Помилка при оновленні профілю');
+  }
+};
+
+export const changePassword = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) throw new UnauthorizedError('Не авторизовано');
+
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      throw new BadRequestError('Потрібно вказати поточний та новий пароль');
+    }
+    if (String(newPassword).length < 6) {
+      throw new BadRequestError('Новий пароль має містити не менше 6 символів');
+    }
+
+    await authService.changePassword(userId, currentPassword, newPassword);
+    res.status(200).json({ message: 'Пароль успішно змінено' });
+  } catch (error) {
+    handleError(res, error, 'Помилка при зміні пароля');
   }
 };
