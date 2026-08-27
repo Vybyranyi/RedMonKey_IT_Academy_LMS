@@ -19,10 +19,26 @@ const publicUserSelect = {
   group: { select: { id: true, name: true } },
 } satisfies Prisma.UserSelect;
 
+/** Форма користувача, яку бачить клієнт. Одна на login, GET /auth/me і PATCH /auth/me. */
+export type PublicUser = Prisma.UserGetPayload<{ select: typeof publicUserSelect }>;
+
+const fullUserInclude = { group: { select: { id: true, name: true } } } satisfies Prisma.UserInclude;
+
+type FullUser = Prisma.UserGetPayload<{ include: typeof fullUserInclude }>;
+
+/**
+ * Дзеркалить publicUserSelect для випадків, коли запис уже прочитано повністю
+ * (логін читає passwordHash). Тип PublicUser гарантує, що обидва шляхи не розійдуться.
+ */
+export const toPublicUser = (user: FullUser): PublicUser => {
+  const { passwordHash, tokenVersion, ...publicUser } = user;
+  return publicUser;
+};
+
 export const userRepository = {
   /** Повний запис (з passwordHash/tokenVersion) — лише для внутрішньої логіки auth. */
   async findByEmail(email: string) {
-    return prisma.user.findFirst({ where: { email } });
+    return prisma.user.findFirst({ where: { email }, include: fullUserInclude });
   },
 
   async findById(id: string) {

@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { IUpdateProfileDto, UserRole } from '@redmonkey/shared';
-import { userRepository } from "../repositories/user.repository.js";
+import { toPublicUser, userRepository } from '../repositories/user.repository.js';
+import { SALT_ROUNDS } from '../config/constants.js';
 import { ForbiddenError, UnauthorizedError } from "../utils/errors.js";
 import {
   RefreshTokenPayload,
@@ -33,16 +34,7 @@ export const authService = {
         ...payload,
         tokenVersion: user.tokenVersion,
       }),
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        avatar: user.avatar,
-        redCoins: user.redCoins,
-        phone: user.phone,
-      },
+      user: toPublicUser(user),
     };
   },
 
@@ -117,7 +109,7 @@ export const authService = {
       throw new UnauthorizedError('Поточний пароль вказано невірно');
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
     // Як і logout, зміна пароля відкликає всі раніше видані refresh-токени.
     const tokenVersion = await userRepository.updatePassword(userId, passwordHash);

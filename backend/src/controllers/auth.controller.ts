@@ -61,21 +61,14 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
       throw new UnauthorizedError('Не авторизовано');
     }
 
-    const user = await userRepository.findById(userId);
-    if (!user || !user.isActive) {
+    // findByIdActive повертає ту саму публічну проєкцію, що й PATCH /auth/me,
+    // тож клієнт отримує однакову форму користувача з обох ендпоінтів.
+    const user = await userRepository.findByIdActive(userId);
+    if (!user) {
       throw new UnauthorizedError('Користувача не знайдено або він не активний');
     }
 
-    res.status(200).json({
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      role: user.role,
-      avatar: user.avatar,
-      redCoins: user.redCoins,
-      phone: user.phone,
-    });
+    res.status(200).json(user);
   } catch (error) {
     handleError(res, error, 'Помилка сервера');
   }
