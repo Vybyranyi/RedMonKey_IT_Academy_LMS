@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { apiGetUsers, apiCreateUser, apiUpdateUser } from '@/api/users';
 import { UserRole, type IUser, type IUserDto } from '@redmonkey/shared';
 import { Button } from '@/components/ui/button';
@@ -18,25 +18,37 @@ export default function TeachersPage() {
   const [selectedTeacher, setSelectedTeacher] = useState<IUser | null>(null);
   const [editingTeacher, setEditingTeacher] = useState<IUser | null>(null);
 
-  const fetchTeachers = useCallback(async () => {
-    try {
-      const data = await apiGetUsers({ role: UserRole.TEACHER });
-      setTeachers(data);
-    } catch (error) {
-      console.error('Помилка завантаження викладачів:', error);
-    }
-  }, []);
+  // Лічильник перезавантаження: після створення/редагування збільшуємо його,
+  // і ефект перечитує список. Запит лишається в одному місці, а setState
+  // не викликається з ефекту синхронно.
+  const [reloadKey, setReloadKey] = useState(0);
+  const reloadTeachers = () => setReloadKey((key) => key + 1);
 
   useEffect(() => {
-    fetchTeachers();
-  }, [fetchTeachers]);
+    let cancelled = false;
+
+    const loadTeachers = async () => {
+      try {
+        const data = await apiGetUsers({ role: UserRole.TEACHER });
+        if (!cancelled) setTeachers(data);
+      } catch (error) {
+        console.error('Помилка завантаження викладачів:', error);
+      }
+    };
+
+    loadTeachers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   const handleCreateTeacher = async (values: IUserDto) => {
     setIsSubmitLoading(true);
     try {
       await apiCreateUser({ ...values, role: UserRole.TEACHER });
       setIsCreateOpen(false);
-      fetchTeachers();
+      reloadTeachers();
     } catch (error) {
       console.error(error);
     } finally {
@@ -50,7 +62,7 @@ export default function TeachersPage() {
     try {
       await apiUpdateUser(editingTeacher.id, values);
       setEditingTeacher(null);
-      fetchTeachers();
+      reloadTeachers();
     } catch (error) {
       console.error(error);
     } finally {
@@ -117,7 +129,7 @@ export default function TeachersPage() {
                   email: editingTeacher.email,
                   phone: editingTeacher.phone || '',
                   role: editingTeacher.role,
-                  group: editingTeacher.group && typeof editingTeacher.group === 'object' ? (editingTeacher.group as any).id : editingTeacher.group || ''
+                  group: editingTeacher.group && typeof editingTeacher.group === 'object' ? editingTeacher.group.id : editingTeacher.group || ''
                 }}
                 onSubmit={handleUpdateTeacher} 
                 isSubmitting={isSubmitLoading} 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { UserRole } from '@redmonkey/shared';
 import type { IGroupDto, IPopulatedGroup } from '@redmonkey/shared';
@@ -16,25 +16,37 @@ export default function GroupsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
 
-  const fetchGroups = useCallback(async () => {
-    try {
-      const data = await apiGetGroups();
-      setGroups(data);
-    } catch (error) {
-      console.error('Помилка завантаження груп:', error);
-    }
-  }, []);
+  // Лічильник перезавантаження: після створення групи збільшуємо його,
+  // і ефект перечитує список. Запит лишається в одному місці, а setState
+  // не викликається з ефекту синхронно.
+  const [reloadKey, setReloadKey] = useState(0);
+  const reloadGroups = () => setReloadKey((key) => key + 1);
 
   useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
+    let cancelled = false;
+
+    const loadGroups = async () => {
+      try {
+        const data = await apiGetGroups();
+        if (!cancelled) setGroups(data);
+      } catch (error) {
+        console.error('Помилка завантаження груп:', error);
+      }
+    };
+
+    loadGroups();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   const handleCreateGroup = async (values: IGroupDto) => {
     setIsSubmitLoading(true);
     try {
       await apiCreateGroup(values);
       setIsCreateOpen(false);
-      fetchGroups();
+      reloadGroups();
     } catch (error) {
       console.error('Помилка при створенні групи:', error);
     } finally {

@@ -1,10 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import type { IUser } from '@redmonkey/shared';
+import type { IUserWithStats } from '@/types/userStats';
 
 interface TeacherDetailsModalProps {
-  teacher: IUser | null;
+  teacher: IUserWithStats | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -12,10 +12,10 @@ interface TeacherDetailsModalProps {
 export default function TeacherDetailsModal({ teacher, isOpen, onClose }: TeacherDetailsModalProps) {
   if (!teacher) return null;
 
-  const subjects = (teacher as any).subjects || [];
-  const groups = (teacher as any).groups || [];
+  const subjects = teacher.subjects ?? [];
+  const groups = teacher.groups ?? [];
   const groupsCount = groups.length;
-  const studentsCount = (teacher as any).studentsCount || 0;
+  const studentsCount = teacher.studentsCount || 0;
   const hireDate = teacher.createdAt ? new Date(teacher.createdAt).toLocaleDateString('uk-UA', { year: 'numeric', month: 'short' }) : '—';
   
   const avatarColors = ['bg-orange-600', 'bg-emerald-600', 'bg-blue-600'];
@@ -78,7 +78,7 @@ export default function TeacherDetailsModal({ teacher, isOpen, onClose }: Teache
               <h4 className="font-bold text-slate-800 text-lg">Предмети</h4>
               {subjects.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {subjects.map((subj: string, idx: number) => (
+                  {subjects.map((subj, idx) => (
                     <Badge key={idx} variant="secondary" className="bg-white border border-slate-200 text-slate-700 px-3 py-1 text-sm font-medium">
                       {subj}
                     </Badge>
@@ -96,7 +96,7 @@ export default function TeacherDetailsModal({ teacher, isOpen, onClose }: Teache
               <h4 className="font-bold text-slate-800 text-lg">Групи</h4>
               {groups.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3">
-                  {groups.map((grp: string, idx: number) => (
+                  {groups.map((grp, idx) => (
                     <div key={idx} className="bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between shadow-sm">
                       <span className="text-sm font-bold text-slate-700">{grp}</span>
                     </div>

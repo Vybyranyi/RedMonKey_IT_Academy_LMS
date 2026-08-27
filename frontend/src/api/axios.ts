@@ -19,10 +19,15 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-let isRefreshing = false;
-let failedQueue: any[] = [];
+interface QueuedRequest {
+  resolve: (token: string | null) => void;
+  reject: (error: unknown) => void;
+}
 
-const processQueue = (error: any, token: string | null = null) => {
+let isRefreshing = false;
+let failedQueue: QueuedRequest[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -40,7 +45,7 @@ axiosInstance.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        return new Promise((resolve, reject) => {
+        return new Promise<string | null>((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {

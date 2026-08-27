@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { apiGetUsers, apiCreateUser, apiUpdateUser } from '@/api/users';
 import { apiGetGroups } from '@/api/groups';
-import { UserRole, type IUser, type IUserDto } from '@redmonkey/shared';
+import { UserRole, type IPopulatedGroup, type IUser, type IUserDto } from '@redmonkey/shared';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import { Plus } from 'lucide-react';
 export default function StudentsPage() {
   const { user: currentUser } = useAuthStore();
   const [students, setStudents] = useState<IUser[]>([]);
-  const [groups, setGroups] = useState<any[]>([]);
+  const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -23,42 +23,60 @@ export default function StudentsPage() {
   const [selectedStudent, setSelectedStudent] = useState<IUser | null>(null);
   const [editingStudent, setEditingStudent] = useState<IUser | null>(null);
 
-  const fetchStudents = useCallback(async () => {
-    try {
-      const data = await apiGetUsers({
-        role: UserRole.STUDENT,
-        groupId: selectedGroup,
-        q: search
-      });
-      setStudents(data);
-    } catch (error) {
-      console.error('Помилка завантаження студентів:', error);
-    }
-  }, [search, selectedGroup]);
+  // Лічильник перезавантаження: після створення/редагування студента
+  // збільшуємо його, і ефект перечитує список. Так запит живе в одному місці,
+  // а setState не викликається з ефекту синхронно.
+  const [reloadKey, setReloadKey] = useState(0);
+  const reloadStudents = () => setReloadKey((key) => key + 1);
 
-  const fetchGroups = useCallback(async () => {
-    try {
-      const data = await apiGetGroups();
-      setGroups(data);
-    } catch (error) {
-      console.error(error);
-    }
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadStudents = async () => {
+      try {
+        const data = await apiGetUsers({
+          role: UserRole.STUDENT,
+          groupId: selectedGroup,
+          q: search
+        });
+        if (!cancelled) setStudents(data);
+      } catch (error) {
+        console.error('Помилка завантаження студентів:', error);
+      }
+    };
+
+    loadStudents();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [search, selectedGroup, reloadKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadGroups = async () => {
+      try {
+        const data = await apiGetGroups();
+        if (!cancelled) setGroups(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadGroups();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  useEffect(() => {
-    fetchStudents();
-  }, [fetchStudents]);
-
-  useEffect(() => {
-    fetchGroups();
-  }, [fetchGroups]);
 
   const handleCreateStudent = async (values: IUserDto) => {
     setIsSubmitLoading(true);
     try {
       await apiCreateUser({ ...values, role: UserRole.STUDENT });
       setIsCreateOpen(false);
-      fetchStudents();
+      reloadStudents();
     } catch (error) {
       console.error(error);
     } finally {
@@ -72,7 +90,7 @@ export default function StudentsPage() {
     try {
       await apiUpdateUser(editingStudent.id, values);
       setEditingStudent(null);
-      fetchStudents();
+      reloadStudents();
     } catch (error) {
       console.error(error);
     } finally {
@@ -133,7 +151,7 @@ export default function StudentsPage() {
                   email: editingStudent.email,
                   phone: editingStudent.phone || '',
                   role: editingStudent.role,
-                  group: editingStudent.group && typeof editingStudent.group === 'object' ? (editingStudent.group as any).id : editingStudent.group || ''
+                  group: editingStudent.group && typeof editingStudent.group === 'object' ? editingStudent.group.id : editingStudent.group || ''
                 }}
                 onSubmit={handleUpdateStudent} 
                 isSubmitting={isSubmitLoading} 

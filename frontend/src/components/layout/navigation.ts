@@ -1,5 +1,5 @@
-import type { ComponentType } from 'react';
 import { UserRole } from '@redmonkey/shared';
+import type { LucideIcon } from 'lucide-react';
 import { 
   LayoutDashboard, Users, GraduationCap, CalendarDays, 
   BookOpenCheck, CircleDollarSign, Settings 
@@ -8,7 +8,7 @@ import {
 export interface NavItem {
   name: string;
   path: string;
-  icon: ComponentType<any>;
+  icon: LucideIcon;
   roles: UserRole[];
 }
 

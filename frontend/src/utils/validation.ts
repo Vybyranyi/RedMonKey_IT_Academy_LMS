@@ -6,7 +6,7 @@ export const loginSchema = z.object({
 });
 
 // Допоміжна функція інтеграції Zod з Formik
-export const validateWithZod = (schema: z.ZodSchema) => (values: any) => {
+export const validateWithZod = (schema: z.ZodSchema) => (values: unknown) => {
   const result = schema.safeParse(values);
   if (result.success) return {};
   

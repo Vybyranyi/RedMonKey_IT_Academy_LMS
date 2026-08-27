@@ -4,9 +4,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Eye, Pencil } from 'lucide-react';
 import type { IUser } from '@redmonkey/shared';
+import type { IUserWithStats } from '@/types/userStats';
 
 interface StudentTableProps {
-  students: IUser[];
+  students: IUserWithStats[];
   onViewDetails: (id: string) => void;
   onEdit?: (student: IUser) => void;
 }
@@ -41,7 +42,7 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
               </TableCell>
             </TableRow>
           ) : (
-            students.map((student: any) => {
+            students.map((student) => {
               const avgScore = student.averageScore || 0;
               const attendance = student.attendance || 0;
               const displayCoins = student.redCoins || 0;
@@ -68,7 +69,7 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                   <TableCell>
                     {student.group ? (
                       <Badge variant="outline" className="bg-blue-50 text-blue-600 border-none rounded-full px-3 font-semibold text-xs">
-                        {student.group.name}
+                        {typeof student.group === 'object' ? student.group.name : 'Група'}
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="bg-slate-100 text-slate-600 border-none rounded-full px-3 font-semibold text-xs">

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import axiosInstance from '@/api/axios';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { LoginForm } from '@/components/features/auth/LoginForm';
+import { LoginForm, type LoginFormValues } from '@/components/features/auth/LoginForm';
+import { getApiErrorMessage } from '@/utils/apiError';
 import logo from '@/assets/logo.png';
 
 export default function LoginPage() {
@@ -11,15 +12,18 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const handleLogin = async (values: any, { setSubmitting }: any) => {
+  const handleLogin = async (
+    values: LoginFormValues,
+    { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }
+  ) => {
     setServerError(null);
     try {
       const response = await axiosInstance.post('/auth/login', values);
       const { accessToken, user } = response.data;
       setAuth(user, accessToken);
       navigate('/');
-    } catch (error: any) {
-      setServerError(error.response?.data?.message || 'Халепа! Щось пішло не так.');
+    } catch (error) {
+      setServerError(getApiErrorMessage(error, 'Халепа! Щось пішло не так.'));
     } finally {
       setSubmitting(false);
     }
