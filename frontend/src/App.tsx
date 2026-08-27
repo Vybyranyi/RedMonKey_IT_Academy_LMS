@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import AppRouter from "./router";
 import { useAuthStore } from "./store/authStore";
 import axiosInstance from "./api/axios";
+import { Toaster } from "@/components/ui/sonner";
 
 function App() {
   const { isAuthenticated, user, setUser, clearAuth } = useAuthStore();
@@ -29,6 +30,7 @@ function App() {
 
   return (
     <>
+      <Toaster position="top-right" richColors/>
       <AppRouter />
     </>
   );
