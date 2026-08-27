@@ -14,7 +14,8 @@ function App() {
         try {
           const response = await axiosInstance.get('/auth/me');
           setUser(response.data);
-        } catch (error) {
+        } catch {
+          // Токен протух або користувача деактивували — просто виходимо
           clearAuth();
         }
       }
