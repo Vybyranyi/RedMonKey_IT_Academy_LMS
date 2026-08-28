@@ -1,8 +1,9 @@
-import { UserRole } from "@redmonkey/shared";
-import { groupRepository } from "../repositories/group.repository.js";
-import { TokenPayload } from "../utils/jwt.js";
-import { userRepository } from "../repositories/user.repository.js";
+import { UserRole } from '@redmonkey/shared';
+import { groupRepository } from '../repositories/group.repository.js';
+import { userRepository } from '../repositories/user.repository.js';
+import { TokenPayload } from '../utils/jwt.js';
 
+/** Мінімум даних про ціль, якого достатньо для рішення про доступ. */
 export interface UserSubject {
   id: string;
   role: UserRole;
@@ -19,11 +20,12 @@ export interface LessonSubject {
   groupId: string;
 }
 
+/**
+ * Єдине місце, де живуть правила видимості записів.
+ * Після переходу на Postgres ці ж правила транслюються в RLS-політики майже 1:1.
+ */
 export const accessPolicy = {
-  async canViewUser(
-    actor: TokenPayload,
-    target: UserSubject,
-  ): Promise<boolean> {
+  async canViewUser(actor: TokenPayload, target: UserSubject): Promise<boolean> {
     if (actor.role === UserRole.ADMIN) return true;
     if (actor.userId === target.id) return true;
 
@@ -36,22 +38,14 @@ export const accessPolicy = {
     return false;
   },
 
-  async canViewGroup(
-    actor: TokenPayload,
-    target: GroupSubject,
-  ): Promise<boolean> {
+  async canViewGroup(actor: TokenPayload, target: GroupSubject): Promise<boolean> {
     if (actor.role === UserRole.ADMIN) return true;
-    if (actor.role === UserRole.TEACHER)
-      return target.teacherIds.includes(actor.userId);
-    if (actor.role === UserRole.STUDENT)
-      return target.studentIds.includes(actor.userId);
+    if (actor.role === UserRole.TEACHER) return target.teacherIds.includes(actor.userId);
+    if (actor.role === UserRole.STUDENT) return target.studentIds.includes(actor.userId);
     return false;
   },
 
-  async canViewLesson(
-    actor: TokenPayload,
-    target: LessonSubject,
-  ): Promise<boolean> {
+  async canViewLesson(actor: TokenPayload, target: LessonSubject): Promise<boolean> {
     if (actor.role === UserRole.ADMIN) return true;
 
     if (actor.role === UserRole.TEACHER) {
