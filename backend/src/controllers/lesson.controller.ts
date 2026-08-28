@@ -70,14 +70,21 @@ export const updateLesson = async (
   }
 };
 
-export const cancelLesson = async (
+/**
+ * DELETE у ТЗ 4.4 — це м'яке скасування (status: cancelled), а не фізичне
+ * видалення, тож відповідь несе оновлене заняття, а не порожній 204.
+ */
+export const deleteLesson = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
     if (!req.user) throw new UnauthorizedError("Авторизація обовʼязкова");
-    await lessonService.cancelLesson(req.params.id as string, req.user);
-    res.status(204).send();
+    const lesson = await lessonService.cancelLesson(
+      req.params.id as string,
+      req.user,
+    );
+    res.status(200).json(lesson);
   } catch (error) {
     handleError(res, error, "Помилка при скасуванні заняття");
   }

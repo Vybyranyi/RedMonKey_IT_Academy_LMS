@@ -1,8 +1,8 @@
 import { UserRole } from "@redmonkey/shared";
 import { Router } from "express";
 import {
-  cancelLesson,
   createLesson,
+  deleteLesson,
   getLessonById,
   getLessons,
   updateLesson,
@@ -28,11 +28,13 @@ router.patch(
   authorize([UserRole.ADMIN, UserRole.TEACHER]),
   updateLesson,
 );
-router.patch(
-  "/:id/cancel",
+// DELETE не видаляє запис фізично, а переводить у статус cancelled —
+// див. lessonService.cancelLesson
+router.delete(
+  "/:id",
   authenticate,
   authorize([UserRole.ADMIN, UserRole.TEACHER]),
-  cancelLesson,
+  deleteLesson,
 );
 
 export default router;
