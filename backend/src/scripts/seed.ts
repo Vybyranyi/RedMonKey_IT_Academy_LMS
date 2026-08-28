@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
-import { UserRole } from '@redmonkey/shared';
+import { LessonType, UserRole } from '@redmonkey/shared';
 import { prisma } from '../lib/prisma.js';
 
 const SEED_PASSWORD = process.env.SEED_PASSWORD || 'Password123!';
@@ -112,6 +112,44 @@ const seedDatabase = async () => {
     })),
   });
   console.log('[seed]: Student users created and assigned to groups.');
+
+  // Дати рахуються від дня запуску сіда, а не зашиті константами: інакше вже
+  // через два тижні календар відкривався б порожнім.
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const lessonAt = (dayOffset: number, hours: number) => {
+    const date = new Date(startOfToday);
+    date.setDate(date.getDate() + dayOffset);
+    date.setHours(hours, 0, 0, 0);
+    return date;
+  };
+
+  const lessonsData = [
+    { title: 'React: компоненти та props', type: LessonType.LECTURE, date: lessonAt(0, 10), duration: 80, group: group1, teacherId: teacher1.id },
+    { title: 'Практика: верстка картки товару', type: LessonType.PRACTICE, date: lessonAt(2, 14), duration: 120, group: group1, teacherId: teacher1.id },
+    { title: 'Консультація перед модулем', type: LessonType.CONSULTATION, date: lessonAt(5, 18), duration: 45, group: group1, teacherId: teacher1.id },
+    { title: 'Модульний іспит: основи JavaScript', type: LessonType.EXAM, date: lessonAt(9, 9), duration: 180, group: group1, teacherId: teacher1.id },
+    { title: 'Принципи візуальної ієрархії', type: LessonType.LECTURE, date: lessonAt(1, 11), duration: 80, group: group2, teacherId: teacher2.id },
+    { title: 'Практика: прототип у Figma', type: LessonType.PRACTICE, date: lessonAt(4, 16), duration: 120, group: group2, teacherId: teacher2.id },
+    { title: 'Розбір домашніх робіт', type: LessonType.CONSULTATION, date: lessonAt(8, 19), duration: 60, group: group2, teacherId: teacher2.id },
+    { title: 'Захист навчального проєкту', type: LessonType.EXAM, date: lessonAt(12, 13), duration: 180, group: group2, teacherId: teacher2.id },
+  ];
+
+  await prisma.lesson.createMany({
+    data: lessonsData.map((lesson) => ({
+      academyId,
+      groupId: lesson.group.id,
+      teacherId: lesson.teacherId,
+      title: lesson.title,
+      description: `${lesson.title} — заняття групи ${lesson.group.name}`,
+      date: lesson.date,
+      duration: lesson.duration,
+      type: lesson.type,
+    })),
+  });
+  console.log(`[seed]: ${lessonsData.length} lessons created for the next two weeks.`);
+
   console.log('[seed]: Seeding completed successfully!');
 };
 
