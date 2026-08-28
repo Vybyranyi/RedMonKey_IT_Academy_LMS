@@ -1,7 +1,7 @@
 import { UserRole } from "@redmonkey/shared";
 import { groupRepository } from "../repositories/group.repository.js";
 import { TokenPayload } from "../utils/jwt.js";
-import { userRepository } from "src/repositories/user.repository.js";
+import { userRepository } from "../repositories/user.repository.js";
 
 export interface UserSubject {
   id: string;
