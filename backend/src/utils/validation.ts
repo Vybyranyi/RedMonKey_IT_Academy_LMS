@@ -1,5 +1,5 @@
-import { ZodType } from 'zod';
-import { BadRequestError } from './errors.js';
+import { ZodType } from "zod";
+import { BadRequestError } from "./errors.js";
 
 /**
  * Єдина точка входу для валідації тіла запиту: помилку Zod згортаємо
@@ -10,7 +10,11 @@ export const parseBody = <T>(schema: ZodType<T>, body: unknown): T => {
   const result = schema.safeParse(body);
   if (!result.success) {
     const [issue] = result.error.issues;
-    throw new BadRequestError(issue?.message ?? 'Некоректні дані запиту');
+    throw new BadRequestError(issue?.message ?? "Некоректні дані запиту");
   }
   return result.data;
 };
+
+/** Те саме, що parseBody, але для query-рядка: ?from=...&groupId=... */
+export const parseQuery = <T>(schema: ZodType<T>, query: unknown): T =>
+  parseBody(schema, query);
