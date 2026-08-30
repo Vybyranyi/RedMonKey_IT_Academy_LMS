@@ -3,7 +3,7 @@ import type {
   ILessonDto,
   ILessonFilters,
   IUpdateLessonDto,
-} from "@redmonkey/shared";
+} from "@redmonkey/shared/src/schema/lesson.schema.js";
 import { LessonStatus, UserRole } from "@redmonkey/shared";
 import { academyRepository } from "../repositories/academy.repository.js";
 import { groupRepository } from "../repositories/group.repository.js";
@@ -12,7 +12,8 @@ import { userRepository } from "../repositories/user.repository.js";
 import { ForbiddenError, NotFoundError } from "../utils/errors.js";
 import { TokenPayload } from "../utils/jwt.js";
 import { accessPolicy } from "./access.policy.js";
-
+import { attendanceService } from "src/services/attendance.service.js";
+import { IAttendanceRecordDto } from "@redmonkey/shared/src/schema/attendance.schema.js";//тут всюди де @redmonkey/shared має бути в мене з'являється помилка що не може дістати з того шляху тому пишу так
 export const lessonService = {
   async getLessons(filters: ILessonFilters, actor: TokenPayload) {
     const { groupId, teacherId, from, to } = filters;
@@ -139,4 +140,18 @@ export const lessonService = {
 
     return lessonRepository.update(id, { status: LessonStatus.CANCELLED });
   },
+  async completeLesson(id: string, records: IAttendanceRecordDto[], actor: TokenPayload) {
+  const subject = await lessonRepository.findSubjectById(id);
+  if (!subject) throw new NotFoundError('Заняття не знайдено');
+
+  if (!accessPolicy.canManageLesson(actor, subject)) {
+    throw new ForbiddenError('Позначити заняття проведеним може лише адмін або викладач-власник');
+  }
+
+  if (records.length > 0) {
+    await attendanceService.saveBulk({ lessonId: id, records }, actor);
+  }
+
+  return lessonRepository.update(id, { status: LessonStatus.COMPLETED });
+},
 };

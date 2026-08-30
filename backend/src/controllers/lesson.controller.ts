@@ -2,11 +2,12 @@ import {
   createLessonSchema,
   lessonFiltersSchema,
   updateLessonSchema,
-} from "@redmonkey/shared";
+} from "@redmonkey/shared/src/schema/lesson.schema.js";
 import { Request, Response } from "express";
 import { lessonService } from "../services/lesson.service.js";
 import { UnauthorizedError, handleError } from "../utils/errors.js";
 import { parseBody, parseQuery } from "../utils/validation.js";
+import { completeLessonSchema } from "@redmonkey/shared";
 
 export const getLessons = async (
   req: Request,
@@ -89,3 +90,22 @@ export const deleteLesson = async (
     handleError(res, error, "Помилка при скасуванні заняття");
   }
 };
+
+export const completeLesson = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    if (!req.user) throw new UnauthorizedError("Авторизація обовʼязкова");
+    const { records } = parseBody(completeLessonSchema, req.body);
+    const lesson = await lessonService.completeLesson(
+      req.params.id as string,
+      records,
+      req.user,
+    );
+    res.status(200).json(lesson);
+  } catch (error) {
+    handleError(res, error, "Помилка при завершенні заняття");
+  }
+};
+

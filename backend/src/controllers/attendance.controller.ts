@@ -1,10 +1,10 @@
 import { bulkAttendanceSchema, updateAttendanceSchema } from '@redmonkey/shared/src/schema/attendance.schema';
 import { parseBody } from '../utils/validation.js';
-import { attendanceService } from 'src/repositories/attendance.service.js';
+import { attendanceService } from '../services/attendance.service.js';
 import { Request, Response} from 'express';
 import { handleError, UnauthorizedError } from 'src/utils/errors.js';
 
-const getAttendance = async (req: Request, res: Response): Promise<void> => {
+export const getAttendance = async (req: Request, res: Response): Promise<void> => {
   try{
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
     const {lessonId, studentId} = req.params;
@@ -17,7 +17,7 @@ const getAttendance = async (req: Request, res: Response): Promise<void> => {
 
 }
 
-const saveBulkAttendance = async (req: Request, res: Response): Promise<void> => {
+export const saveBulkAttendance = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
     const data = parseBody(bulkAttendanceSchema, req.body);
@@ -29,7 +29,7 @@ const saveBulkAttendance = async (req: Request, res: Response): Promise<void> =>
 
 
 }
-const updateAttendance = async (req: Request, res: Response): Promise<void> => {
+export const updateAttendance = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
     const { id } = req.params as { id: string };

@@ -1,6 +1,7 @@
 import { UserRole } from "@redmonkey/shared";
 import { Router } from "express";
 import {
+  completeLesson,
   createLesson,
   deleteLesson,
   getLessonById,
@@ -37,4 +38,13 @@ router.delete(
   deleteLesson,
 );
 
+// Завершити заняття + масова явка
+router.post(
+  "/:id/complete",
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.TEACHER]),
+  completeLesson,
+);
+
 export default router;
+
