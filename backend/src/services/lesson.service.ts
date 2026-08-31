@@ -3,7 +3,7 @@ import type {
   ILessonDto,
   ILessonFilters,
   IUpdateLessonDto,
-} from "@redmonkey/shared/src/schema/lesson.schema.js";
+} from "@redmonkey/shared";
 import { LessonStatus, UserRole } from "@redmonkey/shared";
 import { academyRepository } from "../repositories/academy.repository.js";
 import { groupRepository } from "../repositories/group.repository.js";
@@ -12,8 +12,8 @@ import { userRepository } from "../repositories/user.repository.js";
 import { ForbiddenError, NotFoundError } from "../utils/errors.js";
 import { TokenPayload } from "../utils/jwt.js";
 import { accessPolicy } from "./access.policy.js";
-import { attendanceService } from "src/services/attendance.service.js";
-import { IAttendanceRecordDto } from "@redmonkey/shared/src/schema/attendance.schema.js";//тут всюди де @redmonkey/shared має бути в мене з'являється помилка що не може дістати з того шляху тому пишу так
+import { attendanceService } from "./attendance.service.js";
+import type { IAttendanceRecordDto } from "@redmonkey/shared";
 export const lessonService = {
   async getLessons(filters: ILessonFilters, actor: TokenPayload) {
     const { groupId, teacherId, from, to } = filters;

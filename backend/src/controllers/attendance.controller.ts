@@ -1,4 +1,4 @@
-import { bulkAttendanceSchema, updateAttendanceSchema } from '@redmonkey/shared/src/schema/attendance.schema';
+import { bulkAttendanceSchema, updateAttendanceSchema } from '@redmonkey/shared';
 import { parseBody } from '../utils/validation.js';
 import { attendanceService } from '../services/attendance.service.js';
 import { Request, Response} from 'express';

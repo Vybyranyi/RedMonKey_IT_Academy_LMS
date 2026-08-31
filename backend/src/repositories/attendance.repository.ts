@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import type { IAttendanceRecordDto } from '@redmonkey/shared/src/schema/attendance.schema';
+import type { IAttendanceRecordDto } from '@redmonkey/shared';
 import { prisma } from '../lib/prisma.js';
 
 const studentSelect = {

@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { UserRole } from '@redmonkey/shared';
-import type { IBulkAttendanceDto, IUpdateAttendanceDto } from '@redmonkey/shared/src/schema/attendance.schema';
+import type { IBulkAttendanceDto, IUpdateAttendanceDto } from '@redmonkey/shared';
 import { attendanceRepository } from '../repositories/attendance.repository.js';
 import { lessonRepository } from '../repositories/lesson.repository.js';
 import { userRepository } from '../repositories/user.repository.js';
