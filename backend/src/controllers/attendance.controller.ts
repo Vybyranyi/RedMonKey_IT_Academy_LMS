@@ -2,7 +2,7 @@ import { bulkAttendanceSchema, updateAttendanceSchema } from '@redmonkey/shared'
 import { parseBody } from '../utils/validation.js';
 import { attendanceService } from '../services/attendance.service.js';
 import { Request, Response} from 'express';
-import { handleError, UnauthorizedError } from 'src/utils/errors.js';
+import { handleError, UnauthorizedError } from '../utils/errors.js';
 
 export const getAttendance = async (req: Request, res: Response): Promise<void> => {
   try{

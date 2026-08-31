@@ -3,7 +3,7 @@ import authRoutes from './auth.routes.js';
 import groupRoutes from './group.routes.js';
 import lessonRoutes from './lesson.routes.js';
 import userRoutes from './user.routes.js';
-import attendanceRoutes from 'src/routes/attendance.routes.js';
+import attendanceRoutes from './attendance.routes.js';
 
 const router = Router();
 

@@ -3,7 +3,7 @@ import {
   getAttendance,
   saveBulkAttendance,
   updateAttendance,
-} from '../controllers/attendance.controller';
+} from '../controllers/attendance.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { UserRole } from '@redmonkey/shared';
 
