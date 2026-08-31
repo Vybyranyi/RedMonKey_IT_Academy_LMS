@@ -7,7 +7,7 @@ import { handleError, UnauthorizedError } from 'src/utils/errors.js';
 export const getAttendance = async (req: Request, res: Response): Promise<void> => {
   try{
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
-    const {lessonId, studentId} = req.params;
+    const {lessonId, studentId} = req.query;
     const attendance = await attendanceService.getAttendance({ lessonId, studentId }, req.user);
     res.status(200).json(attendance);
   } catch (error) {
