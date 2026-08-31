@@ -42,4 +42,3 @@ export const updateAttendance = async (req: Request, res: Response): Promise<voi
 
 
 }
-//памагітє пажалуста i`m typed some shit there ig
