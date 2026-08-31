@@ -64,6 +64,11 @@ export const lessonFiltersSchema = z.object({
   to: isoDay.optional(),
 });
 
+
+
+
+
+
 export type ILessonDto = z.infer<typeof createLessonSchema>;
 export type IUpdateLessonDto = z.infer<typeof updateLessonSchema>;
 export type ILessonFilters = z.infer<typeof lessonFiltersSchema>;

@@ -12,7 +12,8 @@ import { userRepository } from "../repositories/user.repository.js";
 import { ForbiddenError, NotFoundError } from "../utils/errors.js";
 import { TokenPayload } from "../utils/jwt.js";
 import { accessPolicy } from "./access.policy.js";
-
+import { attendanceService } from "./attendance.service.js";
+import type { IAttendanceRecordDto } from "@redmonkey/shared";
 export const lessonService = {
   async getLessons(filters: ILessonFilters, actor: TokenPayload) {
     const { groupId, teacherId, from, to } = filters;
@@ -139,4 +140,18 @@ export const lessonService = {
 
     return lessonRepository.update(id, { status: LessonStatus.CANCELLED });
   },
+  async completeLesson(id: string, records: IAttendanceRecordDto[], actor: TokenPayload) {
+  const subject = await lessonRepository.findSubjectById(id);
+  if (!subject) throw new NotFoundError('Заняття не знайдено');
+
+  if (!accessPolicy.canManageLesson(actor, subject)) {
+    throw new ForbiddenError('Позначити заняття проведеним може лише адмін або викладач-власник');
+  }
+
+  if (records.length > 0) {
+    await attendanceService.saveBulk({ lessonId: id, records }, actor);
+  }
+
+  return lessonRepository.update(id, { status: LessonStatus.COMPLETED });
+},
 };
