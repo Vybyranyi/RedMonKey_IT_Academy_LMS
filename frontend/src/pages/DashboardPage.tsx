@@ -284,7 +284,7 @@ function TeacherDashboard({
               >
                 <div>
                   <p className="font-semibold text-slate-800 text-sm">{group.name}</p>
-                  <p className="text-xs text-slate-500">{(group as any).course?.name || 'Курс не вказано'}</p>
+                  {((group as unknown) as { course?: { name?: string } }).course?.name || 'Курс не вказано'}
                 </div>
                 <Badge variant="outline">{group.students?.length || 0} студ.</Badge>
               </div>
