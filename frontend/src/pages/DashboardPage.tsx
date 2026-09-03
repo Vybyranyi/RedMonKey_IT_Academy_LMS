@@ -14,25 +14,22 @@ import {
   UsersRound,
   Calendar,
 } from 'lucide-react';
-
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
 import { useAuthStore } from '@/store/authStore';
 import { UserRole, type IPopulatedLesson, type IPopulatedGroup } from '@redmonkey/shared';
-import { apiGetLessons } from '@/api/lessons.ts';
+import { apiGetLessons } from '@/api/lessons';
 import { apiGetUsers } from '@/api/users';
 import { apiGetGroups } from '@/api/groups';
 import { getApiErrorMessage } from '@/utils/apiError';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
-
 import StatCard from '@/components/features/dashboard/StatCard';
 import UpcomingLessons from '@/components/features/dashboard/UpcomingLessons';
 
 export default function DashboardPage() {
- const { user } = useAuthStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -144,9 +141,6 @@ export default function DashboardPage() {
   );
 }
 
-// ----------------------------------------------------------------------
-// Admin Dashboard Component
-// ----------------------------------------------------------------------
 interface DashboardStats {
   students: number;
   teachers: number;
@@ -242,9 +236,6 @@ function AdminDashboard({
   );
 }
 
-// ----------------------------------------------------------------------
-// Teacher Dashboard Component
-// ----------------------------------------------------------------------
 interface TeacherDashboardProps {
   todayLessons: IPopulatedLesson[];
   upcoming: IPopulatedLesson[];
@@ -315,9 +306,6 @@ function TeacherDashboard({
   );
 }
 
-// ----------------------------------------------------------------------
-// Student Dashboard Component
-// ----------------------------------------------------------------------
 interface StudentDashboardProps {
   nextLesson: IPopulatedLesson | null;
   weekLessons: IPopulatedLesson[];
