@@ -288,11 +288,15 @@ function TeacherDashboard({
                 key={group.id}
                 className="flex items-center justify-between p-3 border border-slate-100 rounded-xl bg-slate-50/50"
               >
-                <div>
-                  <p className="font-semibold text-slate-800 text-sm">{group.name}</p>
-                  {((group as unknown) as { course?: { name?: string } }).course?.name || 'Курс не вказано'}
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-800 text-sm truncate">{group.name}</p>
+                  {group.description && (
+                    <p className="text-xs text-slate-500 truncate">{group.description}</p>
+                  )}
                 </div>
-                <Badge variant="outline">{group.students?.length || 0} студ.</Badge>
+                <Badge variant="outline" className="shrink-0">
+                  {group.students.length} студ.
+                </Badge>
               </div>
             ))}
         </CardContent>
