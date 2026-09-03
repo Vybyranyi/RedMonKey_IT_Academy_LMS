@@ -41,12 +41,14 @@ export default function DashboardPage() {
     groups: 0,
   });
 
+  const userId = user?.id;
   const isAdmin = user?.role === UserRole.ADMIN;
   const isTeacher = user?.role === UserRole.TEACHER;
   const isStudent = user?.role === UserRole.STUDENT;
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
+    let cancelled = false;
 
     const fetchData = async () => {
       setIsLoading(true);
@@ -63,6 +65,8 @@ export default function DashboardPage() {
           isAdmin || isTeacher ? apiGetGroups() : Promise.resolve([]),
         ]);
 
+        if (cancelled) return;
+
         setWeekLessons(lessonsData);
         setGroups(groupsData);
         setStats({
@@ -71,14 +75,20 @@ export default function DashboardPage() {
           groups: groupsData.length,
         });
       } catch (error) {
-        toast.error(getApiErrorMessage(error, 'Не вдалося завантажити дані дашборду'));
+        if (!cancelled) {
+          toast.error(getApiErrorMessage(error, 'Не вдалося завантажити дані дашборду'));
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [user, isAdmin, isTeacher]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, isAdmin, isTeacher]);
 
   const now = new Date();
   const upcoming = weekLessons.filter((lesson) => new Date(lesson.date) >= now).slice(0, 5);
