@@ -38,7 +38,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [weekLessons, setWeekLessons] = useState<IPopulatedLesson[]>([]);
   const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     students: 0,
     teachers: 0,
     groups: 0,
@@ -147,19 +147,27 @@ export default function DashboardPage() {
 // ----------------------------------------------------------------------
 // Admin Dashboard Component
 // ----------------------------------------------------------------------
+interface DashboardStats {
+  students: number;
+  teachers: number;
+  groups: number;
+}
+
+interface AdminDashboardProps {
+  stats: DashboardStats;
+  weekLessonsCount: number;
+  upcoming: IPopulatedLesson[];
+  isLoading: boolean;
+  onSelectLesson: () => void;
+}
+
 function AdminDashboard({
   stats,
   weekLessonsCount,
   upcoming,
   isLoading,
   onSelectLesson,
-}: {
-  stats: { students: number; teachers: number; groups: number };
-  weekLessonsCount: number;
-  upcoming: IPopulatedLesson[];
-  isLoading: boolean;
-  onSelectLesson: (lesson: IPopulatedLesson) => void;
-}) {
+}: AdminDashboardProps) {
   return (
     <div className="space-y-6">
       {/* Картки статистики */}
@@ -237,19 +245,21 @@ function AdminDashboard({
 // ----------------------------------------------------------------------
 // Teacher Dashboard Component
 // ----------------------------------------------------------------------
+interface TeacherDashboardProps {
+  todayLessons: IPopulatedLesson[];
+  upcoming: IPopulatedLesson[];
+  groups: IPopulatedGroup[];
+  isLoading: boolean;
+  onSelectLesson: () => void;
+}
+
 function TeacherDashboard({
   todayLessons,
   upcoming,
   groups,
   isLoading,
   onSelectLesson,
-}: {
-  todayLessons: IPopulatedLesson[];
-  upcoming: IPopulatedLesson[];
-  groups: IPopulatedGroup[];
-  isLoading: boolean;
-  onSelectLesson: (lesson: IPopulatedLesson) => void;
-}) {
+}: TeacherDashboardProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-6">
@@ -308,19 +318,21 @@ function TeacherDashboard({
 // ----------------------------------------------------------------------
 // Student Dashboard Component
 // ----------------------------------------------------------------------
+interface StudentDashboardProps {
+  nextLesson: IPopulatedLesson | null;
+  weekLessons: IPopulatedLesson[];
+  redCoins: number;
+  isLoading: boolean;
+  onSelectLesson: () => void;
+}
+
 function StudentDashboard({
   nextLesson,
   weekLessons,
   redCoins,
   isLoading,
   onSelectLesson,
-}: {
-  nextLesson: IPopulatedLesson | null;
-  weekLessons: IPopulatedLesson[];
-  redCoins: number;
-  isLoading: boolean;
-  onSelectLesson: (lesson: IPopulatedLesson) => void;
-}) {
+}: StudentDashboardProps) {
   const meta = nextLesson ? LESSON_TYPE_META[nextLesson.type] : null;
 
   return (
@@ -351,7 +363,7 @@ function StudentDashboard({
                     <Clock className="h-4 w-4 text-slate-400" />
                     <span>{format(new Date(nextLesson.date), 'EEEE, d MMMM, HH:mm', { locale: uk })}</span>
                   </div>
-                  <Button size="sm" onClick={() => onSelectLesson(nextLesson)}>
+                  <Button size="sm" onClick={onSelectLesson}>
                     Перейти до розкладу
                   </Button>
                 </div>
