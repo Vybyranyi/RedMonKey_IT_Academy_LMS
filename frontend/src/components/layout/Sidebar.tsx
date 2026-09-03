@@ -18,7 +18,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`${isCollapsed ? "w-20" : "w-65"} bg-[#29425D] text-slate-100 h-screen flex flex-col shadow-xl shrink-0 transition-all duration-300 ease-in-out`}
+      className={`${isCollapsed ? "w-20" : "w-65"} bg-[#29425D] text-slate-100 h-screen flex flex-col shadow-xl z-20 shrink-0 transition-all duration-300 ease-in-out`}
     >
       {/* Logo Section */}
       <div
