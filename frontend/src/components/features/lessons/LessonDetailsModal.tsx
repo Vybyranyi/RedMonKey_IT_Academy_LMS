@@ -7,6 +7,7 @@ import {
   LessonStatus,
   UserRole,
   type IPopulatedLesson,
+  type IUser,
 } from '@redmonkey/shared';
 import {
   Dialog,
@@ -24,7 +25,6 @@ import {
   apiSaveBulkAttendance,
 } from '@/api/attendance';
 import { apiGetUsers } from '@/api/users';
-import type { IUserWithStats } from '@/types/userStats';
 import { LESSON_STATUS_META } from '@/lib/lessonStatuses';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import { useAuthStore } from '@/store/authStore';
@@ -39,15 +39,14 @@ interface LessonDetailsModalProps {
   onSaved: () => void;
 }
 
-
 export default function LessonDetailsModal({
   lesson,
   isOpen,
   onClose,
   onSaved,
 }: LessonDetailsModalProps) {
-  const { isAuthenticated, user } = useAuthStore();
-  const [students, setStudents] = useState<IUserWithStats[]>([]);
+  const { user } = useAuthStore();
+  const [students, setStudents] = useState<IUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [attendance, setAttendance] = useState<
@@ -56,7 +55,8 @@ export default function LessonDetailsModal({
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (!isOpen || !lesson || !isAuthenticated || !user) return;
+    if (!isOpen || !lesson) return;
+    let cancelled = false;
 
     const fetchData = async () => {
       setIsLoading(true);
@@ -66,7 +66,7 @@ export default function LessonDetailsModal({
           apiGetAttendance({ lessonId: lesson.id }),
         ]);
 
-        setStudents(groupStudents);
+        if (cancelled) return;
 
         // Хто вже відмічений — бере збережений статус, решта дефолтом present
         const initial: Record<string, AttendanceStatus> = {};
@@ -76,19 +76,26 @@ export default function LessonDetailsModal({
           initial[student.id] = record?.status ?? AttendanceStatus.PRESENT;
           initialNotes[student.id] = record?.note ?? '';
         });
+        setStudents(groupStudents);
         setAttendance(initial);
         setNotes(initialNotes);
       } catch (error) {
-        toast.error(
-          getApiErrorMessage(error, 'Не вдалося завантажити дані заняття'),
-        );
+        if (!cancelled) {
+          toast.error(
+            getApiErrorMessage(error, 'Не вдалося завантажити дані заняття'),
+          );
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [isAuthenticated, isOpen, lesson, user]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, lesson]);
 
   if (!lesson) return null;
 
@@ -181,13 +188,8 @@ export default function LessonDetailsModal({
                 <Skeleton key={item} className="h-16 w-full rounded-xl" />
               ))}
             </div>
-          ) : students.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
-              У групі немає студентів
-            </div>
           ) : (
-            <div className="space-y-4">
-              <AttendanceList
+            <AttendanceList
                 students={students}
                 value={attendance}
                 onChange={(studentId, status) =>
@@ -196,27 +198,12 @@ export default function LessonDetailsModal({
                     [studentId]: status,
                   }))
                 }
+                notes={notes}
+                onNoteChange={(studentId, note) =>
+                  setNotes((current) => ({ ...current, [studentId]: note }))
+                }
                 readOnly={!canManage || isSaving}
               />
-              <div className="space-y-2">
-                {students.map((student) => (
-                  <input
-                    key={student.id}
-                    aria-label={`Нотатка для ${student.firstName} ${student.lastName}`}
-                    value={notes[student.id] ?? ''}
-                    disabled={!canManage || isSaving}
-                    onChange={(event) =>
-                      setNotes((current) => ({
-                        ...current,
-                        [student.id]: event.target.value,
-                      }))
-                    }
-                    placeholder={`Нотатка: ${student.firstName} ${student.lastName}`}
-                    className="h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#BA0000] focus:ring-2 focus:ring-[#BA0000]/20"
-                  />
-                ))}
-              </div>
-            </div>
           )}
         </div>
 
