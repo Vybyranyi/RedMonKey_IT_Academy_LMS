@@ -49,11 +49,9 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
-  closeButtonClassName,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
-  closeButtonClassName?: string
 }) {
   return (
     <DialogPortal>
@@ -71,7 +69,7 @@ function DialogContent({
           <DialogPrimitive.Close data-slot="dialog-close" asChild>
             <Button
               variant="ghost"
-              className={cn("absolute top-2 right-2", closeButtonClassName)}
+              className="absolute top-2 right-2"
               size="icon-sm"
             >
               <XIcon

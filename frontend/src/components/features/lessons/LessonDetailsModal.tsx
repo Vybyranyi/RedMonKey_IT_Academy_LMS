@@ -143,46 +143,46 @@ export default function LessonDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        className="sm:max-w-[680px] p-0 overflow-hidden bg-slate-50"
-        closeButtonClassName="text-white hover:bg-white/10 hover:text-white"
-      >
-        <DialogHeader className="bg-[#1A2645] px-6 pt-6 pb-5 text-white">
-          <div className="flex flex-wrap items-center gap-2 pr-8">
-            <Badge className={`${typeMeta.event} border-0 font-semibold`}>
-              {typeMeta.label}
-            </Badge>
-            <Badge className={`${currentStatus.className} font-semibold`}>
-              {currentStatus.label}
-            </Badge>
-          </div>
-          <DialogTitle className="text-2xl font-bold tracking-tight text-white">
+      <DialogContent className="sm:max-w-[680px] p-0 overflow-hidden bg-slate-50">
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <DialogTitle className="text-xl font-bold text-slate-900">
             {lesson.title}
           </DialogTitle>
-          <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
-            <span className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" />
-              {format(new Date(lesson.date), "d MMMM yyyy, HH:mm", {
-                locale: uk,
-              })}
-            </span>
-            <span className="flex items-center gap-2">
-              <Clock3 className="h-4 w-4" />
-              {lesson.duration} хв
-            </span>
-            <span className="flex items-center gap-2">
-              <UserRound className="h-4 w-4" />
-              Група: {lesson.group.name}
-            </span>
-            <span className="flex items-center gap-2">
-              <UserRound className="h-4 w-4" />
-              Викладач: {lesson.teacher.firstName} {lesson.teacher.lastName}
-            </span>
-          </div>
         </DialogHeader>
 
-        <div className="max-h-[58vh] overflow-y-auto px-6 py-5">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="max-h-[70vh] overflow-y-auto px-6 pb-6">
+          <div className="bg-[#1A2645] rounded-2xl p-6 text-white shadow-sm mt-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className={`${typeMeta.event} border-0 font-semibold`}>
+                {typeMeta.label}
+              </Badge>
+              <Badge className={`${currentStatus.className} font-semibold`}>
+                {currentStatus.label}
+              </Badge>
+            </div>
+            <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2 mt-4">
+              <span className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" />
+                {format(new Date(lesson.date), "d MMMM yyyy, HH:mm", {
+                  locale: uk,
+                })}
+              </span>
+              <span className="flex items-center gap-2">
+                <Clock3 className="h-4 w-4" />
+                {lesson.duration} хв
+              </span>
+              <span className="flex items-center gap-2">
+                <UserRound className="h-4 w-4" />
+                Група: {lesson.group.name}
+              </span>
+              <span className="flex items-center gap-2">
+                <UserRound className="h-4 w-4" />
+                Викладач: {lesson.teacher.firstName} {lesson.teacher.lastName}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-6 mb-4 flex items-center justify-between">
             <h3 className="text-lg font-bold text-slate-900">Відвідуваність</h3>
             <span className="text-sm text-slate-500">
               {students.length} студентів
@@ -234,7 +234,7 @@ export default function LessonDetailsModal({
         </div>
 
         {canManage && (
-          <DialogFooter className="!mx-0 !mb-0 bg-white pr-6 pb-6">
+          <DialogFooter className="bg-white px-6 pb-6">
             <Button
               variant="outline"
               disabled={isSaving}
