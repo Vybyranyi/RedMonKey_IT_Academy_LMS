@@ -1,3 +1,3 @@
 export default function SettingsPage() {
-  return <div className="p-4 text-2xl font-bold">Налаштування (Тільки для Admin)</div>;
+  return <p className="text-slate-500">Розділ у розробці. Доступно лише для Admin.</p>;
 }

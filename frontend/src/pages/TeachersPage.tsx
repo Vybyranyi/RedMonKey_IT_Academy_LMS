@@ -82,15 +82,9 @@ export default function TeachersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Викладачі</h1>
-            <Badge variant="secondary" className="mt-1">
-              {teachers.length} всього
-            </Badge>
-          </div>
-          <p className="text-slate-500">Викладацький склад IT Академії та напрямки їх роботи</p>
-        </div>
+        <Badge variant="secondary">
+          {teachers.length} всього
+        </Badge>
 
         {isAdmin && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

@@ -107,16 +107,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Шапка привітання */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          Вітаємо, {user?.firstName}!
-        </h1>
-        <p className="text-slate-500 capitalize">
-          {format(new Date(), 'EEEE, d MMMM yyyy', { locale: uk })}
-        </p>
-      </div>
-
       {/* Відображення блоків за роллю */}
       {isAdmin && (
         <AdminDashboard

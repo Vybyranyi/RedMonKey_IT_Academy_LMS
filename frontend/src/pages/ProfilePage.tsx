@@ -78,11 +78,6 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Мій профіль</h1>
-        <p className="text-slate-500">Перегляд та редагування власних даних</p>
-      </div>
-
       <div className="bg-[#1A2645] rounded-2xl p-6 flex items-center gap-5 text-white shadow-sm">
         <Avatar className="h-20 w-20 border-2 border-white/20">
           <AvatarImage src={user.avatar || undefined} />

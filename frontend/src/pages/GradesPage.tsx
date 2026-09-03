@@ -1,3 +1,3 @@
 export default function GradesPage() {
-  return <div className="p-4 text-2xl font-bold">Журнал оцінок (Всім доступно)</div>;
+  return <p className="text-slate-500">Розділ у розробці. Доступно всім ролям.</p>;
 }

@@ -110,15 +110,9 @@ export default function StudentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Студенти</h1>
-            <Badge variant="secondary" className="mt-1">
-              {students.filter(s => s.isActive).length} активних - {students.length} всього
-            </Badge>
-          </div>
-          <p className="text-slate-500">Управління обліковими записами студентів та моніторинг успішності</p>
-        </div>
+        <Badge variant="secondary">
+          {students.filter(s => s.isActive).length} активних - {students.length} всього
+        </Badge>
 
         {isAdmin && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

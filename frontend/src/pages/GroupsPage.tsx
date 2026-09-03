@@ -63,15 +63,9 @@ export default function GroupsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Групи</h1>
-            <Badge variant="secondary" className="mt-1">
-              {groups.filter(g => g.isActive).length} активних · {groups.length} всього
-            </Badge>
-          </div>
-          <p className="text-slate-500">Управління академічними групами та перегляд їхнього складу</p>
-        </div>
+        <Badge variant="secondary">
+          {groups.filter(g => g.isActive).length} активних · {groups.length} всього
+        </Badge>
 
         {isAdmin && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

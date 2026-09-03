@@ -152,20 +152,16 @@ export default function SchedulePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Розклад занять</h1>
-          <p className="text-slate-500">Календар навчальних подій</p>
-        </div>
-        {canManage && (
+      {canManage && (
+        <div className="flex justify-end">
           <Button
             className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white"
             onClick={() => setIsCreateOpen(true)}
           >
             <Plus className="h-4 w-4" /> Додати заняття
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       <ScheduleToolbar label={rangeLabel} view={view} onView={setView} onNavigate={handleNavigate} />
 
