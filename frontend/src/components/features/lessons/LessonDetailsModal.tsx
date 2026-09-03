@@ -25,6 +25,7 @@ import {
 } from '@/api/attendance';
 import { apiGetUsers } from '@/api/users';
 import type { IUserWithStats } from '@/types/userStats';
+import { LESSON_STATUS_META } from '@/lib/lessonStatuses';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import { useAuthStore } from '@/store/authStore';
 import { getApiErrorMessage } from '@/utils/apiError';
@@ -38,20 +39,6 @@ interface LessonDetailsModalProps {
   onSaved: () => void;
 }
 
-const statusMeta: Record<LessonStatus, { label: string; className: string }> = {
-  [LessonStatus.SCHEDULED]: {
-    label: 'Заплановано',
-    className: 'bg-blue-50 text-blue-700 border-blue-200',
-  },
-  [LessonStatus.COMPLETED]: {
-    label: 'Проведено',
-    className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  },
-  [LessonStatus.CANCELLED]: {
-    label: 'Скасовано',
-    className: 'bg-red-50 text-red-700 border-red-200',
-  },
-};
 
 export default function LessonDetailsModal({
   lesson,
@@ -109,7 +96,7 @@ export default function LessonDetailsModal({
     user?.role === UserRole.ADMIN ||
     (user?.role === UserRole.TEACHER && user.id === lesson.teacherId);
   const typeMeta = LESSON_TYPE_META[lesson.type];
-  const currentStatus = statusMeta[lesson.status];
+  const statusMeta = LESSON_STATUS_META[lesson.status];
   const canComplete =
     lesson.status !== LessonStatus.COMPLETED &&
     lesson.status !== LessonStatus.CANCELLED;
@@ -156,8 +143,8 @@ export default function LessonDetailsModal({
               <Badge className={`${typeMeta.event} border-0 font-semibold`}>
                 {typeMeta.label}
               </Badge>
-              <Badge className={`${currentStatus.className} font-semibold`}>
-                {currentStatus.label}
+              <Badge className={`${statusMeta.badge} font-semibold`}>
+                {statusMeta.label}
               </Badge>
             </div>
             <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2 mt-4">
