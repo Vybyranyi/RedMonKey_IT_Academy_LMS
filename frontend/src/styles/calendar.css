@@ -1,0 +1,37 @@
+/**
+ * Стилі бібліотеки підключаємо тут і заводимо у Tailwind-шар components:
+ * у Tailwind 4 усі утиліти лежать в @layer utilities, а нешаровані правила
+ * сильніші за будь-який шар. Якби CSS бібліотеки лишився поза шарами, дефолтна
+ * синя .rbc-event перебивала б класи, які ми віддаємо через eventPropGetter.
+ */
+@import 'react-big-calendar/lib/css/react-big-calendar.css' layer(components);
+
+@layer components {
+  /* Прибираємо дефолтний вигляд плашки, щоб керувати нею через Tailwind-класи з eventPropGetter */
+  .rbc-event {
+    background: none;
+    border: none;
+    padding: 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .rbc-event:focus { outline: 2px solid #BA0000; outline-offset: 1px; }
+  .rbc-event-label { display: none; }
+
+  .rbc-calendar { font-family: inherit; }
+  .rbc-header {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 0;
+    font-weight: 500;
+    color: #94a3b8;
+    font-size: 13px;
+    text-transform: capitalize;
+  }
+  .rbc-time-content, .rbc-time-header-content, .rbc-month-view, .rbc-time-view {
+    border-color: #e2e8f0;
+  }
+  .rbc-time-slot .rbc-label { color: #94a3b8; font-size: 12px; }
+  .rbc-today { background-color: #F8F9FA; }
+  .rbc-off-range-bg { background-color: #F8F9FA; }
+  .rbc-current-time-indicator { background-color: #C10000; height: 2px; }
+}

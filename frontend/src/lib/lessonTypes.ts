@@ -1,4 +1,3 @@
-
 import { LessonType } from '@redmonkey/shared';
 
 export interface LessonTypeMeta {

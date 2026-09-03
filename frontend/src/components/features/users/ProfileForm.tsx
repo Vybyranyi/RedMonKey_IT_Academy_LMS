@@ -2,6 +2,7 @@ import { Formik, Form, Field } from 'formik';
 import type { FieldProps } from 'formik';
 import { updateProfileSchema } from '@redmonkey/shared';
 import { validateWithZod } from '@/utils/validation';
+import { getChangedFields } from '@/utils/formUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,26 +13,6 @@ export interface ProfileFormValues {
   phone: string;
   avatar: string;
 }
-
-/**
- * PATCH має нести лише змінені поля. Якщо слати форму цілком, кожне збереження
- * перезаписує всі поля тим, що форма показала, — і значення, яке не доїхало з
- * бекенда, тихо затирається порожнім рядком.
- */
-const getChangedFields = (
-  initial: ProfileFormValues,
-  values: ProfileFormValues
-): Partial<ProfileFormValues> => {
-  const changed: Partial<ProfileFormValues> = {};
-
-  (Object.keys(values) as (keyof ProfileFormValues)[]).forEach((key) => {
-    if (values[key] !== initial[key]) {
-      changed[key] = values[key];
-    }
-  });
-
-  return changed;
-};
 
 interface ProfileFormProps {
   initialValues: ProfileFormValues;
