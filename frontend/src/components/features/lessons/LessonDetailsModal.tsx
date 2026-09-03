@@ -1,35 +1,35 @@
-import { CalendarDays, Clock3, UserRound } from "lucide-react";
-import { useEffect, useState } from "react";
-import { format } from "date-fns";
-import { uk } from "date-fns/locale";
+import { CalendarDays, Clock3, UserRound } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { uk } from 'date-fns/locale';
 import {
   AttendanceStatus,
   LessonStatus,
   UserRole,
   type IPopulatedLesson,
-} from "@redmonkey/shared";
+} from '@redmonkey/shared';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   apiCompleteLesson,
   apiGetAttendance,
   apiSaveBulkAttendance,
-} from "@/api/attendance";
-import { apiGetUsers } from "@/api/users";
-import type { IUserWithStats } from "@/types/userStats";
-import { LESSON_TYPE_META } from "@/lib/lessonTypes";
-import { useAuthStore } from "@/store/authStore";
-import { getApiErrorMessage } from "@/utils/apiError";
-import { toast } from "sonner";
-import AttendanceList from "./AttendanceList";
+} from '@/api/attendance';
+import { apiGetUsers } from '@/api/users';
+import type { IUserWithStats } from '@/types/userStats';
+import { LESSON_TYPE_META } from '@/lib/lessonTypes';
+import { useAuthStore } from '@/store/authStore';
+import { getApiErrorMessage } from '@/utils/apiError';
+import { toast } from 'sonner';
+import AttendanceList from './AttendanceList';
 
 interface LessonDetailsModalProps {
   lesson: IPopulatedLesson | null;
@@ -40,16 +40,16 @@ interface LessonDetailsModalProps {
 
 const statusMeta: Record<LessonStatus, { label: string; className: string }> = {
   [LessonStatus.SCHEDULED]: {
-    label: "Заплановано",
-    className: "bg-blue-50 text-blue-700 border-blue-200",
+    label: 'Заплановано',
+    className: 'bg-blue-50 text-blue-700 border-blue-200',
   },
   [LessonStatus.COMPLETED]: {
-    label: "Проведено",
-    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    label: 'Проведено',
+    className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   },
   [LessonStatus.CANCELLED]: {
-    label: "Скасовано",
-    className: "bg-red-50 text-red-700 border-red-200",
+    label: 'Скасовано',
+    className: 'bg-red-50 text-red-700 border-red-200',
   },
 };
 
@@ -87,13 +87,13 @@ export default function LessonDetailsModal({
         groupStudents.forEach((student) => {
           const record = saved.find((item) => item.studentId === student.id);
           initial[student.id] = record?.status ?? AttendanceStatus.PRESENT;
-          initialNotes[student.id] = record?.note ?? "";
+          initialNotes[student.id] = record?.note ?? '';
         });
         setAttendance(initial);
         setNotes(initialNotes);
       } catch (error) {
         toast.error(
-          getApiErrorMessage(error, "Не вдалося завантажити дані заняття"),
+          getApiErrorMessage(error, 'Не вдалося завантажити дані заняття'),
         );
       } finally {
         setIsLoading(false);
@@ -116,7 +116,7 @@ export default function LessonDetailsModal({
   const records = Object.entries(attendance).map(([studentId, status]) => ({
     studentId,
     status,
-    note: notes[studentId] ?? "",
+    note: notes[studentId] ?? '',
   }));
 
   const saveAttendance = async (complete: boolean) => {
@@ -128,13 +128,13 @@ export default function LessonDetailsModal({
         await apiSaveBulkAttendance({ lessonId: lesson.id, records });
       }
       toast.success(
-        complete ? "Заняття позначено проведеним" : "Явку збережено",
+        complete ? 'Заняття позначено проведеним' : 'Явку збережено',
       );
       onSaved();
       onClose();
     } catch (error) {
       toast.error(
-        getApiErrorMessage(error, "Не вдалося зберегти дані заняття"),
+        getApiErrorMessage(error, 'Не вдалося зберегти дані заняття'),
       );
     } finally {
       setIsSaving(false);
@@ -163,7 +163,7 @@ export default function LessonDetailsModal({
             <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2 mt-4">
               <span className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4" />
-                {format(new Date(lesson.date), "d MMMM yyyy, HH:mm", {
+                {format(new Date(lesson.date), 'd MMMM yyyy, HH:mm', {
                   locale: uk,
                 })}
               </span>
@@ -216,7 +216,7 @@ export default function LessonDetailsModal({
                   <input
                     key={student.id}
                     aria-label={`Нотатка для ${student.firstName} ${student.lastName}`}
-                    value={notes[student.id] ?? ""}
+                    value={notes[student.id] ?? ''}
                     disabled={!canManage || isSaving}
                     onChange={(event) =>
                       setNotes((current) => ({
@@ -240,14 +240,14 @@ export default function LessonDetailsModal({
               disabled={isSaving}
               onClick={() => void saveAttendance(false)}
             >
-              {isSaving ? "Збереження..." : "Зберегти явку"}
+              {isSaving ? 'Збереження...' : 'Зберегти явку'}
             </Button>
             {canComplete && (
               <Button
                 disabled={isSaving}
                 onClick={() => void saveAttendance(true)}
               >
-                {isSaving ? "Збереження..." : "Позначити проведеним"}
+                {isSaving ? 'Збереження...' : 'Позначити проведеним'}
               </Button>
             )}
           </DialogFooter>
