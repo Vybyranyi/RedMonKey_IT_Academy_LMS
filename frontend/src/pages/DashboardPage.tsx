@@ -88,6 +88,12 @@ export default function DashboardPage() {
   const todayLessons = weekLessons.filter((lesson) => isToday(new Date(lesson.date)));
   const nextLesson = upcoming[0] ?? null;
 
+  // GET /groups віддає всі активні групи академії без звуження за роллю,
+  // тож картку «Мої групи» фільтруємо на місці за складом викладачів
+  const myGroups = groups.filter((group) =>
+    group.teachers.some((teacher) => teacher.id === user?.id)
+  );
+
   const handleLessonSelect = () => {
     navigate('/schedule');
   };
@@ -119,7 +125,7 @@ export default function DashboardPage() {
         <TeacherDashboard
           todayLessons={todayLessons}
           upcoming={upcoming}
-          groups={groups}
+          groups={myGroups}
           isLoading={isLoading}
           onSelectLesson={handleLessonSelect}
         />
