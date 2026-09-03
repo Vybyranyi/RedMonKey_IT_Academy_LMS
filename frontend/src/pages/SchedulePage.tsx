@@ -25,6 +25,7 @@ import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import LessonDetailsModal from '@/components/features/lessons/LessonDetailsModal';
 import LessonEvent from '@/components/features/lessons/LessonEvent';
 import LessonForm from '@/components/features/lessons/LessonForm';
 import LessonTypeLegend from '@/components/features/lessons/LessonTypeLegend';
@@ -189,7 +190,7 @@ export default function SchedulePage() {
             max={new Date(1970, 0, 1, 21, 0)}
             style={{ height: 700 }}
             eventPropGetter={(event) => ({
-              // Поки немає модалки деталей (#39), вибране заняття лише підсвічуємо
+              // Вибране заняття підсвічуємо, поки відкрита модалка деталей
               className: `${LESSON_TYPE_META[event.resource.type].event}${
                 selectedLesson?.id === event.resource.id ? ' ring-2 ring-[#BA0000]' : ''
               }`,
@@ -207,6 +208,13 @@ export default function SchedulePage() {
           />
         )}
       </div>
+
+      <LessonDetailsModal
+        lesson={selectedLesson}
+        isOpen={Boolean(selectedLesson)}
+        onClose={() => setSelectedLesson(null)}
+        onSaved={() => setReloadKey((key) => key + 1)}
+      />
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent>
