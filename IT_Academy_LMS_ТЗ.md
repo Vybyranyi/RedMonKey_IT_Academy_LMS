@@ -592,15 +592,15 @@ Bottom Navigation (mobile):
 ### Тиждень 3: Розклад занять
 
 **Backend:**
-- [ ] Lessons Schema + CRUD API
-- [ ] Attendance Schema + bulk-attendance endpoint
-- [ ] Фільтрація занять за датою/групою/викладачем
+- [x] Lessons Schema + CRUD API
+- [x] Attendance Schema + bulk-attendance endpoint
+- [x] Фільтрація занять за датою/групою/викладачем
 
 **Frontend:**
-- [ ] SchedulePage + Calendar (react-big-calendar)
-- [ ] LessonForm (модалка)
-- [ ] LessonDetails з відвідуваністю
-- [ ] Dashboard з найближчими заняттями
+- [x] SchedulePage + Calendar (react-big-calendar)
+- [x] LessonForm (модалка)
+- [x] LessonDetails з відвідуваністю
+- [x] Dashboard з найближчими заняттями
 
 **Результат:** Викладач бачить свій розклад і може додавати заняття.
 
