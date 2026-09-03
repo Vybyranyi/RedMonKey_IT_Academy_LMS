@@ -51,7 +51,7 @@ const statusMeta: Record<LessonStatus, { label: string; className: string }> = {
     label: "Скасовано",
     className: "bg-red-50 text-red-700 border-red-200",
   },
-};// Можливо це краще в окремий файл винести
+};
 
 export default function LessonDetailsModal({
   lesson,
@@ -101,7 +101,7 @@ export default function LessonDetailsModal({
     };
 
     fetchData();
-  }, [isAuthenticated, isOpen, lesson, user]);//я попросив його перевіряти аунтетифікацю 
+  }, [isAuthenticated, isOpen, lesson, user]);
 
   if (!lesson) return null;
 
@@ -190,7 +190,7 @@ export default function LessonDetailsModal({
           </div>
           {isLoading ? (
             <div className="space-y-3" aria-label="Завантаження">
-              {[1, 2, 3].map((item) => (//Може це можна по іншому зробити, а то як костиль виглядає
+              {[1, 2, 3].map((item) => (
                 <Skeleton key={item} className="h-16 w-full rounded-xl" />
               ))}
             </div>

@@ -49,7 +49,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
-  closeButtonClassName,// я попросив його змінити колір хрестика щоб не паритись, теж костильно вигядає
+  closeButtonClassName,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
