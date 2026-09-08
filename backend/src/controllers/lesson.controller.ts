@@ -1,13 +1,13 @@
 import {
+  completeLessonSchema,
   createLessonSchema,
   lessonFiltersSchema,
   updateLessonSchema,
-} from "@redmonkey/shared/src/schema/lesson.schema.js";
+} from "@redmonkey/shared";
 import { Request, Response } from "express";
 import { lessonService } from "../services/lesson.service.js";
 import { UnauthorizedError, handleError } from "../utils/errors.js";
 import { parseBody, parseQuery } from "../utils/validation.js";
-import { completeLessonSchema } from "@redmonkey/shared";
 
 export const getLessons = async (
   req: Request,

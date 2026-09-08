@@ -4,7 +4,7 @@ import groupRoutes from './group.routes.js';
 import lessonRoutes from './lesson.routes.js';
 import userRoutes from './user.routes.js';
 import attendanceRoutes from './attendance.routes.js';
-import gradeRoutes from 'src/routes/grade.routes.js';
+import gradeRoutes from './grade.routes.js';
 
 const router = Router();
 
