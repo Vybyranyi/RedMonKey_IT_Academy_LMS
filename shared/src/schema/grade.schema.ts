@@ -4,8 +4,6 @@ import { GradeType } from '../enums';
 export const GRADE_MIN = 1;
 export const GRADE_MAX = 12;
 
-// У БД немає CHECK-обмеження на 1..12 (Prisma не вміє їх декларувати),
-// тож ця схема — єдине місце, де діапазон реально перевіряється.
 const value = z
   .number({ error: 'Оцінка має бути числом' })
   .int('Оцінка має бути цілим числом')
@@ -31,12 +29,6 @@ export const createGradeSchema = z.object({
   comment: comment.optional(),
 });
 
-/**
- * PATCH описуємо окремо, а НЕ через createGradeSchema.partial():
- * .partial() не знімає .default(), і в майбутньому це мовчки затирало б поля.
- * studentId і lessonId у PATCH не приймаємо — перенести оцінку на іншого
- * студента чи інше заняття означає видалити її й виставити заново.
- */
 export const updateGradeSchema = z
   .object({
     value: value.optional(),
