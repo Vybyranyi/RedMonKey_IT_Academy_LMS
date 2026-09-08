@@ -609,9 +609,9 @@ Bottom Navigation (mobile):
 ### Тиждень 4: Журнал успішності
 
 **Backend:**
-- [ ] Grades Schema + CRUD
-- [ ] POST /grades/bulk endpoint
-- [ ] Агрегація: середня оцінка студента
+- [x] Grades Schema + CRUD
+- [x] POST /grades/bulk endpoint
+- [x] Агрегація: середня оцінка студента
 
 **Frontend:**
 - [ ] GradeJournalPage (ключовий!!)
