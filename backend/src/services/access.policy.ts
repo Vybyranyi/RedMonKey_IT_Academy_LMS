@@ -20,6 +20,10 @@ export interface LessonSubject {
   groupId: string;
 }
 
+export interface GradeSubject {
+  teacherId: string;
+}
+
 /**
  * Єдине місце, де живуть правила видимості записів.
  * Після переходу на Postgres ці ж правила транслюються в RLS-політики майже 1:1.
@@ -64,6 +68,12 @@ export const accessPolicy = {
 
   /** Редагувати/скасовувати заняття може адмін або викладач-власник (ТЗ 4.4). */
   canManageLesson(actor: TokenPayload, target: LessonSubject): boolean {
+    if (actor.role === UserRole.ADMIN) return true;
+    return actor.role === UserRole.TEACHER && target.teacherId === actor.userId;
+  },
+
+    /** Редагувати/видаляти оцінку може адмін або той викладач, який її виставив (ТЗ 4.5). */
+  canManageGrade(actor: TokenPayload, target: GradeSubject): boolean {
     if (actor.role === UserRole.ADMIN) return true;
     return actor.role === UserRole.TEACHER && target.teacherId === actor.userId;
   },
