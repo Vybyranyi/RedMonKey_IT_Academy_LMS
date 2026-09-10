@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
+import { UserRole } from '@redmonkey/shared';
 import { useAuthStore } from '@/store/authStore';
 
 interface PageMeta {
@@ -34,7 +35,15 @@ export default function Header() {
       return { title: 'Розклад занять', subtitle: 'Календар навчальних подій' };
     }
     if (path.startsWith('/grades')) {
-      return { title: 'Журнал оцінок', subtitle: 'Успішність студентів за навчальними групами' };
+      // Студент бачить у журналі лише власні оцінки, тож загальний підзаголовок
+      // про успішність студентів для нього неточний
+      return {
+        title: 'Журнал оцінок',
+        subtitle:
+          user?.role === UserRole.STUDENT
+            ? 'Ваші оцінки за заняттями'
+            : 'Успішність студентів за навчальними групами',
+      };
     }
     if (path.startsWith('/coins')) {
       return { title: 'RedCoins', subtitle: 'Внутрішня гейміфікована валюта академії' };
