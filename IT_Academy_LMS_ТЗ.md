@@ -614,10 +614,10 @@ Bottom Navigation (mobile):
 - [x] Агрегація: середня оцінка студента
 
 **Frontend:**
-- [ ] GradeJournalPage (ключовий!!)
-- [ ] GradeCell з inline-editing
-- [ ] BulkGradeForm (Drawer)
-- [ ] StudentGrades (вид студента)
+- [x] GradeJournalPage (ключовий!!)
+- [x] GradeCell з inline-editing
+- [x] BulkGradeForm (Drawer)
+- [x] StudentGrades (вид студента)
 
 **Результат:** Викладач може виставляти оцінки, студент — переглядати свої.
 
