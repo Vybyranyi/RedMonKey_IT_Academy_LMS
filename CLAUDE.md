@@ -105,23 +105,20 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 | Avatar fallback BG | `#0070F3` |
 | Оцінки: 10–12 зелений · 7–9 синій · 4–6 жовтий · 1–3 червоний | |
 
-**Типографіка:** шрифт `Geist Variable` (`@fontsource-variable/geist`), ніколи системний sans. H1 сторінки — `text-3xl font-bold tracking-tight text-slate-900`; заголовок у Header — `text-[28px] font-extrabold text-[#1A2645]`.
+**Типографіка:** шрифт `Geist Variable` (`@fontsource-variable/geist`), ніколи системний sans. Єдиний H1 на екрані — у `Header`: `text-[28px] font-extrabold text-[#1A2645]`. Заголовки секцій усередині сторінки — `h3`/`h4`, не `h1`.
 
 **Border radius:** чим більший елемент — тим більший radius. Badge/Input — `rounded-md`. Card — `rounded-lg`/`rounded-xl`. Модалки — `rounded-[20px]`. Nav items у Sidebar — `rounded-[12px]`.
 
 **Іконки:** тільки `lucide-react`. Nav items — `h-4.5 w-4.5 strokeWidth={2.5}`, у кнопках/картках — `h-4 w-4`.
 
-**Патерн list-сторінки (еталон — `GroupsPage`):**
+**Заголовок сторінки — не в сторінці.** `components/layout/Header.tsx` сам визначає title і subtitle за `location.pathname` і рендерить їх для кожного роуту. Сторінка **не повинна** мати власного `<h1>` чи підзаголовка — інакше вони задублюються на екрані. Додаєш новий роут — додай його і в `getPageMeta` у `Header.tsx`.
+
+**Патерн list-сторінки (еталон — `GroupsPage`, `StudentsPage`):**
 ```tsx
 <div className="space-y-6">
+  {/* заголовок і підзаголовок рендерить Header — тут лише лічильник і дія */}
   <div className="flex items-center justify-between">
-    <div>
-      <div className="flex items-center gap-2">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Назва</h1>
-        <Badge variant="secondary" className="mt-1">N записів</Badge>
-      </div>
-      <p className="text-slate-500">Підзаголовок</p>
-    </div>
+    <Badge variant="secondary">N записів</Badge>
     <Button>Дія</Button> {/* тільки для admin — ховай за роллю */}
   </div>
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -129,6 +126,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
   </div>
 </div>
 ```
+Якщо лічильника немає (як у `SchedulePage`) — лишається сама кнопка через `<div className="flex justify-end">`.
 
 **Card:** `border-t-2 border-t-slate-200`, іконка-плашка в хедері `p-3 bg-red-50 text-primary rounded-xl`, `hover:shadow-md transition-shadow`, footer `bg-slate-50/50`.
 
