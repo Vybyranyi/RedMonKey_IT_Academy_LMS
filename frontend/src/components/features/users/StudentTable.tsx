@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Pencil } from 'lucide-react';
 import type { IUser } from '@redmonkey/shared';
 import type { IUserWithStats } from '@/types/userStats';
+import { getGradeColor } from '@/lib/gradeColors';
 
 interface StudentTableProps {
   students: IUserWithStats[];
@@ -13,13 +14,6 @@ interface StudentTableProps {
 }
 
 export default function StudentTable({ students, onViewDetails, onEdit }: StudentTableProps) {
-  const getGradeStyles = (score: number) => {
-    if (score >= 10) return 'bg-emerald-100 text-emerald-700';
-    if (score >= 7) return 'bg-blue-100 text-blue-700';
-    if (score >= 4) return 'bg-amber-100 text-amber-700';
-    return 'bg-rose-100 text-rose-700';
-  };
-
   return (
     <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
       <Table>
@@ -79,7 +73,7 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded flex items-center justify-center font-bold text-xs ${getGradeStyles(avgScore)}`}>
+                      <div className={`w-7 h-7 rounded flex items-center justify-center font-bold text-xs ${getGradeColor(avgScore)}`}>
                         {Math.round(avgScore)}
                       </div>
                       <span className="text-sm font-medium text-slate-600">{avgScore}</span>
