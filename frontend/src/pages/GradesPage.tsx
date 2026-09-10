@@ -205,34 +205,25 @@ export default function GradesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Журнал оцінок</h1>
-            {!isStudent && (
-              <Badge variant="secondary" className="mt-1">
-                {students.length} студентів
-              </Badge>
-            )}
-          </div>
-          <p className="text-slate-500">
-            {isStudent ? 'Ваші оцінки за заняттями' : 'Успішність студентів за заняттями'}
-          </p>
-        </div>
+      {/* Заголовок і підзаголовок сторінки рендерить Header у AppLayout — тут лише лічильник і дія */}
+      {!isStudent && (
+        <div className="flex items-center justify-between">
+          <Badge variant="secondary">{students.length} студентів</Badge>
 
-        {canEdit && (
-          <Button
-            className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white"
-            onClick={() => {
-              setBulkKey((key) => key + 1);
-              setIsBulkOpen(true);
-            }}
-            disabled={!groupId || lessons.length === 0}
-          >
-            <Plus className="h-4 w-4" /> Виставити масово
-          </Button>
-        )}
-      </div>
+          {canEdit && (
+            <Button
+              className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white"
+              onClick={() => {
+                setBulkKey((key) => key + 1);
+                setIsBulkOpen(true);
+              }}
+              disabled={!groupId || lessons.length === 0}
+            >
+              <Plus className="h-4 w-4" /> Виставити масово
+            </Button>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
         {!isStudent && (
