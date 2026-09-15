@@ -5,6 +5,7 @@ import lessonRoutes from './lesson.routes.js';
 import userRoutes from './user.routes.js';
 import attendanceRoutes from './attendance.routes.js';
 import gradeRoutes from './grade.routes.js';
+import coinRoutes from 'src/routes/coin.routes.js';
 
 const router = Router();
 
@@ -14,6 +15,7 @@ router.use('/lessons', lessonRoutes);
 router.use('/users', userRoutes);
 router.use('/attendance', attendanceRoutes);
 router.use('/grades', gradeRoutes);
+router.use('/coins', coinRoutes);
 router.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok', message: 'Server is healthy' });
 });
