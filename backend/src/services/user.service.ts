@@ -7,6 +7,9 @@ import { academyRepository } from '../repositories/academy.repository.js';
 import { accessPolicy } from './access.policy.js';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.js';
 import { TokenPayload } from '../utils/jwt.js';
+import { coinRepository } from '../repositories/coin.repository.js';
+import { statsRepository } from '../repositories/stats.repository.js';
+import type { IUserStats } from '@redmonkey/shared';
 
 export const userService = {
   async getUsers(query: { role?: any; groupId?: any; q?: any }, currentUserRole?: UserRole) {
@@ -53,6 +56,38 @@ export const userService = {
 
     return user;
   },
+
+/** Зведена статистика студента: оцінки, монети, відвідуваність (ТЗ 4.2). */
+  async getUserStats(id: string, actor: TokenPayload): Promise<IUserStats> {
+    const user = await userRepository.findById(id);
+    if (!user || !user.isActive) {
+      throw new NotFoundError('Користувача не знайдено');
+    }
+
+    // Те саме правило, що й на перегляд профілю: адмін, сам користувач
+    // або викладач його групи
+    const allowed = await accessPolicy.canViewUser(actor, {
+      id: user.id,
+      role: user.role as UserRole,
+      groupId: user.groupId ?? null,
+    });
+    if (!allowed) {
+      throw new ForbiddenError('У вас немає доступу до статистики цього користувача');
+    }
+
+    const [grades, attendance, coins] = await Promise.all([
+      statsRepository.gradeStats(id),
+      statsRepository.attendanceStats(id),
+      coinRepository.sumByDirection(id),
+    ]);
+
+    return {
+      grades,
+      attendance,
+      coins: { balance: user.redCoins, ...coins },
+    };
+  },
+
 
   async createUser(userData: any) {
     const { firstName, lastName, email, password, role, phone, group } = userData;
