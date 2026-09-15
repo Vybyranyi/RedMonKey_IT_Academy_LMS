@@ -626,9 +626,9 @@ Bottom Navigation (mobile):
 ### Тиждень 5: RedCoins + Дашборд
 
 **Backend:**
-- [ ] CoinTransaction Schema + API
-- [ ] Leaderboard агрегація
-- [ ] Stats endpoint для дашборду
+- [x] CoinTransaction Schema + API
+- [x] Leaderboard агрегація
+- [x] Stats endpoint для дашборду
 
 **Frontend:**
 - [ ] CoinsPage (нарахування + баланс)
