@@ -4,7 +4,8 @@ import {
   getUserById,
   createUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  getUserStats
 } from '../controllers/user.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { UserRole } from '@redmonkey/shared';
@@ -15,6 +16,8 @@ const router = Router();
 router.get('/', authenticate, authorize([UserRole.ADMIN, UserRole.TEACHER]), getUsers);
 // Доступ до конкретного профілю перевіряється на рівні запису в userService.getUserById
 router.get('/:id', authenticate, getUserById);
+// Доступ перевіряє userService через accessPolicy.canViewUser — те саме правило, що й на профіль
+router.get('/:id/stats', authenticate, getUserStats);
 
 // Створення, зміна та видалення користувачів доступні лише адміну
 router.post('/', authenticate, authorize([UserRole.ADMIN]), createUser);

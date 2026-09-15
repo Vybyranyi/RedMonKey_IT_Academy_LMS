@@ -51,3 +51,13 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
     handleError(res, error, 'Помилка при видаленні користувача');
   }
 };
+
+export const getUserStats = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
+    const stats = await userService.getUserStats(req.params.id as string, req.user);
+    res.status(200).json(stats);
+  } catch (error) {
+    handleError(res, error, 'Помилка при отриманні статистики');
+  }
+};
