@@ -1,8 +1,13 @@
 import axiosInstance from './axios';
-import type { IUser, IUserDto } from '@redmonkey/shared';
+import type { IUser, IUserDto, IUserStats } from '@redmonkey/shared';
 
 export const apiGetUsers = async (params?: { role?: string; groupId?: string; q?: string }): Promise<IUser[]> => {
   const response = await axiosInstance.get('/users', { params });
+  return response.data;
+};
+/** Зведена статистика студента для дашборду: оцінки, відвідуваність, монети. */
+export const apiGetUserStats = async (id: string): Promise<IUserStats> => {
+  const response = await axiosInstance.get(`/users/${id}/stats`);
   return response.data;
 };
 

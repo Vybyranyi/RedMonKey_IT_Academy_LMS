@@ -8,7 +8,6 @@ import {
   GraduationCap,
   BookOpenCheck,
   CalendarDays,
-  Coins,
   Clock,
   ArrowRight,
   UsersRound,
@@ -21,12 +20,14 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/authStore';
 import { UserRole, type IPopulatedLesson, type IPopulatedGroup } from '@redmonkey/shared';
 import { apiGetLessons } from '@/api/lessons';
-import { apiGetUsers } from '@/api/users';
+import { apiGetUsers, apiGetUserStats } from '@/api/users';
 import { apiGetGroups } from '@/api/groups';
 import { getApiErrorMessage } from '@/utils/apiError';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import StatCard from '@/components/features/dashboard/StatCard';
 import UpcomingLessons from '@/components/features/dashboard/UpcomingLessons';
+import { apiGetLeaderboard } from '@/api/coins';
+import CoinLeaderboard from '@/components/features/coins/CoinLeaderboard';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -35,6 +36,8 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [weekLessons, setWeekLessons] = useState<IPopulatedLesson[]>([]);
   const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
+  const [leaderboard, setLeaderboard] = useState<ILeaderboardRow[]>([]);
+  const [studentStats, setStudentStats] = useState<IUserStats | null>(null);
   const [stats, setStats] = useState<DashboardStats>({
     students: 0,
     teachers: 0,
@@ -58,22 +61,22 @@ export default function DashboardPage() {
           to: endOfWeek(new Date(), { weekStartsOn: 1 }).toISOString(),
         };
 
-        const [lessonsData, studentsData, teachersData, groupsData] = await Promise.all([
-          apiGetLessons(weekRange),
-          isAdmin ? apiGetUsers({ role: UserRole.STUDENT }) : Promise.resolve([]),
-          isAdmin ? apiGetUsers({ role: UserRole.TEACHER }) : Promise.resolve([]),
-          isAdmin || isTeacher ? apiGetGroups() : Promise.resolve([]),
-        ]);
+                const [lessonsData, studentsData, teachersData, groupsData, leaderboardData, statsData] =
+          await Promise.all([
+            apiGetLessons(weekRange),
+            isAdmin ? apiGetUsers({ role: UserRole.STUDENT }) : Promise.resolve([]),
+            isAdmin ? apiGetUsers({ role: UserRole.TEACHER }) : Promise.resolve([]),
+            isAdmin || isTeacher ? apiGetGroups() : Promise.resolve([]),
+            apiGetLeaderboard({ limit: 5 }),
+            isStudent ? apiGetUserStats(userId) : Promise.resolve(null),
+          ]);
 
         if (cancelled) return;
 
         setWeekLessons(lessonsData);
         setGroups(groupsData);
-        setStats({
-          students: studentsData.length,
-          teachers: teachersData.length,
-          groups: groupsData.length,
-        });
+        setLeaderboard(leaderboardData);
+        setStudentStats(statsData);
       } catch (error) {
         if (!cancelled) {
           toast.error(getApiErrorMessage(error, 'Не вдалося завантажити дані дашборду'));
@@ -88,7 +91,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, isAdmin, isTeacher]);
+  }, [userId, isAdmin, isTeacher,isStudent]);
 
   const now = new Date();
   const upcoming = weekLessons.filter((lesson) => new Date(lesson.date) >= now).slice(0, 5);
@@ -109,30 +112,34 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Відображення блоків за роллю */}
       {isAdmin && (
-        <AdminDashboard
+          <AdminDashboard
           stats={stats}
           weekLessonsCount={weekLessons.length}
           upcoming={upcoming}
+          leaderboard={leaderboard}
           isLoading={isLoading}
           onSelectLesson={handleLessonSelect}
         />
       )}
 
       {isTeacher && (
-        <TeacherDashboard
+                <TeacherDashboard
           todayLessons={todayLessons}
           upcoming={upcoming}
           groups={myGroups}
+          leaderboard={leaderboard}
           isLoading={isLoading}
           onSelectLesson={handleLessonSelect}
         />
       )}
 
       {isStudent && (
-        <StudentDashboard
+                <StudentDashboard
           nextLesson={nextLesson}
           weekLessons={weekLessons}
-          redCoins={user?.redCoins ?? 0}
+          stats={studentStats}
+          leaderboard={leaderboard}
+          studentId={user?.id}
           isLoading={isLoading}
           onSelectLesson={handleLessonSelect}
         />
@@ -151,6 +158,7 @@ interface AdminDashboardProps {
   stats: DashboardStats;
   weekLessonsCount: number;
   upcoming: IPopulatedLesson[];
+  leaderboard: ILeaderboardRow[];
   isLoading: boolean;
   onSelectLesson: () => void;
 }
@@ -159,6 +167,7 @@ function AdminDashboard({
   stats,
   weekLessonsCount,
   upcoming,
+  leaderboard,
   isLoading,
   onSelectLesson,
 }: AdminDashboardProps) {
@@ -261,13 +270,17 @@ function TeacherDashboard({
           emptyText="Сьогодні занять немає"
           onSelect={onSelectLesson}
         />
-        <UpcomingLessons
-          title="Найближчі заняття"
-          lessons={upcoming}
-          isLoading={isLoading}
-          onSelect={onSelectLesson}
-        />
+          <div className="lg:col-span-2 space-y-6">
+          <UpcomingLessons
+            title="Найближчі заняття"
+            lessons={upcoming}
+            isLoading={isLoading}
+            onSelect={onSelectLesson}
+          />
+          <CoinLeaderboard rows={leaderboard} isLoading={isLoading} />
+        </div>
       </div>
+
 
       {/* Мої групи */}
       <Card className="border-t-2 border-t-slate-200 h-fit">
@@ -309,7 +322,9 @@ function TeacherDashboard({
 interface StudentDashboardProps {
   nextLesson: IPopulatedLesson | null;
   weekLessons: IPopulatedLesson[];
-  redCoins: number;
+  stats: IUserStats | null;
+  leaderboard: ILeaderboardRow[];
+  studentId?: string;
   isLoading: boolean;
   onSelectLesson: () => void;
 }
@@ -317,7 +332,9 @@ interface StudentDashboardProps {
 function StudentDashboard({
   nextLesson,
   weekLessons,
-  redCoins,
+  stats,
+  leaderboard,
+  studentId,
   isLoading,
   onSelectLesson,
 }: StudentDashboardProps) {
@@ -365,13 +382,15 @@ function StudentDashboard({
         </Card>
 
         {/* Розклад на тиждень */}
-        <UpcomingLessons
-          title="Розклад на тиждень"
-          lessons={weekLessons}
-          isLoading={isLoading}
-          onSelect={onSelectLesson}
-        />
-      </div>
+       <div className="lg:col-span-2 space-y-6">
+          <UpcomingLessons
+            title="Найближчі заняття"
+            lessons={upcoming}
+            isLoading={isLoading}
+            onSelect={onSelectLesson}
+          />
+          <CoinLeaderboard rows={leaderboard} isLoading={isLoading} />
+        </div>
 
       {/* Баланс RedCoins */}
       <div className="space-y-6">
