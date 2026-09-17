@@ -5,7 +5,7 @@ import lessonRoutes from './lesson.routes.js';
 import userRoutes from './user.routes.js';
 import attendanceRoutes from './attendance.routes.js';
 import gradeRoutes from './grade.routes.js';
-import coinRoutes from 'src/routes/coin.routes.js';
+import coinRoutes from './coin.routes.js';
 
 const router = Router();
 
