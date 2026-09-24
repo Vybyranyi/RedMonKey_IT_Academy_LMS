@@ -9,7 +9,9 @@
   "scripts": {
     "predev": "npm run build -w @redmonkey/shared",
     "dev": "concurrently -c \"cyan.bold,blue.bold,green.bold\" -n \"SHARED,BACKEND,FRONTEND\" \"npm run dev -w @redmonkey/shared\" \"npm run dev -w backend\" \"npm run dev -w frontend\"",
-    "build": "npm run build --workspaces --if-present"
+    "build": "npm run build --workspaces --if-present",
+    "pretest": "npm run build -w @redmonkey/shared",
+    "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {
     "concurrently": "^10.0.3"
