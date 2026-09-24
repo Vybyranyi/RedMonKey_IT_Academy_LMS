@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.ts", "src/**/*.test.ts"],
     // Тестові секрети — не реальні креденшли, лише щоб config/env.ts не впав при старті.
     env: {
       DATABASE_URL: "postgresql://test:test@localhost:5432/test",
