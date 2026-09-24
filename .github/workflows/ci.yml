@@ -27,10 +27,7 @@ jobs:
       - name: Lint (frontend)
         run: npm run lint -w frontend
 
-      - name: Pretest (shared → backend → frontend)
-        run: npm run pretest
-
-      - name: Test (backend + frontend)
+      - name: Test (shared → backend → frontend)
         run: npm run test
 
       - name: Build (shared → backend → frontend)
