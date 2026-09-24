@@ -17,7 +17,7 @@ export const transliterate = (text: string): string => {
     .replace(/[^a-z0-9]/g, '');
 };
 
-export const generateRandomPassword = (length: number = 10): string => {
+export const generateRandomPassword = (length: number = 8): string => {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let password = '';
   for (let i = 0; i < length; i++) {
