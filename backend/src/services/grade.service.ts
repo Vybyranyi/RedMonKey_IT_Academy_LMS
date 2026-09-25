@@ -26,16 +26,29 @@ export const gradeService = {
     const where: Prisma.GradeWhereInput = {};
 
     if (filters.studentId) where.studentId = filters.studentId;
-    if (filters.lessonId) where.lessonId = filters.lessonId;
     if (filters.type) where.type = filters.type;
-    if (filters.groupId) where.lesson = { groupId: filters.groupId };
+
+    // Групу фільтруємо через id її занять, а не через зв'язок lesson.groupId:
+    // зв'язок Prisma перетворює на JOIN, і Postgres замість індексу grades(lesson_id)
+    // сканує всю таблицю grades. Заміри — у backend/prisma/QUERY_PLANS.md
+    if (filters.lessonId || filters.groupId) {
+      const lessonFilter: Prisma.StringFilter = {};
+      if (filters.lessonId) lessonFilter.equals = filters.lessonId;
+      if (filters.groupId) lessonFilter.in = await lessonRepository.findIdsByGroup(filters.groupId);
+      where.lessonId = lessonFilter;
+    }
 
     // Звуження за роллю перекриває будь-який фільтр із query
     if (actor.role === UserRole.STUDENT) {
       where.studentId = actor.userId;
     } else if (actor.role === UserRole.TEACHER) {
       const ownGroupIds = await groupRepository.findIdsByTeacher(actor.userId);
-      where.OR = [{ teacherId: actor.userId }, { lesson: { groupId: { in: ownGroupIds } } }];
+      // Журнал власної групи викладач бачить повністю — тоді OR нічого не звужує,
+      // лише додає ще один JOIN на lessons
+      const isOwnGroup = filters.groupId !== undefined && ownGroupIds.includes(filters.groupId);
+      if (!isOwnGroup) {
+        where.OR = [{ teacherId: actor.userId }, { lesson: { groupId: { in: ownGroupIds } } }];
+      }
     }
 
     return gradeRepository.findAll(where);
@@ -162,7 +175,9 @@ export const gradeService = {
       isActive: true,
     });
 
-    const where: Prisma.GradeWhereInput = { lesson: { groupId: filters.groupId } };
+    // Як і в getGrades — через id занять, а не JOIN на lessons
+    const lessonIds = await lessonRepository.findIdsByGroup(filters.groupId);
+    const where: Prisma.GradeWhereInput = { lessonId: { in: lessonIds } };
     if (filters.type) where.type = filters.type;
     // Студент бачить у зведенні лише власний рядок
     if (actor.role === UserRole.STUDENT) where.studentId = actor.userId;

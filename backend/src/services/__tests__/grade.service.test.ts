@@ -28,7 +28,7 @@ vi.mock('../../repositories/group.repository.js', () => ({
   groupRepository: { findIdsByTeacher: vi.fn() },
 }));
 vi.mock('../../repositories/lesson.repository.js', () => ({
-  lessonRepository: { findSubjectById: vi.fn() },
+  lessonRepository: { findSubjectById: vi.fn(), findIdsByGroup: vi.fn() },
 }));
 vi.mock('../../repositories/user.repository.js', () => ({
   userRepository: { findAll: vi.fn(), findById: vi.fn() },
@@ -43,6 +43,7 @@ const gradeFindSubject = vi.mocked(gradeRepository.findSubjectById);
 const averageByStudent = vi.mocked(gradeRepository.averageByStudent);
 const findIdsByTeacher = vi.mocked(groupRepository.findIdsByTeacher);
 const lessonFindSubject = vi.mocked(lessonRepository.findSubjectById);
+const findLessonIdsByGroup = vi.mocked(lessonRepository.findIdsByGroup);
 const userFindAll = vi.mocked(userRepository.findAll);
 const userFindById = vi.mocked(userRepository.findById);
 
@@ -53,6 +54,7 @@ const student: TokenPayload = { userId: 'student-1', role: UserRole.STUDENT };
 const OWN_GROUP = 'group-own';
 const OTHER_GROUP = 'group-other';
 const LESSON_ID = 'lesson-1';
+const GROUP_LESSON_IDS = ['lesson-1', 'lesson-2'];
 
 /** Помилка унікального індексу @@unique([studentId, lessonId, type]). */
 const duplicateError = () =>
@@ -75,6 +77,7 @@ beforeEach(() => {
   gradeFindAll.mockResolvedValue([] as never);
   gradeCreate.mockResolvedValue({ id: 'grade-1' } as never);
   lessonFindSubject.mockResolvedValue({ teacherId: teacher.userId, groupId: OWN_GROUP } as never);
+  findLessonIdsByGroup.mockResolvedValue(GROUP_LESSON_IDS);
   userFindById.mockResolvedValue({
     id: 'student-1',
     role: UserRole.STUDENT,
@@ -95,6 +98,41 @@ describe('getGrades', () => {
     await gradeService.getGrades({}, teacher);
 
     expect(gradeFindAll).toHaveBeenCalledWith({
+      OR: [{ teacherId: teacher.userId }, { lesson: { groupId: { in: [OWN_GROUP] } } }],
+    });
+  });
+
+  // Фільтр групи — через id занять: JOIN на lessons змушував Postgres сканувати всю grades
+  it('групу фільтрує через id її занять, а не через зв\'язок lesson', async () => {
+    await gradeService.getGrades({ groupId: OWN_GROUP, type: GradeType.CLASSWORK }, admin);
+
+    expect(findLessonIdsByGroup).toHaveBeenCalledWith(OWN_GROUP);
+    expect(gradeFindAll).toHaveBeenCalledWith({
+      type: GradeType.CLASSWORK,
+      lessonId: { in: GROUP_LESSON_IDS },
+    });
+  });
+
+  it('поєднує фільтри заняття й групи, а не підміняє один іншим', async () => {
+    await gradeService.getGrades({ groupId: OWN_GROUP, lessonId: 'lesson-9' }, admin);
+
+    expect(gradeFindAll).toHaveBeenCalledWith({
+      lessonId: { equals: 'lesson-9', in: GROUP_LESSON_IDS },
+    });
+  });
+
+  // Усі оцінки власної групи викладачу й так видно, тож OR лише додав би JOIN
+  it('у журналі власної групи викладач бачить усі оцінки без OR', async () => {
+    await gradeService.getGrades({ groupId: OWN_GROUP }, teacher);
+
+    expect(gradeFindAll).toHaveBeenCalledWith({ lessonId: { in: GROUP_LESSON_IDS } });
+  });
+
+  it('у чужій групі викладач бачить лише виставлені ним оцінки', async () => {
+    await gradeService.getGrades({ groupId: OTHER_GROUP }, teacher);
+
+    expect(gradeFindAll).toHaveBeenCalledWith({
+      lessonId: { in: GROUP_LESSON_IDS },
       OR: [{ teacherId: teacher.userId }, { lesson: { groupId: { in: [OWN_GROUP] } } }],
     });
   });
@@ -279,6 +317,18 @@ describe('getSummary', () => {
     const rows = await gradeService.getSummary({ groupId: OWN_GROUP }, admin);
 
     expect(rows[1]).toMatchObject({ studentId: 'student-2', average: null, count: 0 });
+  });
+
+  it('рахує середні лише за оцінками занять цієї групи', async () => {
+    averageByStudent.mockResolvedValue([] as never);
+
+    await gradeService.getSummary({ groupId: OWN_GROUP, type: GradeType.EXAM }, admin);
+
+    expect(findLessonIdsByGroup).toHaveBeenCalledWith(OWN_GROUP);
+    expect(averageByStudent).toHaveBeenCalledWith({
+      lessonId: { in: GROUP_LESSON_IDS },
+      type: GradeType.EXAM,
+    });
   });
 
   it('студент бачить у зведенні лише власний рядок', async () => {
