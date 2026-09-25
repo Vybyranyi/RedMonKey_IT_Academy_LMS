@@ -21,7 +21,10 @@
 - `README.md`, `CONTRIBUTING.md`, `DESIGN.md`
 - `.vscode/extensions.json` та `.vscode/settings.json`
 - `CLAUDE.md` — контекст проєкту для AI-агентів (стек, архітектура backend/frontend, дизайн-система, конвенції)
-- CI (`.github/workflows/ci.yml`): лінт frontend і білд усіх workspace-ів на кожен push/PR у `main`/`develop`
+- CI (`.github/workflows/ci.yml`): лінт frontend, білд і тести всіх workspace-ів на кожен push/PR у `main`/`develop`
+- Тести на Vitest у всіх трьох workspace-ах (`npm test` з кореня): Zod-схеми в `shared`, утиліти, `access.policy` і сервіси в `backend`, утиліти, `authStore`, axios-interceptor і компоненти в `frontend`
+- API-тести на Supertest (`backend/src/__tests__/api.test.ts`) — маршрути, авторизація і коди помилок без звернень до БД
+- `backend/src/app.ts` — збірка Express-застосунку відокремлена від `listen()` у `src/index.ts`, щоб тести піднімали ті самі маршрути без зайняття порту
 - `.github/ISSUE_TEMPLATE/config.yml` з посиланнями на ТЗ і CONTRIBUTING
 - Self-service профіль на backend: `PATCH /auth/me` (власні `firstName`/`lastName`/`phone`/`avatar`) і `PATCH /auth/me/password`. Роль, група та email лишаються тільки під адміном через `PATCH /users/:id`
 - ProfilePage (`/profile`) — перегляд і редагування власних даних та зміна пароля, доступно всім ролям

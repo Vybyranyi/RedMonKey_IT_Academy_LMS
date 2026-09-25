@@ -10,7 +10,7 @@
 
 ### Вимоги
 
-- Node.js ≥ 20
+- Node.js ≥ 22 (jsdom у frontend-тестах не працює на Node 20)
 - npm ≥ 10
 - PostgreSQL (напр. безкоштовний проєкт на [Neon](https://neon.tech))
 
@@ -82,6 +82,7 @@ RedMonKey_IT_Academy_LMS/
 |---------|-----------|
 | `npm run dev` | Запускає shared + backend + frontend |
 | `npm run build` | Збирає всі workspace-и |
+| `npm test` | Ганяє тести (Vitest) у всіх workspace-ах |
 | `npm run seed -w backend` | Заповнює БД тестовими даними |
 | `npm run lint -w frontend` | Запускає ESLint у frontend |
 

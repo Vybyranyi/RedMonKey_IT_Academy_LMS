@@ -631,11 +631,11 @@ Bottom Navigation (mobile):
 - [x] Stats endpoint для дашборду
 
 **Frontend:**
-- [ ] CoinsPage (нарахування + баланс)
-- [ ] CoinLeaderboard
-- [ ] CoinHistory (транзакції)
-- [ ] DashboardPage (різний контент за роллю)
-- [ ] Нотифікації (toast) при нарахуванні монет
+- [x] CoinsPage (нарахування + баланс)
+- [x] CoinLeaderboard
+- [x] CoinHistory (транзакції)
+- [x] DashboardPage (різний контент за роллю)
+- [x] Нотифікації (toast) при нарахуванні монет
 
 **Результат:** Повна гейміфікація, адаптований Dashboard.
 
