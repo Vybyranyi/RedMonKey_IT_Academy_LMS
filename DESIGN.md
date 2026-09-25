@@ -46,6 +46,8 @@
 | **Brand Red Focus** | `#BA0000/20` | `focus-visible:ring-[#BA0000]/20` | Ring фокусу на інпутах |
 | **Red Icon BG** | `#FEF2F2` (`red-50`) | `bg-red-50` | Фон під іконку в картці |
 
+> ⚠️ Токен `--primary` у `frontend/src/index.css` лишився стандартним для ShadCN (майже чорний), тому `bg-primary` / `text-primary` — **не** брендовий червоний, а дефолтний `<Button>` без класів — темний. Брендову кнопку задавай явно: `bg-[#C10000] hover:bg-[#A00000] text-white`.
+
 ### Sidebar / Auth-screen palette
 
 | Назва | HEX | Tailwind клас | Де використовується |
@@ -63,7 +65,7 @@
 | **Page BG** | `bg-[#F8F9FA]` | Фон основного контенту |
 | **Card BG** | `bg-white` | Картки, модалки, попапи |
 | **Page Title** | `text-[#1A2645]` | Заголовок H1 в Header |
-| **Section Title** | `text-slate-900` | H1 всередині сторінки |
+| **Section Title** | `text-slate-900` | Заголовки карток і секцій (`h3`/`h4`); власного H1 сторінки не мають |
 | **Body Text** | `text-slate-600`, `text-slate-700` | Основний текст |
 | **Muted Text** | `text-slate-500`, `text-slate-400` | Підписи, дати, placeholders |
 | **Sidebar Muted** | `text-[#8B9DB4]` | Мuted текст у sidebar, footer |
@@ -105,8 +107,7 @@
 
 | Рівень | Tailwind | Де застосовується |
 |--------|----------|-------------------|
-| `text-[28px] font-extrabold` | `text-[#1A2645] tracking-tight` | Заголовок сторінки в Header |
-| `text-3xl font-bold tracking-tight` | `text-slate-900` | H1 всередині сторінки (`GroupsPage`) |
+| `text-2xl md:text-[28px] font-extrabold` | `text-[#1A2645] tracking-tight` | Заголовок сторінки в Header — єдиний H1 на екрані |
 | `text-[22px] font-bold` | `text-slate-900 tracking-tight` | Заголовок Card (Login CardTitle) |
 | `text-xl font-bold` | `text-slate-800` | GroupCard назва |
 | `text-[15px] font-extrabold` | `text-white tracking-wide` | Назва продукту в Sidebar |
@@ -128,8 +129,8 @@
 ┌─────────────────────────────────────────────────┐
 │  Sidebar (w-65 = 260px / w-20 = 80px collapsed) │
 │  + Main Area (flex-1)                            │
-│    ├── Header: px-8 pt-10 pb-6                   │
-│    └── main: px-8 pb-10                          │
+│    ├── Header: px-4 pt-6 (md: px-8 pt-10 pb-6)   │
+│    └── main: px-4 pb-28 (md: px-8 pb-10)         │
 │         max-w-[1400px] mx-auto                   │
 └─────────────────────────────────────────────────┘
 ```
@@ -251,36 +252,37 @@
 
 ## 9. Header
 
-**Padding:** `px-8 pt-10 pb-6`  
+**Padding:** `px-4 pt-6 pb-5`, від `md` — `px-8 pt-10 pb-6`  
 **Layout:** `flex flex-col sm:flex-row sm:items-end justify-between gap-4`
+
+Header сам визначає заголовок і підзаголовок за `location.pathname` (`getPageMeta` у `Header.tsx`) — сторінки власних H1 і підзаголовків не рендерять. Новий маршрут — новий `case` у `getPageMeta`.
 
 ### Анатомія
 
 ```
-Сьогодні, вівторок, 23 червня          [header-actions portal]
-───────────────────────────────────────────────────────────────
-Панель адміністратора
-Сьогодні, вівторок, 23 червня
+Вітаємо, Іван!                          [#header-actions]
+П'ятниця, 25 вересня 2026
 ```
 
-- **H1:** `text-[28px] leading-tight font-extrabold text-[#1A2645] tracking-tight`
-- **Дата:** `text-[14px] font-medium text-slate-500 mt-1`
-- **`#header-actions`** — React Portal слот для кнопок, специфічних для сторінки
+- **H1:** `text-2xl md:text-[28px] leading-tight font-extrabold text-[#1A2645] tracking-tight`
+- **Підзаголовок:** `text-[14px] font-medium text-slate-500 mt-1` — дата на дашборді, опис розділу на решті сторінок
+- **`#header-actions`** — порожній слот праворуч; зараз сторінки кнопки в нього не передають, дії стоять у рядку під Header
 
 ### Заголовки за маршрутами
 
 | Шлях | Заголовок |
 |------|-----------|
-| `/` (admin) | Панель адміністратора |
-| `/` (teacher) | Панель викладача |
-| `/` (student) | Особистий кабінет |
+| `/` (усі ролі) | Вітаємо, {ім'я}! (підзаголовок — сьогоднішня дата) |
 | `/students` | Студенти |
 | `/teachers` | Викладачі |
 | `/groups` | Групи |
-| `/schedule` | Розклад |
+| `/schedule` | Розклад занять |
 | `/grades` | Журнал оцінок |
 | `/coins` | RedCoins |
+| `/profile` | Мій профіль |
 | `/settings` | Налаштування |
+| невідомий шлях | Сторінку не знайдено |
+| роль не пускає | Доступ заборонено |
 
 ---
 
@@ -322,8 +324,10 @@
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  Групи  [3 активних · 5 всього]        [+ Нова група]│
-│  Управління академічними групами...                  │
+│  Групи                                  ← Header (H1)│
+│  Управління академічними групами...     ← підзаголовок│
+│                                                      │
+│  [3 активних · 5 всього]           [+ Нова група]    │ ← рядок сторінки
 │                                                      │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐           │
 │  │ GroupCard│  │ GroupCard│  │ GroupCard│           │
@@ -332,27 +336,22 @@
 └─────────────────────────────────────────────────────┘
 ```
 
-**Page header pattern:**
+**Рядок сторінки** — лише лічильник і дія; заголовок і опис уже намалював Header:
 ```tsx
-<div className="flex items-center justify-between">
-  <div>
-    <div className="flex items-center gap-2">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-        Назва сторінки
-      </h1>
-      <Badge variant="secondary" className="mt-1">
-        N записів
-      </Badge>
-    </div>
-    <p className="text-slate-500">Підзаголовок / опис</p>
+<div className="space-y-6">
+  <div className="flex items-center justify-between">
+    <Badge variant="secondary">N записів</Badge>
+    {isAdmin && <Button>Дія</Button>}
   </div>
-  <Button>Дія</Button>  {/* тільки для admin */}
+  {/* фільтри, сітка карток або таблиця */}
 </div>
 ```
 
+Якщо лічильника немає (`SchedulePage`), лишається сама кнопка: `<div className="flex justify-end">`.
+
 **CTA кнопка (admin only):**
 ```tsx
-<Button className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-white">
+<Button className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white">
   <Plus className="h-4 w-4" /> Нова група
 </Button>
 ```
@@ -362,11 +361,11 @@
 | Елемент | Реалізація |
 |---------|------------|
 | Обгортка сторінки | `<div className="space-y-6">` |
-| Page header | `flex items-center justify-between` |
-| H1 | `text-3xl font-bold tracking-tight text-slate-900` |
-| Counter badge | `<Badge variant="secondary" className="mt-1">` |
-| Subtitle | `<p className="text-slate-500">` |
+| Рядок лічильника й дії | `flex items-center justify-between` |
+| Заголовок і опис | не в сторінці — `getPageMeta` у `Header.tsx` |
+| Counter badge | `<Badge variant="secondary">` |
 | Grid карток | `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6` |
+| Порожньо / помилка | `EmptyState` / `ErrorState` з `components/common/` |
 
 ---
 
@@ -408,8 +407,8 @@
 // Primary — для головних дій
 <Button className="bg-[#BA0000] hover:bg-[#A00000] text-white rounded-md h-11 font-medium shadow-sm">
 
-// З іконкою — для secondary дій
-<Button className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-white">
+// З іконкою — «Додати студента», «Нова група»
+<Button className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white">
   <Plus className="h-4 w-4" /> Текст
 </Button>
 
