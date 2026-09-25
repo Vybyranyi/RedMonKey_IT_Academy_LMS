@@ -138,7 +138,13 @@ export const userService = {
 
     const data: Prisma.UserUncheckedUpdateInput = { ...rest };
     if (role !== undefined) data.role = role;
-    if (password) data.passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    if (password) {
+      data.passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+      // Адмін скидає пароль зазвичай тоді, коли акаунт скомпрометовано. Як і при
+      // зміні пароля самим користувачем, відкликаємо всі видані refresh-токени —
+      // інакше чужа сесія жила б іще до 7 днів
+      data.tokenVersion = { increment: 1 };
+    }
 
     // Перепризначення групи — одне поле FK. Не-студент групи не має.
     if ('group' in updateBody || role !== undefined) {

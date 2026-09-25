@@ -337,6 +337,21 @@ describe('PATCH /api/v1/users/:id — білий список полів', () =>
     expect(await bcrypt.compare('newSecret1', data.passwordHash as string)).toBe(true);
   });
 
+  // Раніше після скидання пароля адміном старі сесії (refresh-токени) жили далі
+  it('новий пароль відкликає всі сесії користувача', async () => {
+    await patchUser({ password: 'newSecret1' });
+
+    const [, data] = userUpdate.mock.calls[0] as [string, Record<string, unknown>];
+    expect(data.tokenVersion).toEqual({ increment: 1 });
+  });
+
+  it('без зміни пароля сесії не чіпає', async () => {
+    await patchUser({ firstName: 'Анна' });
+
+    const [, data] = userUpdate.mock.calls[0] as [string, Record<string, unknown>];
+    expect(data).not.toHaveProperty('tokenVersion');
+  });
+
   it('зайнятий email віддає 400 замість 500', async () => {
     userUpdate.mockRejectedValue(prismaError('P2002'));
 
