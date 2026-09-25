@@ -1,7 +1,9 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { LessonType, UserRole } from '@redmonkey/shared';
+import { ACADEMY_TIME_ZONE } from '../config/constants.js';
 import { prisma } from '../lib/prisma.js';
+import { todayIn, zonedTime } from '../utils/zonedTime.js';
 
 const SEED_PASSWORD = process.env.SEED_PASSWORD || 'Password123!';
 
@@ -129,16 +131,12 @@ const seedDatabase = async () => {
   console.log('[seed]: Student users created and assigned to groups.');
 
   // Дати рахуються від дня запуску сіда, а не зашиті константами: інакше вже
-  // через два тижні календар відкривався б порожнім.
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  // через два тижні календар відкривався б порожнім. Години — за часом академії:
+  // setHours на сервері в UTC перетворив би консультацію о 18:00 на 21:00 за Києвом.
+  const today = todayIn(ACADEMY_TIME_ZONE);
 
-  const lessonAt = (dayOffset: number, hours: number) => {
-    const date = new Date(startOfToday);
-    date.setDate(date.getDate() + dayOffset);
-    date.setHours(hours, 0, 0, 0);
-    return date;
-  };
+  const lessonAt = (dayOffset: number, hours: number) =>
+    zonedTime(ACADEMY_TIME_ZONE, today.year, today.monthIndex, today.day + dayOffset, hours);
 
   const lessonsData = [
     {
