@@ -95,6 +95,56 @@ describe('GET /api/v1/health', () => {
   });
 });
 
+describe('заголовки безпеки (helmet)', () => {
+  it('вмикає захисні заголовки й ховає X-Powered-By', async () => {
+    const response = await request(app).get('/api/v1/health');
+
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+    expect(response.headers['strict-transport-security']).toBeDefined();
+    expect(response.headers['x-powered-by']).toBeUndefined();
+  });
+});
+
+describe('невідомі маршрути', () => {
+  it('віддають 404 у JSON, а не HTML-сторінку Express', async () => {
+    const response = await request(app).get('/api/v1/no-such-route');
+
+    expect(response.status).toBe(404);
+    expect(response.headers['content-type']).toContain('application/json');
+    expect(response.body.message).toBe('Маршрут GET /api/v1/no-such-route не знайдено');
+  });
+
+  it('обробляють і шляхи поза /api/v1', async () => {
+    const response = await request(app).post('/whatever');
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('Маршрут POST /whatever не знайдено');
+  });
+});
+
+describe('розбір тіла запиту', () => {
+  it('битий JSON віддає 400 з поясненням, а не 500', async () => {
+    const response = await request(app)
+      .post('/api/v1/auth/login')
+      .set('Content-Type', 'application/json')
+      .send('{"email": "admin@academy.com",');
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Тіло запиту містить некоректний JSON');
+  });
+
+  it('тіло понад 1 МБ відхиляє з 413 ще до контролера', async () => {
+    const response = await request(app)
+      .post('/api/v1/coins/transactions')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ ...validTransaction, reason: 'x'.repeat(1024 * 1024) });
+
+    expect(response.status).toBe(413);
+    expect(response.body.message).toBe('Тіло запиту завелике (максимум 1mb)');
+    expect(createWithBalance).not.toHaveBeenCalled();
+  });
+});
+
 describe('автентифікація маршрутів', () => {
   it('без токена повертає 401', async () => {
     const response = await request(app).get('/api/v1/users');

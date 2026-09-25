@@ -45,6 +45,19 @@ const durationToSeconds = (name: string, raw: string, fallback: string): number 
   return Number(amount) * (SECONDS_IN[unit] as number);
 };
 
+/**
+ * Скільки проксі стоїть перед застосунком (Render/Railway/Nginx — зазвичай 1).
+ * Від цього залежить req.ip, а отже й rate-limit: з 0 за проксі всі клієнти
+ * мали б одну IP-адресу балансувальника і вичерпували б спільний ліміт.
+ */
+const parseTrustProxy = (raw: string | undefined): number => {
+  const value = raw?.trim() || '0';
+  if (!/^\d+$/.test(value)) {
+    fail(`TRUST_PROXY="${value}" має бути кількістю проксі перед застосунком: 0, 1, 2...`);
+  }
+  return Number(value);
+};
+
 const accessSecret = requireSecret('JWT_ACCESS_SECRET');
 const refreshSecret = requireSecret('JWT_REFRESH_SECRET');
 
@@ -57,6 +70,7 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   isProduction: process.env.NODE_ENV === 'production',
   clientUrl: process.env.CLIENT_URL ?? 'http://localhost:5173',
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
   databaseUrl: requireEnv('DATABASE_URL'),
   jwt: {
     accessSecret,
