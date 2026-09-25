@@ -9,7 +9,7 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.
 import { TokenPayload } from '../utils/jwt.js';
 import { coinRepository } from '../repositories/coin.repository.js';
 import { statsRepository } from '../repositories/stats.repository.js';
-import type { ICreateUserDto, IUpdateUserDto, IUserStats } from '@redmonkey/shared';
+import type { ICreateUserDto, IUpdateUserDto, IUserFilters, IUserStats } from '@redmonkey/shared';
 
 /**
  * Помилки обмежень БД, які означають некоректний ввід, а не збій сервера:
@@ -24,27 +24,26 @@ const rethrowAsBadRequest = (error: unknown): never => {
 };
 
 export const userService = {
-  async getUsers(query: { role?: any; groupId?: any; q?: any }, currentUserRole?: UserRole) {
-    const { role, groupId, q } = query;
+  async getUsers(filters: IUserFilters, currentUserRole?: UserRole) {
+    const { role, groupId, q } = filters;
     const where: Prisma.UserWhereInput = { isActive: true };
 
     // Викладач бачить лише студентів — це обмеження перекриває будь-який фільтр role.
     if (currentUserRole === UserRole.TEACHER) {
       where.role = UserRole.STUDENT;
-    } else if (role && Object.values(UserRole).includes(role as UserRole)) {
-      where.role = role as UserRole;
+    } else if (role) {
+      where.role = role;
     }
 
     if (groupId) {
-      where.groupId = String(groupId);
+      where.groupId = groupId;
     }
 
     if (q) {
-      const term = String(q);
       where.OR = [
-        { firstName: { contains: term, mode: 'insensitive' } },
-        { lastName: { contains: term, mode: 'insensitive' } },
-        { email: { contains: term, mode: 'insensitive' } },
+        { firstName: { contains: q, mode: 'insensitive' } },
+        { lastName: { contains: q, mode: 'insensitive' } },
+        { email: { contains: q, mode: 'insensitive' } },
       ];
     }
 

@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
-import { createUserSchema, updateUserSchema } from '@redmonkey/shared';
+import { createUserSchema, updateUserSchema, userFiltersSchema } from '@redmonkey/shared';
 import { userService } from '../services/user.service.js';
 import { UnauthorizedError, handleError } from '../utils/errors.js';
-import { parseBody } from '../utils/validation.js';
+import { parseBody, parseQuery } from '../utils/validation.js';
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const users = await userService.getUsers(req.query, req.user?.role);
+    const filters = parseQuery(userFiltersSchema, req.query);
+    const users = await userService.getUsers(filters, req.user?.role);
     res.status(200).json(users);
   } catch (error) {
     handleError(res, error, 'Помилка при отриманні користувачів');

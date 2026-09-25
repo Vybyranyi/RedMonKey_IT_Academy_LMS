@@ -226,6 +226,51 @@ describe('GET /api/v1/users', () => {
 
     expect(userFindAll).toHaveBeenCalledWith({ isActive: true });
   });
+
+  // Раніше query йшов у Prisma як є: колонка uuid на «js-1» відповідала 500
+  it('на groupId, що не є UUID, відповідає 400 і не йде в БД', async () => {
+    const response = await request(app)
+      .get('/api/v1/users?groupId=js-1')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('groupId має бути UUID');
+    expect(userFindAll).not.toHaveBeenCalled();
+  });
+
+  // Так StudentsPage питає список, коли фільтри порожні
+  it('порожні groupId і q не звужують вибірку', async () => {
+    const response = await request(app)
+      .get('/api/v1/users?role=student&groupId=&q=')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(200);
+    expect(userFindAll).toHaveBeenCalledWith({ isActive: true, role: UserRole.STUDENT });
+  });
+
+  it('передає в БД обрізаний пошуковий запит і групу', async () => {
+    await request(app)
+      .get(`/api/v1/users?groupId=${GROUP_ID}&q=%20Коваль%20`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(userFindAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        groupId: GROUP_ID,
+        OR: expect.arrayContaining([{ lastName: { contains: 'Коваль', mode: 'insensitive' } }]),
+      })
+    );
+  });
+});
+
+describe('GET /api/v1/attendance', () => {
+  it('на lessonId, що не є UUID, відповідає 400, а не 500', async () => {
+    const response = await request(app)
+      .get('/api/v1/attendance?lessonId=lesson-1')
+      .set('Authorization', `Bearer ${teacherToken}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('lessonId має бути UUID');
+  });
 });
 
 // Mass assignment: раніше тіло PATCH /users/:id ішло в Prisma як є, і адмін

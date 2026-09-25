@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AttendanceStatus } from '../../enums';
 import {
+  attendanceFiltersSchema,
   bulkAttendanceSchema,
   completeLessonSchema,
   updateAttendanceSchema,
@@ -72,5 +73,24 @@ describe('completeLessonSchema', () => {
       records: [{ studentId: UUID.student, status: AttendanceStatus.EXCUSED }],
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('attendanceFiltersSchema', () => {
+  it('приймає порожній query — студенту фільтр підставляє сервіс', () => {
+    expect(attendanceFiltersSchema.safeParse({}).success).toBe(true);
+  });
+
+  // Раніше рядок ішов у Prisma як є, і колонка uuid відповідала 500
+  it('відхиляє lessonId, що не є UUID', () => {
+    const result = attendanceFiltersSchema.safeParse({ lessonId: 'lesson-1' });
+    expect(firstIssue(result)).toBe('lessonId має бути UUID');
+  });
+
+  it('відхиляє повторений параметр (?studentId=a&studentId=b)', () => {
+    const result = attendanceFiltersSchema.safeParse({
+      studentId: [UUID.student, UUID.otherStudent],
+    });
+    expect(result.success).toBe(false);
   });
 });

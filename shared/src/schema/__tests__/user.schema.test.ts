@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { UserRole } from '../../enums';
-import { createUserSchema, updateUserSchema } from '../user.schema';
+import { createUserSchema, updateUserSchema, userFiltersSchema } from '../user.schema';
 import { UUID, firstIssue } from './fixtures';
 
 const validUser = {
@@ -97,5 +97,27 @@ describe('updateUserSchema', () => {
     [{ email: 'nope' }, 'Некоректний email'],
   ])('відхиляє %o', (body, message) => {
     expect(firstIssue(updateUserSchema.safeParse(body))).toBe(message);
+  });
+});
+
+describe('userFiltersSchema', () => {
+  it('приймає фільтри сторінки студентів', () => {
+    expect(
+      userFiltersSchema.parse({ role: UserRole.STUDENT, groupId: UUID.group, q: '  Коваль ' })
+    ).toEqual({ role: UserRole.STUDENT, groupId: UUID.group, q: 'Коваль' });
+  });
+
+  it('порожній groupId означає «усі групи»', () => {
+    expect(userFiltersSchema.parse({ groupId: '', q: '' })).toEqual({ groupId: undefined, q: '' });
+  });
+
+  it('відхиляє невідому роль', () => {
+    expect(firstIssue(userFiltersSchema.safeParse({ role: 'superadmin' }))).toBe('Некоректна роль');
+  });
+
+  it('відхиляє groupId, що не є UUID', () => {
+    expect(firstIssue(userFiltersSchema.safeParse({ groupId: 'js-1' }))).toBe(
+      'groupId має бути UUID'
+    );
   });
 });

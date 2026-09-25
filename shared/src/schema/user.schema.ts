@@ -48,5 +48,21 @@ export const updateUserSchema = z
   })
   .refine(hasAnyField, { message: 'Не передано жодного поля для оновлення' });
 
+/** GET /users. q шукає за імʼям, прізвищем або email. */
+export const userFiltersSchema = z.object({
+  role: role.optional(),
+  // «Усі групи» у фільтрі StudentsPage приходить як groupId= — це «без фільтра», а не помилка
+  groupId: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.uuid('groupId має бути UUID').optional()
+  ),
+  q: z
+    .string({ error: 'q має бути рядком' })
+    .trim()
+    .max(100, 'Задовгий пошуковий запит')
+    .optional(),
+});
+
 export type ICreateUserDto = z.infer<typeof createUserSchema>;
 export type IUpdateUserDto = z.infer<typeof updateUserSchema>;
+export type IUserFilters = z.infer<typeof userFiltersSchema>;
