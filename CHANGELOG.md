@@ -7,7 +7,24 @@
 
 ## [Unreleased]
 
-Зміни, які ще не потрапили в офіційний реліз.
+Зміни, які ще не потрапили в реліз.
+
+---
+
+## [1.0.0] — 2026-09-25
+
+Перший реліз: усі функціональні вимоги ТЗ (тижні 1–5) і полірування тижня 6 — безпека backend і база даних (6.1, крім деплою), стійкість UI (6.2), якість коду і CI (6.3), документація (6.4). Не ввійшли й лишаються в роботі: деплой і чеклист продакшн-змінних (6.1), демо-дані та сценарій презентації (6.5), дрібниці з 6.6.
+
+### Підсумок шести тижнів
+
+| Етап roadmap | Період | Що зроблено | PR |
+|---|---|---|---|
+| Тиждень 1 — основа | 24.05 – 09.06 | ТЗ і шаблони задач; монорепо на npm workspaces з пакетом `shared`; Express + TypeScript, React + Vite + Tailwind + ShadCN; JWT-автентифікація (access + refresh), `authenticate`/`authorize`; CRUD груп; `ProtectedRoute`, `LoginPage`, `AppLayout` (Sidebar + Header), axios-interceptor для токенів | [#3](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/3), [#14](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/14), [#15](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/15), [#16](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/16), [#17](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/17), [#18](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/18), [#27](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/27), [#28](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/28), [#29](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/29) |
+| Тиждень 2 — користувачі | 10.06 – 27.08 | Users API з фільтрами, seed-скрипт; `GroupsPage`, `StudentsPage`, `TeachersPage` з формами й модалками деталей; README, CONTRIBUTING, DESIGN.md; **перехід з MongoDB на PostgreSQL (Neon) + Prisma**, CI, CLAUDE.md; self-service профіль (`PATCH /auth/me`, зміна пароля) і `ProfilePage`; лінт frontend до нуля помилок | [#30](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/30), [#31](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/31), [#32](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/32), [#33](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/33), [#42](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/42), [#43](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/43), [#45](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/45) |
+| Тиждень 3 — розклад | 28.08 – 03.09 | Lessons API з фільтрами за датою, групою й викладачем; Attendance API з масовою явкою; `SchedulePage` з календарем (тиждень/місяць), `LessonForm`, деталі заняття з відвідуваністю; `DashboardPage` за ролями | [#46](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/46), [#47](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/47), [#48](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/48), [#50](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/50), [#51](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/51) |
+| Тиждень 4 — журнал | 08.09 – 10.09 | Спільні типи й Zod-схеми оцінок; Grades API з `POST /grades/bulk` і середніми; правила доступу до оцінок; `GradeJournal` з inline-редагуванням у `GradeCell`, `BulkGradeForm`, `StudentGrades` | [#56](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/56), [#57](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/57), [#58](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/58), [#59](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/59), [#60](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/60), [#66](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/66), [#67](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/67), [#68](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/68), [#69](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/69), [#70](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/70) |
+| Тиждень 5 — RedCoins і дашборд | 15.09 – 22.09 | Ledger `CoinTransaction` з балансом в одній транзакції, API й leaderboard; статистика користувача; `CoinsPage` (нарахування, баланс, історія, рейтинг), toast при нарахуванні; статистика й рейтинг на дашборді | [#76](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/76), [#77](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/77), [#78](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/78), [#79](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/79), [#80](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/80), [#88](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/88), [#89](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/89), [#90](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/90), [#91](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/91), [#92](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/92), [#93](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/93) |
+| Тиждень 6 — полірування | 25.09 | Тести на Vitest у всіх workspace (540 тестів) і Node 22 у CI; helmet, rate-limit, глобальний обробник помилок, аудит секретних полів, білий список полів тіла, міграції Prisma, `EXPLAIN` журналу й leaderboard, keyset-пагінація монет (6.1); 404/403, ErrorBoundary, Bottom Nav, скелетони й порожні стани, кеш і скасування запитів, оптимістичні оновлення (6.2); Prettier, ESLint у backend, тести транзакцій, код-рев'ю з виправленнями (6.3); документація й скріншоти (6.4) | [#95](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/95), [#96](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/96), [#97](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/97), [#98](https://github.com/Vybyranyi/RedMonKey_IT_Academy_LMS/pull/98) |
 
 ### Added
 - Базова структура монорепо (backend / frontend / shared)
@@ -47,6 +64,7 @@
 - Prettier на весь монорепо (ТЗ 6.3): `.prettierrc.json`, `npm run format` / `format:check`, `.gitattributes` (LF і на Windows), `.git-blame-ignore-revs` для коміту переформатування
 - ESLint у `backend` (з правилами на типах: `no-floating-promises`, `no-misused-promises`, `await-thenable`) і `shared`; кореневий `npm run lint` перевіряє всі три workspace
 - Тести транзакційної логіки без БД — `backend/src/repositories/__tests__/transactions.test.ts` (баланс + ledger RedCoins, масові оцінки й явка, проведення заняття)
+- Скріншоти інтерфейсу в README (`docs/screenshots/`, десктоп і телефон), огляд можливостей і тестові акаунти після `seed`
 
 ### Changed
 - **Міграція бази даних з MongoDB (Mongoose) на PostgreSQL (Prisma ORM), хостинг [Neon](https://neon.tech)**. Схема тепер реляційна: `id` — `uuid` замість `ObjectId`, масив `Group.teachers[]` замінено join-таблицею `GroupTeacher` (M:N), матеріали заняття винесено в окрему таблицю `LessonMaterial`. Кожна таблиця отримала `academy_id` — підготовка до майбутньої мульти-тенантності (зараз академія одна). Автентифікація лишилась власна на JWT — Supabase Auth не використовується
@@ -65,6 +83,9 @@
 - Увесь код відформатовано Prettier'ом — без зміни логіки
 - `POST /users` вимагає пароль, форма створення студента чи викладача — теж (кнопка генерації вже була); при редагуванні порожній пароль, як і раніше, лишає поточний
 - `GET /users` і `GET /attendance` валідують query Zod-схемами (`userFiltersSchema`, `attendanceFiltersSchema`), як решта списків
+- ТЗ звірено з реалізацією: API (без неіснуючих `POST /auth/register` і `/groups/:id/students`, з `PATCH /auth/me`, `/grades/summary`, `/health`), матриця прав, структура frontend, дизайн-система з DESIGN.md замість палітри першої версії (`#E63946`, Inter)
+- DESIGN.md: шаблон list-сторінки без власного H1, таблиця заголовків Header, брендова кнопка через `bg-[#C10000]` (токен `--primary` не бренд)
+- CONTRIBUTING, CLAUDE.md і ТЗ описують реальну модель гілок: гілки від `main`, PR у `main`, `develop` немає
 
 ### Fixed
 - Mass assignment у `POST/PATCH /users` і `POST/PATCH /groups`: тіло запиту йшло в Prisma як є, тож через `PATCH /users/:id` можна було переписати `redCoins`, `tokenVersion`, `passwordHash`, `academyId`. Тепер тіло проходить Zod-схеми з білим списком полів (`shared/src/schema/user.schema.ts`, `group.schema.ts`), невалідний ввід дає 400 з поясненням
@@ -90,28 +111,16 @@
 - Скидання пароля адміном не відкликало чужі сесії — тепер, як і зміна пароля самим користувачем, інкрементує `tokenVersion`
 - 500 замість 400/404: id у шляху, що не є UUID (усі маршрути `/:id`), невалідні `groupId`/`lessonId` у query `/users` і `/attendance`, неіснуючий `relatedLessonId` у RedCoins, неіснуючий викладач чи група в `POST/PATCH /lessons`
 - Адмін міг призначити викладачем заняття студента чи деактивованого викладача, а `PATCH /lessons/:id` переносив заняття в деактивовану групу
+- Інструкція запуску в README ламалась на свіжому клоні: `seed`, backend і тести падали без згенерованого Prisma Client і зібраного `shared`
+- Биті посилання в ТЗ: три якорі змісту й шляхи `../` на `schema.prisma` і CONTRIBUTING
 
 ---
 
 ## Як вести цей файл
 
-Після кожного тижня розробки додавай новий розділ:
-
-```markdown
-## [Тиждень N] — YYYY-MM-DD
-
-### Added
-- Новий функціонал
-
-### Fixed  
-- Виправлені баги
-
-### Changed
-- Зміни в існуючому коді (рефакторинг, оновлення залежностей)
-
-### Removed
-- Видалений функціонал
-```
+- Помітна зміна — рядок у `[Unreleased]` у тому ж PR, що й сама зміна: `Added` — новий функціонал, `Changed` — зміна поведінки, рефакторинг, залежності, `Fixed` — виправлений баг, `Removed` — прибране.
+- Пиши, що змінилось для користувача чи розробника і чому, а не назву файлу чи коміту.
+- На реліз `[Unreleased]` стає версією з датою (`## [1.1.0] — YYYY-MM-DD`), над нею — новий порожній `[Unreleased]`, а на коміт релізу ставиться git-тег `v1.1.0`. Версія — за SemVer: нова можливість — minor (`1.1.0`), лише виправлення — patch (`1.0.1`), несумісна зміна API — major.
 
 ---
 
