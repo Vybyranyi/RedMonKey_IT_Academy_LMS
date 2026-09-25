@@ -212,6 +212,7 @@ export default function LessonDetailsModal({
             </Button>
             {canComplete && (
               <Button
+                className="bg-[#C10000] hover:bg-[#A00000] text-white"
                 disabled={isSaving || isLoading || Boolean(loadError)}
                 onClick={() => void saveAttendance(true)}
               >
