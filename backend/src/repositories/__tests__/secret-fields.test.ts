@@ -50,14 +50,21 @@ vi.mock('../../lib/prisma.js', () => {
       }
     );
 
+  // Сирий SQL лише блокує рядки й повертає id — секретів у ньому немає. Непорожня
+  // відповідь, щоб метод дійшов до наступного запиту, проєкцію якого й треба перевірити
+  const queryRaw = () => Promise.resolve([{ id: 'other-id' }]);
+
   const prisma: Record<string, unknown> = new Proxy(
     {},
     {
-      get: (_target, key: string) =>
-        key === '$transaction'
-          ? (arg: unknown) =>
-              typeof arg === 'function' ? arg(prisma) : Promise.all(arg as Promise<unknown>[])
-          : model(key),
+      get: (_target, key: string) => {
+        if (key === '$queryRaw') return queryRaw;
+        if (key === '$transaction') {
+          return (arg: unknown) =>
+            typeof arg === 'function' ? arg(prisma) : Promise.all(arg as Promise<unknown>[]);
+        }
+        return model(key);
+      },
     }
   );
 
