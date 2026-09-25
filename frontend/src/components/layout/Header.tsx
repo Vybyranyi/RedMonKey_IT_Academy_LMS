@@ -3,11 +3,14 @@ import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { UserRole, type IUser } from '@redmonkey/shared';
 import { useAuthStore } from '@/store/authStore';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 import { navigationItems } from './navigation';
 
 interface PageMeta {
   title: string;
   subtitle: string;
+  /** Назва для вкладки браузера, якщо заголовок сторінки для неї не підходить */
+  tabTitle?: string;
 }
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
@@ -32,6 +35,7 @@ const getPageMeta = (rawPath: string, user: IUser | null): PageMeta => {
     case '/':
       return {
         title: `Вітаємо, ${user?.firstName ?? ''}!`,
+        tabTitle: 'Головна',
         subtitle: capitalize(format(new Date(), 'eeee, d MMMM yyyy', { locale: uk })),
       };
     case '/students':
@@ -76,7 +80,8 @@ export default function Header() {
   const location = useLocation();
   const { user } = useAuthStore();
 
-  const { title, subtitle } = getPageMeta(location.pathname, user);
+  const { title, subtitle, tabTitle } = getPageMeta(location.pathname, user);
+  useDocumentTitle(tabTitle ?? title);
 
   return (
     <header className="px-4 pt-6 pb-5 md:px-8 md:pt-10 md:pb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">

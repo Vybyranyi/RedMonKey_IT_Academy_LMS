@@ -22,6 +22,7 @@ const renderLayout = (path: string) =>
           <Route path="/grades" element={<Boom />} />
           <Route path="/schedule" element={<p>Вміст розкладу</p>} />
           <Route path="/students" element={<p>Вміст студентів</p>} />
+          <Route path="*" element={<p>Такої сторінки немає</p>} />
         </Route>
       </Routes>
     </MemoryRouter>
@@ -53,6 +54,29 @@ describe('AppLayout — ErrorBoundary сторінки', () => {
 
     expect(screen.getByText('Вміст розкладу')).toBeInTheDocument();
     expect(screen.queryByText('Сторінка не відкрилась')).not.toBeInTheDocument();
+  });
+});
+
+describe('назва вкладки браузера', () => {
+  // Раніше кожна вкладка називалась «frontend» — з шаблону Vite
+  it('береться з заголовка розділу й змінюється при навігації', async () => {
+    renderLayout('/students');
+    expect(document.title).toBe('Студенти · IT Academy LMS');
+
+    const nav = screen.getByRole('navigation', { name: 'Основна навігація' });
+    await userEvent.click(within(nav).getByRole('link', { name: /Розклад/ }));
+
+    expect(document.title).toBe('Розклад занять · IT Academy LMS');
+  });
+
+  it('на головній — «Головна», а не привітання з ім’ям', () => {
+    renderLayout('/');
+    expect(document.title).toBe('Головна · IT Academy LMS');
+  });
+
+  it('на невідомому шляху — «Сторінку не знайдено»', () => {
+    renderLayout('/nope');
+    expect(document.title).toBe('Сторінку не знайдено · IT Academy LMS');
   });
 });
 
