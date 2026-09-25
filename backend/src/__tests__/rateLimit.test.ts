@@ -68,6 +68,21 @@ describe('POST /api/v1/auth/login — ліміт невдалих спроб', (
   });
 });
 
+describe('загальний ліміт /api/v1', () => {
+  it('рахує звичайні запити й віддає заголовки RateLimit', async () => {
+    const response = await request(app).get('/api/v1/users');
+
+    expect(response.headers['ratelimit-policy']).toContain('1000');
+  });
+
+  // Health-check хостингу б'є часто — він не має витрачати ліміт і отримувати 429
+  it('не рахує health-check', async () => {
+    const response = await request(app).get('/api/v1/health');
+
+    expect(response.headers['ratelimit-policy']).toBeUndefined();
+  });
+});
+
 describe('POST /api/v1/auth/refresh — окремий ліміт', () => {
   it(`після ${REFRESH_REQUESTS_ALLOWED} запитів відповідає 429`, async () => {
     for (let i = 0; i < REFRESH_REQUESTS_ALLOWED; i++) {
