@@ -1,10 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import type { IUserWithListStats } from '@redmonkey/shared';
 import type { IUserWithStats } from '@/types/userStats';
 
 interface StudentDetailsModalProps {
-  student: IUserWithStats | null;
+  student: (IUserWithListStats & Pick<IUserWithStats, 'grades' | 'transactions'>) | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -16,8 +17,9 @@ export default function StudentDetailsModal({
 }: StudentDetailsModalProps) {
   if (!student) return null;
 
-  const avgScore = student.averageScore || 0;
-  const attendance = student.attendance || 0;
+  // Ті самі агрегати, що в рядку таблиці; null — даних ще немає або їх не видно
+  const average = student.stats?.averageGrade ?? null;
+  const attendance = student.stats?.attendanceRate ?? null;
   const redCoins = student.redCoins || 0;
   const enrollDate = student.createdAt
     ? new Date(student.createdAt).toLocaleDateString('uk-UA', { year: 'numeric', month: 'short' })
@@ -78,8 +80,10 @@ export default function StudentDetailsModal({
             {/* Metrics Row */}
             <div className="grid grid-cols-4 gap-3">
               <div className="bg-white rounded-xl p-4 flex flex-col items-center justify-center border border-slate-100 shadow-sm text-center">
-                <span className="text-2xl font-bold text-blue-600">
-                  {avgScore > 0 ? avgScore.toFixed(1) : '0.0'}
+                <span
+                  className={`text-2xl font-bold ${average === null ? 'text-slate-400' : 'text-blue-600'}`}
+                >
+                  {average === null ? '—' : average.toFixed(1)}
                 </span>
                 <span className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-1">
                   Середній бал
@@ -95,7 +99,11 @@ export default function StudentDetailsModal({
                 </span>
               </div>
               <div className="bg-white rounded-xl p-4 flex flex-col items-center justify-center border border-slate-100 shadow-sm text-center">
-                <span className="text-2xl font-bold text-emerald-600">{attendance}%</span>
+                <span
+                  className={`text-2xl font-bold ${attendance === null ? 'text-slate-400' : 'text-emerald-600'}`}
+                >
+                  {attendance === null ? '—' : `${attendance}%`}
+                </span>
                 <span className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-1">
                   Відвідуваність
                 </span>

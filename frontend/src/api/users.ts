@@ -1,12 +1,30 @@
 import axiosInstance, { type RequestOptions } from './axios';
 import { invalidateGroupsCache } from './groups';
-import type { IUser, IUserDto, IUserStats } from '@redmonkey/shared';
+import {
+  UserRole,
+  type IUser,
+  type IUserDto,
+  type IUserStats,
+  type IUserWithListStats,
+} from '@redmonkey/shared';
 
 export const apiGetUsers = async (
   params?: { role?: string; groupId?: string; q?: string },
   { signal }: RequestOptions = {}
 ): Promise<IUser[]> => {
   const response = await axiosInstance.get('/users', { params, signal });
+  return response.data;
+};
+
+/** Студенти для таблиці StudentsPage — разом із середнім балом і відвідуваністю кожного. */
+export const apiGetStudentsWithStats = async (
+  params: { groupId?: string; q?: string },
+  { signal }: RequestOptions = {}
+): Promise<IUserWithListStats[]> => {
+  const response = await axiosInstance.get('/users', {
+    params: { ...params, role: UserRole.STUDENT, withStats: true },
+    signal,
+  });
   return response.data;
 };
 

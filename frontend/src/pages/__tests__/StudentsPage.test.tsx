@@ -1,7 +1,7 @@
 import { UserRole } from '@redmonkey/shared';
 import type { IUser } from '@redmonkey/shared';
 import type { InternalAxiosRequestConfig } from 'axios';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '../../store/authStore';
@@ -75,5 +75,46 @@ describe('StudentsPage — пошук', () => {
 
     expect(await screen.findByText('Студентів ще немає')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Додати студента' })).toHaveLength(2);
+  });
+});
+
+describe('StudentsPage — бал і відвідуваність', () => {
+  it('просить агрегати в бекенда й показує їх у таблиці', async () => {
+    const requests: InternalAxiosRequestConfig[] = [];
+    installApi({
+      '/groups': () => [],
+      '/users': (config) => {
+        requests.push(config);
+        return [{ ...anna, stats: { averageGrade: 10.5, attendanceRate: 95 } }];
+      },
+    });
+
+    render(<StudentsPage />);
+
+    expect(await screen.findByText('10.5')).toBeInTheDocument();
+    expect(screen.getByText('95%')).toBeInTheDocument();
+    expect(requests[0]?.params).toMatchObject({ role: UserRole.STUDENT, withStats: true });
+  });
+
+  // Відповідь POST /users — без stats: новий рядок не має виглядати як «0» у червоному
+  it('щойно створений студент — без оцінок і явки, а не з нулями', async () => {
+    installApi({
+      '/groups': () => [],
+      'GET /users': () => [],
+      'POST /users': () => ({ ...anna, id: 'student-2', firstName: 'Богдан' }),
+    });
+    render(<StudentsPage />);
+    await screen.findByText('Студентів ще немає');
+
+    await userEvent.click(screen.getAllByRole('button', { name: 'Додати студента' })[0]!);
+    await userEvent.type(screen.getByLabelText("Ім'я *"), 'Богдан');
+    await userEvent.type(screen.getByLabelText('Прізвище *'), 'Коваленко');
+    await userEvent.type(screen.getByLabelText('Email *'), 'bohdan@academy.ua');
+    await userEvent.click(screen.getByRole('button', { name: 'Генерувати Пароль' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти' }));
+
+    const row = (await screen.findByText('Богдан Коваленко')).closest('tr')!;
+    expect(within(row).getByTitle('Оцінок ще немає')).toHaveTextContent('—');
+    expect(within(row).getByTitle('Відміток явки ще немає')).toHaveTextContent('—');
   });
 });

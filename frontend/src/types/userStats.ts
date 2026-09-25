@@ -1,13 +1,12 @@
 import type { IUser } from '@redmonkey/shared';
 
 /**
- * Поля статистики, яких бекенд ще не віддає — на них чекає `GET /users/:id/stats`
- * (ТЗ 4.2). Доки ендпоінта немає, UI читає їх як опційні: краще так, ніж `as any`
- * у кожному компоненті. Коли ендпоінт з'явиться — тип переїде в shared.
+ * Поля, яких бекенд не віддає: картки викладача (studentsCount, subjects, groups) і списки
+ * оцінок та транзакцій у StudentDetailsModal. UI читає їх як опційні — краще так, ніж
+ * `as any` у кожному компоненті. Середній бал і відвідуваність студента вже справжні —
+ * IUserWithListStats із shared (GET /users?withStats=true).
  */
 export interface IUserWithStats extends IUser {
-  averageScore?: number;
-  attendance?: number;
   studentsCount?: number;
   subjects?: string[];
   groups?: string[];
