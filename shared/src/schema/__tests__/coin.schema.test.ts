@@ -40,7 +40,9 @@ describe('createCoinTransactionSchema', () => {
   });
 
   it.each([COIN_AMOUNT_MIN - 1, COIN_AMOUNT_MAX + 1])('відхиляє суму поза межами: %i', (amount) => {
-    expect(createCoinTransactionSchema.safeParse({ ...validTransaction, amount }).success).toBe(false);
+    expect(createCoinTransactionSchema.safeParse({ ...validTransaction, amount }).success).toBe(
+      false
+    );
   });
 
   it('відхиляє дробову суму', () => {
@@ -89,7 +91,10 @@ describe('coinFiltersSchema', () => {
 
   it.each([
     [{ limit: '0' }, 'limit не може бути меншим за 1'],
-    [{ limit: String(COIN_HISTORY_MAX_LIMIT + 1) }, `limit не може бути більшим за ${COIN_HISTORY_MAX_LIMIT}`],
+    [
+      { limit: String(COIN_HISTORY_MAX_LIMIT + 1) },
+      `limit не може бути більшим за ${COIN_HISTORY_MAX_LIMIT}`,
+    ],
     [{ limit: '2.5' }, 'limit має бути цілим числом'],
     [{ cursor: 'last' }, 'cursor має бути UUID транзакції'],
     [{ groupId: 'group-1' }, 'groupId має бути UUID'],

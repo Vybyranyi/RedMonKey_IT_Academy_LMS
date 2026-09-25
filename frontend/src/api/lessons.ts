@@ -19,7 +19,10 @@ export const apiCreateLesson = async (data: ILessonDto): Promise<IPopulatedLesso
   return response.data;
 };
 
-export const apiUpdateLesson = async (id: string, data: Partial<ILessonDto>): Promise<IPopulatedLesson> => {
+export const apiUpdateLesson = async (
+  id: string,
+  data: Partial<ILessonDto>
+): Promise<IPopulatedLesson> => {
   const response = await axiosInstance.patch(`/lessons/${id}`, data);
   return response.data;
 };

@@ -1,16 +1,14 @@
-import { logout } from "@/api/auth";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuthStore } from "@/store/authStore";
-import { LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { logout } from '@/api/auth';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuthStore } from '@/store/authStore';
+import { LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfileWidgetProps {
   isCollapsed: boolean;
 }
 
-export default function UserProfileWidget({
-  isCollapsed,
-}: UserProfileWidgetProps) {
+export default function UserProfileWidget({ isCollapsed }: UserProfileWidgetProps) {
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
@@ -22,17 +20,17 @@ export default function UserProfileWidget({
   };
 
   const handleProfileClick = () => {
-    navigate("/profile");
+    navigate('/profile');
   };
 
   return (
     <div
-      className={`bg-[#1A3150] rounded-[16px] flex items-center cursor-pointer hover:bg-[#152744] transition-all duration-200 relative group border border-transparent hover:border-slate-700/50 shadow-sm ${isCollapsed ? "p-2 justify-center" : "p-3 gap-3"}`}
+      className={`bg-[#1A3150] rounded-[16px] flex items-center cursor-pointer hover:bg-[#152744] transition-all duration-200 relative group border border-transparent hover:border-slate-700/50 shadow-sm ${isCollapsed ? 'p-2 justify-center' : 'p-3 gap-3'}`}
       onClick={handleProfileClick}
       title="Профіль"
     >
       <Avatar
-        className={`ring-2 ring-[#29425D] group-hover:ring-slate-600 transition-colors bg-[#0070F3] ${isCollapsed ? "h-10 w-10" : "h-9 w-9"}`}
+        className={`ring-2 ring-[#29425D] group-hover:ring-slate-600 transition-colors bg-[#0070F3] ${isCollapsed ? 'h-10 w-10' : 'h-9 w-9'}`}
       >
         <AvatarImage src={user.avatar || undefined} />
         <AvatarFallback className="bg-[#0070F3] text-white font-bold text-xs">
@@ -48,11 +46,11 @@ export default function UserProfileWidget({
               {user.firstName} {user.lastName}
             </p>
             <p className="text-[11px] font-medium text-[#8B9DB4] truncate">
-              {user.role === "admin"
-                ? "Адміністратор"
-                : user.role === "teacher"
-                  ? "Викладач"
-                  : "Студент"}
+              {user.role === 'admin'
+                ? 'Адміністратор'
+                : user.role === 'teacher'
+                  ? 'Викладач'
+                  : 'Студент'}
             </p>
           </div>
           <button

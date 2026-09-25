@@ -79,7 +79,8 @@ export const groupService = {
       updated = await groupRepository.update(id, rest, teachers);
     } catch (error) {
       if (isPrismaError(error, 'P2025')) throw new NotFoundError('Групу не знайдено');
-      if (isPrismaError(error, 'P2002')) throw new BadRequestError('Група з такою назвою вже існує');
+      if (isPrismaError(error, 'P2002'))
+        throw new BadRequestError('Група з такою назвою вже існує');
       throw error;
     }
     if (!updated) {

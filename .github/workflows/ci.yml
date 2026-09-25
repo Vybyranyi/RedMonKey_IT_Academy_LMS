@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Prisma генерує клієнт лише зі схеми — реальне з'єднання з БД не потрібне.
-      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
-      DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci"
+      DATABASE_URL: 'postgresql://ci:ci@localhost:5432/ci'
+      DIRECT_URL: 'postgresql://ci:ci@localhost:5432/ci'
     steps:
       - uses: actions/checkout@v4
 

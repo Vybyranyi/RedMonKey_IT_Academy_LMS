@@ -1,5 +1,5 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "../lib/prisma.js";
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
 
 const teacherSelect = {
   id: true,
@@ -19,7 +19,7 @@ export const lessonRepository = {
   async findAll(where: Prisma.LessonWhereInput) {
     return prisma.lesson.findMany({
       where,
-      orderBy: { date: "asc" },
+      orderBy: { date: 'asc' },
       include: lessonInclude,
     });
   },

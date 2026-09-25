@@ -40,7 +40,15 @@
   // ─── Spell checker ──────────────────────────────────────
   "cSpell.language": "en,uk",
   "cSpell.words": [
-    "redcoins", "redmonkey", "shadcn", "zustand", "formik",
-    "mongo", "mongoose", "bcrypt", "nodemon", "tsx"
+    "redcoins",
+    "redmonkey",
+    "shadcn",
+    "zustand",
+    "formik",
+    "mongo",
+    "mongoose",
+    "bcrypt",
+    "nodemon",
+    "tsx"
   ]
 }

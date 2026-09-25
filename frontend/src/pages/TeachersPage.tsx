@@ -4,7 +4,13 @@ import { apiGetUsers, apiCreateUser, apiUpdateUser } from '@/api/users';
 import { UserRole, type IUser, type IUserDto } from '@redmonkey/shared';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/common/EmptyState';
@@ -85,7 +91,7 @@ export default function TeachersPage() {
   };
 
   const handleViewDetails = (id: string) => {
-    const teacher = teachers.find(t => t.id === id);
+    const teacher = teachers.find((t) => t.id === id);
     if (teacher) {
       setSelectedTeacher(teacher);
     }
@@ -109,9 +115,7 @@ export default function TeachersPage() {
         {isLoading ? (
           <Skeleton className="h-6 w-24" />
         ) : (
-          <Badge variant="secondary">
-            {teachers.length} всього
-          </Badge>
+          <Badge variant="secondary">{teachers.length} всього</Badge>
         )}
 
         {isAdmin && (
@@ -125,13 +129,18 @@ export default function TeachersPage() {
               <DialogHeader>
                 <DialogTitle className="text-xl">Створення картки викладача</DialogTitle>
               </DialogHeader>
-              <UserForm onSubmit={handleCreateTeacher} isSubmitting={isSubmitLoading} hideRoleSelect initialValues={{
-                firstName: '',
-                lastName: '',
-                email: '',
-                role: UserRole.TEACHER,
-                phone: '',
-              }} />
+              <UserForm
+                onSubmit={handleCreateTeacher}
+                isSubmitting={isSubmitLoading}
+                hideRoleSelect
+                initialValues={{
+                  firstName: '',
+                  lastName: '',
+                  email: '',
+                  role: UserRole.TEACHER,
+                  phone: '',
+                }}
+              />
             </DialogContent>
           </Dialog>
         )}
@@ -144,18 +153,21 @@ export default function TeachersPage() {
               <DialogTitle className="text-xl">Редагування картки викладача</DialogTitle>
             </DialogHeader>
             {editingTeacher && (
-              <UserForm 
+              <UserForm
                 initialValues={{
                   firstName: editingTeacher.firstName,
                   lastName: editingTeacher.lastName,
                   email: editingTeacher.email,
                   phone: editingTeacher.phone || '',
                   role: editingTeacher.role,
-                  group: editingTeacher.group && typeof editingTeacher.group === 'object' ? editingTeacher.group.id : editingTeacher.group || ''
+                  group:
+                    editingTeacher.group && typeof editingTeacher.group === 'object'
+                      ? editingTeacher.group.id
+                      : editingTeacher.group || '',
                 }}
-                onSubmit={handleUpdateTeacher} 
-                isSubmitting={isSubmitLoading} 
-                hideRoleSelect 
+                onSubmit={handleUpdateTeacher}
+                isSubmitting={isSubmitLoading}
+                hideRoleSelect
               />
             )}
           </DialogContent>
@@ -163,7 +175,11 @@ export default function TeachersPage() {
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy="true" aria-label="Завантаження викладачів">
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          aria-busy="true"
+          aria-label="Завантаження викладачів"
+        >
           {[1, 2, 3].map((n) => (
             <Skeleton key={n} className="h-72 w-full rounded-[20px]" />
           ))}
@@ -186,9 +202,9 @@ export default function TeachersPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {teachers.map((teacher) => (
-            <TeacherCard 
-              key={teacher.id} 
-              teacher={teacher} 
+            <TeacherCard
+              key={teacher.id}
+              teacher={teacher}
               onViewDetails={handleViewDetails}
               onEdit={isAdmin ? setEditingTeacher : undefined}
             />
@@ -196,10 +212,10 @@ export default function TeachersPage() {
         </div>
       )}
 
-      <TeacherDetailsModal 
-        teacher={selectedTeacher} 
-        isOpen={!!selectedTeacher} 
-        onClose={() => setSelectedTeacher(null)} 
+      <TeacherDetailsModal
+        teacher={selectedTeacher}
+        isOpen={!!selectedTeacher}
+        onClose={() => setSelectedTeacher(null)}
       />
     </div>
   );

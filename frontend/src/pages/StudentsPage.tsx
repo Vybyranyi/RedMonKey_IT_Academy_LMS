@@ -5,7 +5,13 @@ import { apiGetGroups } from '@/api/groups';
 import { UserRole, type IPopulatedGroup, type IUser, type IUserDto } from '@redmonkey/shared';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/common/EmptyState';
@@ -124,7 +130,9 @@ export default function StudentsPage() {
       // Точково: один рядок за id, решта таблиці не перемальовується
       setStudents((current) =>
         matchesFilters(updated)
-          ? current.map((student) => (student.id === updated.id ? { ...student, ...updated } : student))
+          ? current.map((student) =>
+              student.id === updated.id ? { ...student, ...updated } : student
+            )
           : current.filter((student) => student.id !== updated.id)
       );
       toast.success('Зміни збережено');
@@ -136,7 +144,7 @@ export default function StudentsPage() {
   };
 
   const handleViewDetails = (id: string) => {
-    const student = students.find(s => s.id === id);
+    const student = students.find((s) => s.id === id);
     if (student) {
       setSelectedStudent(student);
     }
@@ -205,10 +213,7 @@ export default function StudentsPage() {
     }
 
     return (
-      <div
-        aria-busy={isLoading}
-        className={`transition-opacity ${isLoading ? 'opacity-60' : ''}`}
-      >
+      <div aria-busy={isLoading} className={`transition-opacity ${isLoading ? 'opacity-60' : ''}`}>
         <StudentTable
           students={students}
           onViewDetails={handleViewDetails}
@@ -223,7 +228,7 @@ export default function StudentsPage() {
       <div className="flex items-center justify-between gap-3">
         {hasLoaded ? (
           <Badge variant="secondary">
-            {students.filter(s => s.isActive).length} активних - {students.length} всього
+            {students.filter((s) => s.isActive).length} активних - {students.length} всього
           </Badge>
         ) : (
           <Skeleton className="h-6 w-40" />
@@ -240,7 +245,11 @@ export default function StudentsPage() {
               <DialogHeader>
                 <DialogTitle className="text-xl">Створення картки студента</DialogTitle>
               </DialogHeader>
-              <UserForm onSubmit={handleCreateStudent} isSubmitting={isSubmitLoading} hideRoleSelect />
+              <UserForm
+                onSubmit={handleCreateStudent}
+                isSubmitting={isSubmitLoading}
+                hideRoleSelect
+              />
             </DialogContent>
           </Dialog>
         )}
@@ -260,7 +269,7 @@ export default function StudentsPage() {
                   email: editingStudent.email,
                   phone: editingStudent.phone || '',
                   role: editingStudent.role,
-                  group: groupIdOf(editingStudent)
+                  group: groupIdOf(editingStudent),
                 }}
                 onSubmit={handleUpdateStudent}
                 isSubmitting={isSubmitLoading}

@@ -35,11 +35,7 @@ export const attendanceRepository = {
    * upsert по @@unique([lessonId, studentId]) робить повторне збереження
    * того самого заняття безпечним — дублікатів не буде.
    */
-  async upsertMany(
-    academyId: string,
-    lessonId: string,
-    records: IAttendanceRecordDto[]
-  ) {
+  async upsertMany(academyId: string, lessonId: string, records: IAttendanceRecordDto[]) {
     return prisma.$transaction(
       records.map((record) =>
         prisma.attendance.upsert({

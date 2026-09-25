@@ -161,7 +161,10 @@ export const gradeService = {
    * Середні бали студентів групи — колонка «Середнє» в журналі.
    * Рахуємо в БД одним groupBy, а не в циклі по студентах.
    */
-  async getSummary(filters: IGradeSummaryFilters, actor: TokenPayload): Promise<IGradeSummaryRow[]> {
+  async getSummary(
+    filters: IGradeSummaryFilters,
+    actor: TokenPayload
+  ): Promise<IGradeSummaryRow[]> {
     if (actor.role === UserRole.TEACHER) {
       const ownGroupIds = await groupRepository.findIdsByTeacher(actor.userId);
       if (!ownGroupIds.includes(filters.groupId)) {

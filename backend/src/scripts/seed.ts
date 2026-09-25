@@ -91,11 +91,26 @@ const seedDatabase = async () => {
   console.log('[seed]: Groups created.');
 
   const studentsData = [
-    { firstName: 'Максим', lastName: 'Шевченко', email: 'student1@academy.com', groupId: group1.id },
+    {
+      firstName: 'Максим',
+      lastName: 'Шевченко',
+      email: 'student1@academy.com',
+      groupId: group1.id,
+    },
     { firstName: 'Анна', lastName: 'Коваленко', email: 'student2@academy.com', groupId: group1.id },
     { firstName: 'Дмитро', lastName: 'Бойко', email: 'student3@academy.com', groupId: group1.id },
-    { firstName: 'Олена', lastName: 'Кравченко', email: 'student4@academy.com', groupId: group2.id },
-    { firstName: 'Владислав', lastName: 'Олійник', email: 'student5@academy.com', groupId: group2.id },
+    {
+      firstName: 'Олена',
+      lastName: 'Кравченко',
+      email: 'student4@academy.com',
+      groupId: group2.id,
+    },
+    {
+      firstName: 'Владислав',
+      lastName: 'Олійник',
+      email: 'student5@academy.com',
+      groupId: group2.id,
+    },
   ];
 
   await prisma.user.createMany({
@@ -126,14 +141,70 @@ const seedDatabase = async () => {
   };
 
   const lessonsData = [
-    { title: 'React: компоненти та props', type: LessonType.LECTURE, date: lessonAt(0, 10), duration: 80, group: group1, teacherId: teacher1.id },
-    { title: 'Практика: верстка картки товару', type: LessonType.PRACTICE, date: lessonAt(2, 14), duration: 120, group: group1, teacherId: teacher1.id },
-    { title: 'Консультація перед модулем', type: LessonType.CONSULTATION, date: lessonAt(5, 18), duration: 45, group: group1, teacherId: teacher1.id },
-    { title: 'Модульний іспит: основи JavaScript', type: LessonType.EXAM, date: lessonAt(9, 9), duration: 180, group: group1, teacherId: teacher1.id },
-    { title: 'Принципи візуальної ієрархії', type: LessonType.LECTURE, date: lessonAt(1, 11), duration: 80, group: group2, teacherId: teacher2.id },
-    { title: 'Практика: прототип у Figma', type: LessonType.PRACTICE, date: lessonAt(4, 16), duration: 120, group: group2, teacherId: teacher2.id },
-    { title: 'Розбір домашніх робіт', type: LessonType.CONSULTATION, date: lessonAt(8, 19), duration: 60, group: group2, teacherId: teacher2.id },
-    { title: 'Захист навчального проєкту', type: LessonType.EXAM, date: lessonAt(12, 13), duration: 180, group: group2, teacherId: teacher2.id },
+    {
+      title: 'React: компоненти та props',
+      type: LessonType.LECTURE,
+      date: lessonAt(0, 10),
+      duration: 80,
+      group: group1,
+      teacherId: teacher1.id,
+    },
+    {
+      title: 'Практика: верстка картки товару',
+      type: LessonType.PRACTICE,
+      date: lessonAt(2, 14),
+      duration: 120,
+      group: group1,
+      teacherId: teacher1.id,
+    },
+    {
+      title: 'Консультація перед модулем',
+      type: LessonType.CONSULTATION,
+      date: lessonAt(5, 18),
+      duration: 45,
+      group: group1,
+      teacherId: teacher1.id,
+    },
+    {
+      title: 'Модульний іспит: основи JavaScript',
+      type: LessonType.EXAM,
+      date: lessonAt(9, 9),
+      duration: 180,
+      group: group1,
+      teacherId: teacher1.id,
+    },
+    {
+      title: 'Принципи візуальної ієрархії',
+      type: LessonType.LECTURE,
+      date: lessonAt(1, 11),
+      duration: 80,
+      group: group2,
+      teacherId: teacher2.id,
+    },
+    {
+      title: 'Практика: прототип у Figma',
+      type: LessonType.PRACTICE,
+      date: lessonAt(4, 16),
+      duration: 120,
+      group: group2,
+      teacherId: teacher2.id,
+    },
+    {
+      title: 'Розбір домашніх робіт',
+      type: LessonType.CONSULTATION,
+      date: lessonAt(8, 19),
+      duration: 60,
+      group: group2,
+      teacherId: teacher2.id,
+    },
+    {
+      title: 'Захист навчального проєкту',
+      type: LessonType.EXAM,
+      date: lessonAt(12, 13),
+      duration: 180,
+      group: group2,
+      teacherId: teacher2.id,
+    },
   ];
 
   await prisma.lesson.createMany({

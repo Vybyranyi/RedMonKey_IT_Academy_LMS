@@ -182,7 +182,12 @@ export default function SchedulePage() {
         </div>
       )}
 
-      <ScheduleToolbar label={rangeLabel} view={view} onView={setView} onNavigate={handleNavigate} />
+      <ScheduleToolbar
+        label={rangeLabel}
+        view={view}
+        onView={setView}
+        onNavigate={handleNavigate}
+      />
 
       <LessonTypeLegend />
 

@@ -4,9 +4,9 @@ import { loginSchema, validateWithZod } from '../validation';
 
 describe('loginSchema', () => {
   it('приймає коректні дані', () => {
-    expect(loginSchema.safeParse({ email: 'admin@academy.com', password: 'secret123' }).success).toBe(
-      true
-    );
+    expect(
+      loginSchema.safeParse({ email: 'admin@academy.com', password: 'secret123' }).success
+    ).toBe(true);
   });
 
   it.each([

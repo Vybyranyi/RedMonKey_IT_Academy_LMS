@@ -90,14 +90,39 @@ describe('CoinsPage — історія сторінками', () => {
 describe('CoinsPage — оптимістичне нарахування', () => {
   const ANNA_ID = '11111111-1111-4111-8111-111111111111';
   const BOHDAN_ID = '22222222-2222-4222-8222-222222222222';
-  const admin = { id: 'admin-1', role: UserRole.ADMIN, firstName: 'Ірина', lastName: 'Адміненко' } as IUser;
+  const admin = {
+    id: 'admin-1',
+    role: UserRole.ADMIN,
+    firstName: 'Ірина',
+    lastName: 'Адміненко',
+  } as IUser;
   const students = [
     { id: ANNA_ID, firstName: 'Анна', lastName: 'Коваленко', redCoins: 10, role: UserRole.STUDENT },
-    { id: BOHDAN_ID, firstName: 'Богдан', lastName: 'Мельник', redCoins: 15, role: UserRole.STUDENT },
+    {
+      id: BOHDAN_ID,
+      firstName: 'Богдан',
+      lastName: 'Мельник',
+      redCoins: 15,
+      role: UserRole.STUDENT,
+    },
   ] as IUser[];
   const leaderboard: ILeaderboardRow[] = [
-    { position: 1, studentId: BOHDAN_ID, firstName: 'Богдан', lastName: 'Мельник', groupName: 'JS-1', redCoins: 15 },
-    { position: 2, studentId: ANNA_ID, firstName: 'Анна', lastName: 'Коваленко', groupName: 'JS-1', redCoins: 10 },
+    {
+      position: 1,
+      studentId: BOHDAN_ID,
+      firstName: 'Богдан',
+      lastName: 'Мельник',
+      groupName: 'JS-1',
+      redCoins: 15,
+    },
+    {
+      position: 2,
+      studentId: ANNA_ID,
+      firstName: 'Анна',
+      lastName: 'Коваленко',
+      groupName: 'JS-1',
+      redCoins: 10,
+    },
   ];
 
   const setupApi = (createTransaction: Parameters<typeof installApi>[0][string]) =>
@@ -133,7 +158,11 @@ describe('CoinsPage — оптимістичне нарахування', () => 
   it('до відповіді сервера показує транзакцію першою і новий баланс у рейтингу', async () => {
     const post = deferred();
     const adapter = setupApi(() => post.promise);
-    render(<MemoryRouter><CoinsPage /></MemoryRouter>);
+    render(
+      <MemoryRouter>
+        <CoinsPage />
+      </MemoryRouter>
+    );
 
     await awardAnna();
 
@@ -151,7 +180,9 @@ describe('CoinsPage — оптимістичне нарахування', () => 
       issuer: { id: 'admin-1', firstName: 'Ірина', lastName: 'Адміненко' },
     });
 
-    await waitFor(() => expect(screen.queryByText('Зберігається…', { exact: false })).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText('Зберігається…', { exact: false })).not.toBeInTheDocument()
+    );
     expect(screen.getByText('Активність на занятті')).toBeInTheDocument();
     expect(toast.success).toHaveBeenCalledWith('Нараховано 10 монет: Анна Коваленко');
     // Ні рейтинг, ні історія не перезапитувались
@@ -163,7 +194,11 @@ describe('CoinsPage — оптимістичне нарахування', () => 
     setupApi((config) => {
       throw httpError(config, 400, 'Недостатньо монет на балансі студента (зараз 10)');
     });
-    render(<MemoryRouter><CoinsPage /></MemoryRouter>);
+    render(
+      <MemoryRouter>
+        <CoinsPage />
+      </MemoryRouter>
+    );
 
     await awardAnna();
 

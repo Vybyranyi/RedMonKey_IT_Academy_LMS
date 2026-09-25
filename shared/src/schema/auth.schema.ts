@@ -27,9 +27,7 @@ export const loginCredentialsSchema = z.object({
     .trim()
     .min(1, 'Потрібно вказати email')
     .max(254, 'Email задовгий'),
-  password: z
-    .string({ error: 'Потрібно вказати пароль' })
-    .min(1, 'Потрібно вказати пароль'),
+  password: z.string({ error: 'Потрібно вказати пароль' }).min(1, 'Потрібно вказати пароль'),
 });
 
 export const updateProfileSchema = z
@@ -49,7 +47,10 @@ export const changePasswordSchema = z
     newPassword: z
       .string({ error: 'Потрібно вказати новий пароль' })
       .min(PASSWORD_MIN_LENGTH, `Новий пароль має містити не менше ${PASSWORD_MIN_LENGTH} символів`)
-      .max(PASSWORD_MAX_LENGTH, `Новий пароль не може бути довшим за ${PASSWORD_MAX_LENGTH} символів`),
+      .max(
+        PASSWORD_MAX_LENGTH,
+        `Новий пароль не може бути довшим за ${PASSWORD_MAX_LENGTH} символів`
+      ),
   })
   .refine((data) => data.currentPassword !== data.newPassword, {
     message: 'Новий пароль має відрізнятися від поточного',

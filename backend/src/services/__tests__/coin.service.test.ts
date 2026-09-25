@@ -97,7 +97,10 @@ describe('getTransactions', () => {
   });
 
   it('поєднує studentId із групою, а не підміняє один іншим', async () => {
-    await coinService.getTransactions({ ...page, groupId: OWN_GROUP, studentId: 'student-9' }, admin);
+    await coinService.getTransactions(
+      { ...page, groupId: OWN_GROUP, studentId: 'student-9' },
+      admin
+    );
 
     expect(findPage).toHaveBeenCalledWith(
       { studentId: { equals: 'student-9', in: GROUP_STUDENTS } },
@@ -109,7 +112,10 @@ describe('getTransactions', () => {
   // Звуження за роллю має перекривати будь-який фільтр із query — інакше
   // студент прочитав би чужу історію, підставивши чужий studentId
   it('студент бачить лише власні транзакції попри фільтри в запиті', async () => {
-    await coinService.getTransactions({ ...page, studentId: 'student-9', groupId: OWN_GROUP }, student);
+    await coinService.getTransactions(
+      { ...page, studentId: 'student-9', groupId: OWN_GROUP },
+      student
+    );
 
     expect(findStudentIdsByGroups).not.toHaveBeenCalled();
     expect(findPage).toHaveBeenCalledWith({ studentId: student.userId }, 20, undefined);
@@ -198,9 +204,9 @@ describe('createTransaction', () => {
     findById.mockResolvedValue(activeStudent({ redCoins: 10 }));
     createWithBalance.mockResolvedValue(null as never);
 
-    await expect(
-      coinService.createTransaction({ ...payload, amount: -50 }, admin)
-    ).rejects.toThrow(BadRequestError);
+    await expect(coinService.createTransaction({ ...payload, amount: -50 }, admin)).rejects.toThrow(
+      BadRequestError
+    );
   });
 
   it('повідомляє поточний баланс, коли монет не вистачає', async () => {
@@ -216,7 +222,14 @@ describe('createTransaction', () => {
 describe('getLeaderboard', () => {
   it('нумерує позиції з одиниці', async () => {
     findLeaderboard.mockResolvedValue([
-      { id: 's1', firstName: 'Анна', lastName: 'К', avatar: null, redCoins: 90, group: { name: 'JS-1' } },
+      {
+        id: 's1',
+        firstName: 'Анна',
+        lastName: 'К',
+        avatar: null,
+        redCoins: 90,
+        group: { name: 'JS-1' },
+      },
       { id: 's2', firstName: 'Богдан', lastName: 'Л', avatar: null, redCoins: 40, group: null },
     ] as never);
 

@@ -16,5 +16,4 @@ export const parseBody = <T>(schema: ZodType<T>, body: unknown): T => {
 };
 
 /** Те саме, що parseBody, але для query-рядка: ?from=...&groupId=... */
-export const parseQuery = <T>(schema: ZodType<T>, query: unknown): T =>
-  parseBody(schema, query);
+export const parseQuery = <T>(schema: ZodType<T>, query: unknown): T => parseBody(schema, query);

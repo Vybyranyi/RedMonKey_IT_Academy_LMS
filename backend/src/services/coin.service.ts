@@ -84,7 +84,10 @@ export const coinService = {
     return transaction;
   },
 
-  async getLeaderboard(filters: ILeaderboardFilters, actor: TokenPayload): Promise<ILeaderboardRow[]> {
+  async getLeaderboard(
+    filters: ILeaderboardFilters,
+    actor: TokenPayload
+  ): Promise<ILeaderboardRow[]> {
     const where: Prisma.UserWhereInput = { role: UserRole.STUDENT, isActive: true };
     if (filters.groupId) where.groupId = filters.groupId;
 

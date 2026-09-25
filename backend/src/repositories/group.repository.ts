@@ -70,10 +70,7 @@ export const groupRepository = {
     return rows.map((row) => row.groupId);
   },
 
-  async create(
-    data: Omit<Prisma.GroupUncheckedCreateInput, 'teachers'>,
-    teacherIds: string[]
-  ) {
+  async create(data: Omit<Prisma.GroupUncheckedCreateInput, 'teachers'>, teacherIds: string[]) {
     const group = await prisma.group.create({
       data: {
         ...data,
@@ -90,11 +87,7 @@ export const groupRepository = {
   },
 
   /** Оновлює скалярні поля; за наявності teacherIds повністю пересинхронізовує M:N. */
-  async update(
-    id: string,
-    data: Prisma.GroupUncheckedUpdateInput,
-    teacherIds?: string[]
-  ) {
+  async update(id: string, data: Prisma.GroupUncheckedUpdateInput, teacherIds?: string[]) {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.group.findUnique({ where: { id }, select: { academyId: true } });
       if (!existing) return null;

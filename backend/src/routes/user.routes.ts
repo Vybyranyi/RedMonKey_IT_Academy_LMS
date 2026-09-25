@@ -5,7 +5,7 @@ import {
   createUser,
   updateUser,
   deleteUser,
-  getUserStats
+  getUserStats,
 } from '../controllers/user.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import { UserRole } from '@redmonkey/shared';

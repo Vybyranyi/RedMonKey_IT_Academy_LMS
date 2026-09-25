@@ -135,9 +135,9 @@ describe('updateLesson', () => {
   it('викладач не редагує чуже заняття', async () => {
     findSubjectById.mockResolvedValue({ teacherId: 'teacher-9', groupId: OWN_GROUP } as never);
 
-    await expect(lessonService.updateLesson(LESSON_ID, { title: 'Нова назва' }, teacher)).rejects.toThrow(
-      ForbiddenError
-    );
+    await expect(
+      lessonService.updateLesson(LESSON_ID, { title: 'Нова назва' }, teacher)
+    ).rejects.toThrow(ForbiddenError);
   });
 
   it('оновлює лише передані поля', async () => {
@@ -199,6 +199,8 @@ describe('completeLesson', () => {
   });
 
   it('студент не закриває заняття', async () => {
-    await expect(lessonService.completeLesson(LESSON_ID, [], student)).rejects.toThrow(ForbiddenError);
+    await expect(lessonService.completeLesson(LESSON_ID, [], student)).rejects.toThrow(
+      ForbiddenError
+    );
   });
 });

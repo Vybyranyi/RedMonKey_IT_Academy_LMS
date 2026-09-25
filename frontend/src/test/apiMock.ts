@@ -15,7 +15,13 @@ export const reply = (config: InternalAxiosRequestConfig, data: unknown, status 
 
 /** Відповідь бекенда з помилкою: message потрапляє в toast так само, як у проді. */
 export const httpError = (config: InternalAxiosRequestConfig, status: number, message?: string) =>
-  new AxiosError('Request failed', 'ERR_BAD_RESPONSE', config, null, reply(config, { message }, status));
+  new AxiosError(
+    'Request failed',
+    'ERR_BAD_RESPONSE',
+    config,
+    null,
+    reply(config, { message }, status)
+  );
 
 /** Проміс, який тест розв'язує сам — щоб перевірити стан UI, поки «сервер» думає. */
 export const deferred = <T = unknown>() => {

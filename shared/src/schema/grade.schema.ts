@@ -45,10 +45,9 @@ export const bulkGradeSchema = z
     lessonId,
     type,
     grades: z
-      .array(
-        z.object({ studentId, value, comment: comment.optional() }),
-        { error: 'grades має бути масивом' }
-      )
+      .array(z.object({ studentId, value, comment: comment.optional() }), {
+        error: 'grades має бути масивом',
+      })
       .min(1, 'Потрібен непорожній масив grades')
       .max(100, 'Забагато оцінок за один раз'),
   })

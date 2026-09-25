@@ -40,7 +40,12 @@ describe('errorHandler', () => {
   it('невідому 4xx-помилку Express віддає з її статусом і загальним текстом', () => {
     const res = mockResponse();
 
-    errorHandler(Object.assign(new Error('aborted'), { status: 400, type: 'request.aborted' }), req, res, vi.fn());
+    errorHandler(
+      Object.assign(new Error('aborted'), { status: 400, type: 'request.aborted' }),
+      req,
+      res,
+      vi.fn()
+    );
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: 'Некоректний запит' });

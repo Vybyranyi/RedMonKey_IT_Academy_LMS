@@ -1,4 +1,11 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, BookOpen } from 'lucide-react';
@@ -17,7 +24,13 @@ export default function GroupCard({ group, onViewDetails }: GroupCardProps) {
         <div className="space-y-1 pr-4">
           <div className="flex items-center gap-2">
             <CardTitle className="text-xl font-bold text-slate-800">{group.name}</CardTitle>
-            <Badge className={group.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600'}>
+            <Badge
+              className={
+                group.isActive
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-slate-100 text-slate-600'
+              }
+            >
               {group.isActive ? 'Активна' : 'Неактивна'}
             </Badge>
           </div>
@@ -46,18 +59,18 @@ export default function GroupCard({ group, onViewDetails }: GroupCardProps) {
           </div>
         </div>
 
-        <UserAvatarGroup 
-          users={group.students} 
-          maxCount={5} 
-          emptyMessage="Студентів немає" 
-          countLabel="студ." 
-          className="pt-2" 
+        <UserAvatarGroup
+          users={group.students}
+          maxCount={5}
+          emptyMessage="Студентів немає"
+          countLabel="студ."
+          className="pt-2"
         />
       </CardContent>
       <CardFooter className="bg-slate-50/50 rounded-b-lg border-t border-slate-100 py-3 flex justify-end">
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="text-slate-600 hover:text-slate-900 font-semibold"
           onClick={() => onViewDetails(group.id)}
         >

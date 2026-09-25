@@ -35,7 +35,9 @@ describe('App — відновлення сесії', () => {
     serverDown = false;
     await userEvent.click(screen.getByRole('button', { name: 'Спробувати знову' }));
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Сторінку не знайдено' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Сторінку не знайдено' })
+    ).toBeInTheDocument();
   });
 
   it('поки профіль вантажиться, показує каркас інтерфейсу, а не голий текст', () => {

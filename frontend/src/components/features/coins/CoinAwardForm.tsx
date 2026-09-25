@@ -100,7 +100,9 @@ export default function CoinAwardForm({
             <Button
               type="button"
               variant={direction === 'award' ? 'default' : 'outline'}
-              className={direction === 'award' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+              className={
+                direction === 'award' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
+              }
               onClick={() => handleDirection('award')}
             >
               Нарахувати

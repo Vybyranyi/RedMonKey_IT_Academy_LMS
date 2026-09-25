@@ -22,7 +22,9 @@ describe('AppRouter', () => {
   it('невідомий URL показує 404 всередині layout з навігацією', () => {
     openAt('/does-not-exist', UserRole.STUDENT);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Сторінку не знайдено' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Сторінку не знайдено' })
+    ).toBeInTheDocument();
     expect(screen.getByText('404')).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Основна навігація' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'На головну' })).toHaveAttribute('href', '/');
@@ -32,13 +34,17 @@ describe('AppRouter', () => {
   it('вкладений шлях під відомим розділом — теж 404', () => {
     openAt('/students/abc', UserRole.ADMIN);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Сторінку не знайдено' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Сторінку не знайдено' })
+    ).toBeInTheDocument();
   });
 
   it('розділ, недоступний ролі, показує 403 із відповідним заголовком', () => {
     openAt('/teachers', UserRole.STUDENT);
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Доступ заборонено' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Доступ заборонено' })
+    ).toBeInTheDocument();
     expect(screen.getByText('403')).toBeInTheDocument();
   });
 

@@ -74,7 +74,8 @@ const AttendanceRow = memo(function AttendanceRow({
           <Avatar className="h-9 w-9">
             <AvatarImage src={student.avatar || undefined} />
             <AvatarFallback className="bg-[#0070F3] text-white text-xs font-bold">
-              {student.firstName[0]}{student.lastName[0]}
+              {student.firstName[0]}
+              {student.lastName[0]}
             </AvatarFallback>
           </Avatar>
           <span className="text-sm font-medium text-slate-700 truncate">
@@ -99,7 +100,9 @@ const AttendanceRow = memo(function AttendanceRow({
                 aria-pressed={status === key}
                 onClick={() => onChange(student.id, key as AttendanceStatus)}
                 className={`px-3 h-8 rounded-md text-xs font-semibold border transition-colors ${
-                  status === key ? meta.active : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                  status === key
+                    ? meta.active
+                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                 }`}
               >
                 {meta.label}

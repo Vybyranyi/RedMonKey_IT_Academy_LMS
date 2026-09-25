@@ -72,7 +72,11 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status !== 401 || !originalRequest || NO_REFRESH_URLS.includes(originalRequest.url)) {
+    if (
+      error.response?.status !== 401 ||
+      !originalRequest ||
+      NO_REFRESH_URLS.includes(originalRequest.url)
+    ) {
       return Promise.reject(error);
     }
 
@@ -99,11 +103,7 @@ axiosInstance.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const response = await axios.post(
-        `${API_URL}/auth/refresh`,
-        {},
-        { withCredentials: true }
-      );
+      const response = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
       const { accessToken } = response.data;
 
       useAuthStore.getState().updateAccessToken(accessToken);

@@ -74,7 +74,9 @@ describe('request interceptor', () => {
 
 describe('response interceptor: оновлення токена', () => {
   it('після 401 рефрешить токен і повторює запит', async () => {
-    const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: { accessToken: 'fresh-token' } });
+    const post = vi
+      .spyOn(axios, 'post')
+      .mockResolvedValue({ data: { accessToken: 'fresh-token' } });
     script = ['unauthorized', 'ok'];
 
     const result = await axiosInstance.get('/users');
@@ -96,7 +98,9 @@ describe('response interceptor: оновлення токена', () => {
 
   // Паралельні запити не мають запускати кілька рефрешів: другий стає в чергу
   it('на кілька одночасних 401 робить лише один рефреш', async () => {
-    const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: { accessToken: 'fresh-token' } });
+    const post = vi
+      .spyOn(axios, 'post')
+      .mockResolvedValue({ data: { accessToken: 'fresh-token' } });
     script = ['unauthorized', 'unauthorized', 'ok', 'ok'];
 
     const results = await Promise.all([axiosInstance.get('/a'), axiosInstance.get('/b')]);
@@ -174,7 +178,9 @@ describe('response interceptor: оновлення токена', () => {
 
   // Якщо після рефрешу знову 401, повторювати немає сенсу — інакше нескінченний цикл
   it('не повторює запит удруге, якщо 401 повернувся після рефрешу', async () => {
-    const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: { accessToken: 'fresh-token' } });
+    const post = vi
+      .spyOn(axios, 'post')
+      .mockResolvedValue({ data: { accessToken: 'fresh-token' } });
     script = ['unauthorized', 'unauthorized'];
 
     await expect(axiosInstance.get('/users')).rejects.toBeInstanceOf(AxiosError);

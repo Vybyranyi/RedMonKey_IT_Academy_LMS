@@ -7,7 +7,7 @@ const item = (id: string, value: number) => ({ id, value });
 
 describe('хелпери оптимістичних оновлень', () => {
   // Саме на збереженні посилань тримається React.memo рядків журналу
-  it('replaceById лишає незмінені записи тими самими об\'єктами', () => {
+  it("replaceById лишає незмінені записи тими самими об'єктами", () => {
     const items = [item('a', 1), item('b', 2)];
 
     const next = replaceById(items, 'b', item('b', 3));
@@ -32,7 +32,12 @@ describe('хелпери оптимістичних оновлень', () => {
 });
 
 describe('applyCoinsToLeaderboard', () => {
-  const row = (studentId: string, lastName: string, redCoins: number, position: number): ILeaderboardRow => ({
+  const row = (
+    studentId: string,
+    lastName: string,
+    redCoins: number,
+    position: number
+  ): ILeaderboardRow => ({
     position,
     studentId,
     firstName: 'Студент',
@@ -41,7 +46,11 @@ describe('applyCoinsToLeaderboard', () => {
     redCoins,
   });
 
-  const rows = [row('s1', 'Бойко', 30, 1), row('s2', 'Антоненко', 20, 2), row('s3', 'Шевчук', 10, 3)];
+  const rows = [
+    row('s1', 'Бойко', 30, 1),
+    row('s2', 'Антоненко', 20, 2),
+    row('s3', 'Шевчук', 10, 3),
+  ];
 
   it('пересортовує рейтинг і перераховує позиції', () => {
     const next = applyCoinsToLeaderboard(rows, 's3', 25);

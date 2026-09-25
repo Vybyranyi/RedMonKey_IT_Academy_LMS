@@ -5,7 +5,13 @@ import { toastApiError } from '@/utils/apiError';
 import { apiUpdateProfile, apiChangePassword } from '@/api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Pencil, KeyRound } from 'lucide-react';
 import { UserRole, type IChangePasswordDto } from '@redmonkey/shared';
@@ -85,7 +91,9 @@ export default function ProfilePage() {
           </AvatarFallback>
         </Avatar>
         <div className="space-y-1.5 flex-1 min-w-0">
-          <h3 className="text-2xl font-bold tracking-tight">{user.firstName} {user.lastName}</h3>
+          <h3 className="text-2xl font-bold tracking-tight">
+            {user.firstName} {user.lastName}
+          </h3>
           <p className="text-slate-300 text-sm break-all">{user.email}</p>
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <Badge className="bg-white/10 text-slate-100 hover:bg-white/20 border-none px-3 font-semibold">
@@ -112,7 +120,12 @@ export default function ProfilePage() {
               <DialogTitle>Редагування профілю</DialogTitle>
             </DialogHeader>
             <ProfileForm
-              initialValues={{ firstName: user.firstName, lastName: user.lastName, phone: user.phone || '', avatar: user.avatar || '' }}
+              initialValues={{
+                firstName: user.firstName,
+                lastName: user.lastName,
+                phone: user.phone || '',
+                avatar: user.avatar || '',
+              }}
               onSubmit={handleUpdateProfile}
               isSubmitting={isSavingProfile}
             />

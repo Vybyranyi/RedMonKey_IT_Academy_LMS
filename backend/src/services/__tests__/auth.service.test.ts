@@ -56,13 +56,17 @@ describe('login', () => {
   it('не пускає неіснуючого користувача', async () => {
     findCredentialsByEmail.mockResolvedValue(null as never);
 
-    await expect(authService.login('nobody@academy.com', 'pass')).rejects.toThrow(UnauthorizedError);
+    await expect(authService.login('nobody@academy.com', 'pass')).rejects.toThrow(
+      UnauthorizedError
+    );
   });
 
   it('не пускає деактивованого користувача', async () => {
     findCredentialsByEmail.mockResolvedValue(dbUser({ isActive: false }));
 
-    await expect(authService.login('teacher@academy.com', 'pass')).rejects.toThrow(UnauthorizedError);
+    await expect(authService.login('teacher@academy.com', 'pass')).rejects.toThrow(
+      UnauthorizedError
+    );
   });
 
   it('не пускає з невірним паролем', async () => {
@@ -78,11 +82,15 @@ describe('login', () => {
   // було перебором дізнатися, які email зареєстровані
   it('не розрізняє в тексті невідомий email і невірний пароль', async () => {
     findCredentialsByEmail.mockResolvedValue(null as never);
-    const unknownEmail = await authService.login('nobody@academy.com', 'pass').catch((e) => e.message);
+    const unknownEmail = await authService
+      .login('nobody@academy.com', 'pass')
+      .catch((e) => e.message);
 
     findCredentialsByEmail.mockResolvedValue(dbUser());
     compare.mockResolvedValue(false as never);
-    const wrongPassword = await authService.login('teacher@academy.com', 'x').catch((e) => e.message);
+    const wrongPassword = await authService
+      .login('teacher@academy.com', 'x')
+      .catch((e) => e.message);
 
     expect(unknownEmail).toBe(wrongPassword);
   });
@@ -127,21 +135,35 @@ describe('refresh', () => {
   // Розбіжність версій означає, що сесію відкликано (logout або зміна пароля)
   it('відхиляє токен зі старою tokenVersion', async () => {
     findCredentialsById.mockResolvedValue(dbUser({ tokenVersion: 2 }));
-    const stale = generateRefreshToken({ userId: 'user-1', role: UserRole.TEACHER, tokenVersion: 1 });
+    const stale = generateRefreshToken({
+      userId: 'user-1',
+      role: UserRole.TEACHER,
+      tokenVersion: 1,
+    });
 
-    await expect(authService.refresh(stale)).rejects.toThrow('Сесію завершено. Увійдіть у систему повторно');
+    await expect(authService.refresh(stale)).rejects.toThrow(
+      'Сесію завершено. Увійдіть у систему повторно'
+    );
   });
 
   it('відхиляє токен деактивованого користувача', async () => {
     findCredentialsById.mockResolvedValue(dbUser({ isActive: false }));
-    const token = generateRefreshToken({ userId: 'user-1', role: UserRole.TEACHER, tokenVersion: 1 });
+    const token = generateRefreshToken({
+      userId: 'user-1',
+      role: UserRole.TEACHER,
+      tokenVersion: 1,
+    });
 
     await expect(authService.refresh(token)).rejects.toThrow(UnauthorizedError);
   });
 
   it('видає новий access-токен за актуальним refresh', async () => {
     findCredentialsById.mockResolvedValue(dbUser({ tokenVersion: 1 }));
-    const token = generateRefreshToken({ userId: 'user-1', role: UserRole.TEACHER, tokenVersion: 1 });
+    const token = generateRefreshToken({
+      userId: 'user-1',
+      role: UserRole.TEACHER,
+      tokenVersion: 1,
+    });
 
     const { accessToken } = await authService.refresh(token);
 
@@ -163,7 +185,11 @@ describe('logout', () => {
 
   // Інкремент версії миттєво вбиває refresh-токени на всіх пристроях
   it('інкрементує tokenVersion за валідним токеном', async () => {
-    const token = generateRefreshToken({ userId: 'user-1', role: UserRole.TEACHER, tokenVersion: 1 });
+    const token = generateRefreshToken({
+      userId: 'user-1',
+      role: UserRole.TEACHER,
+      tokenVersion: 1,
+    });
 
     await authService.logout(token);
 

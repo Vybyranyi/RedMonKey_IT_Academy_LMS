@@ -69,7 +69,7 @@ export const userService = {
     return user;
   },
 
-/** Зведена статистика студента: оцінки, монети, відвідуваність (ТЗ 4.2). */
+  /** Зведена статистика студента: оцінки, монети, відвідуваність (ТЗ 4.2). */
   async getUserStats(id: string, actor: TokenPayload): Promise<IUserStats> {
     const user = await userRepository.findById(id);
     if (!user || !user.isActive) {
@@ -100,7 +100,6 @@ export const userService = {
     };
   },
 
-
   // Тіло вже пройшло createUserSchema: поля поза білим списком сюди не доходять
   async createUser(userData: ICreateUserDto) {
     const { firstName, lastName, email, password, role, phone, group } = userData;
@@ -122,7 +121,7 @@ export const userService = {
         passwordHash,
         role,
         phone: phone ?? null,
-        groupId: role === UserRole.STUDENT ? group ?? null : null,
+        groupId: role === UserRole.STUDENT ? (group ?? null) : null,
         redCoins: 0,
       })
       .catch(rethrowAsBadRequest);
@@ -145,7 +144,7 @@ export const userService = {
     // Перепризначення групи — одне поле FK. Не-студент групи не має.
     if ('group' in updateBody || role !== undefined) {
       const finalRole = (role ?? oldUser.role) as UserRole;
-      data.groupId = finalRole === UserRole.STUDENT ? group ?? null : null;
+      data.groupId = finalRole === UserRole.STUDENT ? (group ?? null) : null;
     }
 
     return userRepository.update(id, data).catch(rethrowAsBadRequest);

@@ -35,7 +35,10 @@ export const updateAttendanceSchema = z
 
 /** POST /lessons/:id/complete — lessonId береться з URL, у тілі лише records. */
 export const completeLessonSchema = z.object({
-  records: z.array(attendanceRecordSchema, { error: 'records має бути масивом' }).max(200).default([]),
+  records: z
+    .array(attendanceRecordSchema, { error: 'records має бути масивом' })
+    .max(200)
+    .default([]),
 });
 
 export type IAttendanceRecordDto = z.infer<typeof attendanceRecordSchema>;

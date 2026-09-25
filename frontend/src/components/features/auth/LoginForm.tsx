@@ -12,7 +12,10 @@ export interface LoginFormValues {
 }
 
 interface LoginFormProps {
-  onSubmit: (values: LoginFormValues, actions: { setSubmitting: (isSubmitting: boolean) => void }) => Promise<void>;
+  onSubmit: (
+    values: LoginFormValues,
+    actions: { setSubmitting: (isSubmitting: boolean) => void }
+  ) => Promise<void>;
 }
 
 export function LoginForm({ onSubmit }: LoginFormProps) {
@@ -70,7 +73,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
                   <Input
                     {...field}
                     id="password"
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     className={`pl-10 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] tracking-widest placeholder:tracking-widest text-sm ${
                       errors.password && touched.password ? 'border-destructive' : ''
@@ -84,9 +87,9 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
             )}
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full mt-2 bg-[#BA0000] hover:bg-[#A00000] text-white rounded-md h-11 text-base font-medium shadow-sm transition-colors" 
+          <Button
+            type="submit"
+            className="w-full mt-2 bg-[#BA0000] hover:bg-[#A00000] text-white rounded-md h-11 text-base font-medium shadow-sm transition-colors"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Вхід...' : 'Увійти'}

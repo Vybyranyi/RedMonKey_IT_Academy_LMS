@@ -13,7 +13,12 @@ vi.mock('../../repositories/academy.repository.js', () => ({
   academyRepository: { getDefaultId: vi.fn() },
 }));
 vi.mock('../../repositories/attendance.repository.js', () => ({
-  attendanceRepository: { findAll: vi.fn(), findById: vi.fn(), update: vi.fn(), upsertMany: vi.fn() },
+  attendanceRepository: {
+    findAll: vi.fn(),
+    findById: vi.fn(),
+    update: vi.fn(),
+    upsertMany: vi.fn(),
+  },
 }));
 vi.mock('../../repositories/group.repository.js', () => ({
   groupRepository: { findIdsByTeacher: vi.fn() },
@@ -91,9 +96,9 @@ describe('saveBulk', () => {
   it('викладач не відмічає явку за чуже заняття', async () => {
     findSubjectById.mockResolvedValue({ teacherId: 'teacher-9', groupId: OWN_GROUP } as never);
 
-    await expect(attendanceService.saveBulk({ lessonId: LESSON_ID, records }, teacher)).rejects.toThrow(
-      ForbiddenError
-    );
+    await expect(
+      attendanceService.saveBulk({ lessonId: LESSON_ID, records }, teacher)
+    ).rejects.toThrow(ForbiddenError);
   });
 
   // Не даємо відмітити чужих студентів: усі мають бути з групи цього заняття

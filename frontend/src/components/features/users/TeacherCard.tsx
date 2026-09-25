@@ -21,18 +21,31 @@ export default function TeacherCard({ teacher, onViewDetails, onEdit }: TeacherC
 
   // Helper for mock avatar colors based on name length or something simple
   const avatarColors = ['bg-orange-600', 'bg-emerald-600', 'bg-blue-600'];
-  const colorClass = avatarColors[(teacher.firstName.length + teacher.lastName.length) % avatarColors.length];
+  const colorClass =
+    avatarColors[(teacher.firstName.length + teacher.lastName.length) % avatarColors.length];
 
   return (
     <Card className="hover:shadow-md transition-all border border-slate-100 rounded-[20px] shadow-sm bg-white relative group">
       <div className="absolute top-3 right-3 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity">
         {onViewDetails && (
-          <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 shadow-sm" onClick={() => onViewDetails(teacher.id)} aria-label="Переглянути картку викладача">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 shadow-sm"
+            onClick={() => onViewDetails(teacher.id)}
+            aria-label="Переглянути картку викладача"
+          >
             <Eye className="h-4 w-4" />
           </Button>
         )}
         {onEdit && (
-          <Button variant="ghost" size="icon" className="h-8 w-8 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 shadow-sm" onClick={() => onEdit(teacher)} aria-label="Редагувати викладача">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 shadow-sm"
+            onClick={() => onEdit(teacher)}
+            aria-label="Редагувати викладача"
+          >
             <Pencil className="h-4 w-4" />
           </Button>
         )}
@@ -57,14 +70,21 @@ export default function TeacherCard({ teacher, onViewDetails, onEdit }: TeacherC
         {groups.length > 0 ? (
           <div className="flex justify-center flex-wrap gap-2">
             {groups.map((grp, idx) => (
-              <Badge key={idx} variant="outline" className={`${idx % 2 === 0 ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'} border-none rounded-full px-3 font-semibold text-xs`}>
+              <Badge
+                key={idx}
+                variant="outline"
+                className={`${idx % 2 === 0 ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'} border-none rounded-full px-3 font-semibold text-xs`}
+              >
                 {grp}
               </Badge>
             ))}
           </div>
         ) : (
           <div className="flex justify-center">
-            <Badge variant="outline" className="bg-slate-50 text-slate-500 border-none rounded-full px-3 font-semibold text-xs">
+            <Badge
+              variant="outline"
+              className="bg-slate-50 text-slate-500 border-none rounded-full px-3 font-semibold text-xs"
+            >
               Немає груп
             </Badge>
           </div>
@@ -72,11 +92,15 @@ export default function TeacherCard({ teacher, onViewDetails, onEdit }: TeacherC
 
         <div className="grid grid-cols-2 pt-5 pb-2 border-t border-slate-100 text-slate-600 relative w-48 mx-auto">
           <div className="flex flex-col items-center">
-            <span className="font-extrabold text-slate-800 text-lg leading-tight">{groupsCount}</span>
+            <span className="font-extrabold text-slate-800 text-lg leading-tight">
+              {groupsCount}
+            </span>
             <span className="text-[10px] text-slate-400 font-medium tracking-wide">груп</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="font-extrabold text-slate-800 text-lg leading-tight">{studentsCount}</span>
+            <span className="font-extrabold text-slate-800 text-lg leading-tight">
+              {studentsCount}
+            </span>
             <span className="text-[10px] text-slate-400 font-medium tracking-wide">студентів</span>
           </div>
         </div>

@@ -12,7 +12,12 @@ const router = Router();
 // Доступ до конкретного запису перевіряється в attendanceService
 router.get('/', authenticate, getAttendance);
 
-router.post('/bulk', authenticate, authorize([UserRole.ADMIN, UserRole.TEACHER]), saveBulkAttendance);
+router.post(
+  '/bulk',
+  authenticate,
+  authorize([UserRole.ADMIN, UserRole.TEACHER]),
+  saveBulkAttendance
+);
 router.patch('/:id', authenticate, authorize([UserRole.ADMIN, UserRole.TEACHER]), updateAttendance);
 
 export default router;

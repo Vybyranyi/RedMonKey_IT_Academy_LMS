@@ -19,11 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  apiCompleteLesson,
-  apiGetAttendance,
-  apiSaveBulkAttendance,
-} from '@/api/attendance';
+import { apiCompleteLesson, apiGetAttendance, apiSaveBulkAttendance } from '@/api/attendance';
 import { apiGetUsers } from '@/api/users';
 import { LESSON_STATUS_META } from '@/lib/lessonStatuses';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
@@ -51,9 +47,7 @@ export default function LessonDetailsModal({
   const [students, setStudents] = useState<IUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [attendance, setAttendance] = useState<
-    Record<string, AttendanceStatus>
-  >({});
+  const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -118,8 +112,7 @@ export default function LessonDetailsModal({
   const typeMeta = LESSON_TYPE_META[lesson.type];
   const statusMeta = LESSON_STATUS_META[lesson.status];
   const canComplete =
-    lesson.status !== LessonStatus.COMPLETED &&
-    lesson.status !== LessonStatus.CANCELLED;
+    lesson.status !== LessonStatus.COMPLETED && lesson.status !== LessonStatus.CANCELLED;
   const records = Object.entries(attendance).map(([studentId, status]) => ({
     studentId,
     status,
@@ -135,9 +128,7 @@ export default function LessonDetailsModal({
         // Явка на календарі не видна — оновлювати розклад нема чого
         await apiSaveBulkAttendance({ lessonId: lesson.id, records });
       }
-      toast.success(
-        complete ? 'Заняття позначено проведеним' : 'Явку збережено',
-      );
+      toast.success(complete ? 'Заняття позначено проведеним' : 'Явку збережено');
       onClose();
     } catch (error) {
       toastApiError(error, 'Не вдалося зберегти дані заняття');
@@ -150,20 +141,14 @@ export default function LessonDetailsModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[680px] p-0 overflow-hidden bg-slate-50">
         <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle className="text-xl font-bold text-slate-900">
-            {lesson.title}
-          </DialogTitle>
+          <DialogTitle className="text-xl font-bold text-slate-900">{lesson.title}</DialogTitle>
         </DialogHeader>
 
         <div className="max-h-[70vh] overflow-y-auto px-6 pb-6">
           <div className="bg-[#1A2645] rounded-2xl p-6 text-white shadow-sm mt-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className={`${typeMeta.event} border-0 font-semibold`}>
-                {typeMeta.label}
-              </Badge>
-              <Badge className={`${statusMeta.badge} font-semibold`}>
-                {statusMeta.label}
-              </Badge>
+              <Badge className={`${typeMeta.event} border-0 font-semibold`}>{typeMeta.label}</Badge>
+              <Badge className={`${statusMeta.badge} font-semibold`}>{statusMeta.label}</Badge>
             </div>
             <div className="grid gap-2 text-sm text-slate-300 sm:grid-cols-2 mt-4">
               <span className="flex items-center gap-2">
@@ -189,9 +174,7 @@ export default function LessonDetailsModal({
 
           <div className="mt-6 mb-4 flex items-center justify-between">
             <h3 className="text-lg font-bold text-slate-900">Відвідуваність</h3>
-            <span className="text-sm text-slate-500">
-              {students.length} студентів
-            </span>
+            <span className="text-sm text-slate-500">{students.length} студентів</span>
           </div>
           {isLoading ? (
             <div className="space-y-3" aria-label="Завантаження">

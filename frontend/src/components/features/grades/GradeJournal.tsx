@@ -112,7 +112,9 @@ export default function GradeJournal({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="sticky left-0 bg-white z-10 min-w-[160px] sm:min-w-[220px]">Студент</TableHead>
+            <TableHead className="sticky left-0 bg-white z-10 min-w-[160px] sm:min-w-[220px]">
+              Студент
+            </TableHead>
             {lessons.map((lesson) => (
               <TableHead key={lesson.id} className="text-center min-w-[72px]">
                 <span className="block text-xs font-semibold text-slate-700">

@@ -96,7 +96,9 @@ export default function GradeCell({
 
       <PopoverContent className="w-64 space-y-3" align="center">
         <div className="space-y-2">
-          <Label htmlFor="grade-value">Оцінка ({GRADE_MIN}–{GRADE_MAX})</Label>
+          <Label htmlFor="grade-value">
+            Оцінка ({GRADE_MIN}–{GRADE_MAX})
+          </Label>
           <Input
             id="grade-value"
             type="number"

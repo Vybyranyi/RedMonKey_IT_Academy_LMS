@@ -25,7 +25,12 @@ vi.mock('../repositories/coin.repository.js', () => ({
   },
 }));
 vi.mock('../repositories/group.repository.js', () => ({
-  groupRepository: { findIdsByTeacher: vi.fn(), findByName: vi.fn(), create: vi.fn(), update: vi.fn() },
+  groupRepository: {
+    findIdsByTeacher: vi.fn(),
+    findByName: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+  },
 }));
 vi.mock('../repositories/user.repository.js', () => ({
   userRepository: {
@@ -292,7 +297,13 @@ describe('POST /api/v1/users', () => {
     const response = await request(app)
       .post('/api/v1/users')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ ...newStudent, redCoins: 1000, tokenVersion: 7, passwordHash: 'plain', academyId: 'x' });
+      .send({
+        ...newStudent,
+        redCoins: 1000,
+        tokenVersion: 7,
+        passwordHash: 'plain',
+        academyId: 'x',
+      });
 
     expect(response.status).toBe(201);
     const [data] = userCreate.mock.calls[0] as [Record<string, unknown>];
@@ -343,7 +354,13 @@ describe('POST /api/v1/groups', () => {
 
     expect(response.status).toBe(201);
     expect(groupCreate).toHaveBeenCalledWith(
-      { name: 'JS-2026-A', description: '', startDate: null, endDate: null, academyId: 'academy-1' },
+      {
+        name: 'JS-2026-A',
+        description: '',
+        startDate: null,
+        endDate: null,
+        academyId: 'academy-1',
+      },
       []
     );
   });
@@ -383,7 +400,11 @@ describe('PATCH /api/v1/groups/:id', () => {
       .send(body);
 
   it('не передає в БД поля поза білим списком', async () => {
-    const response = await patchGroup({ description: 'Новий опис', isActive: false, academyId: 'x' });
+    const response = await patchGroup({
+      description: 'Новий опис',
+      isActive: false,
+      academyId: 'x',
+    });
 
     expect(response.status).toBe(200);
     expect(groupUpdate).toHaveBeenCalledWith(GROUP_ID, { description: 'Новий опис' }, undefined);
@@ -535,9 +556,7 @@ describe('POST /api/v1/auth/login', () => {
 
   // Без email Prisma отримала б where: { email: undefined } — тобто першого-ліпшого користувача
   it('запит без email відхиляє з 400, не звертаючись до БД', async () => {
-    const response = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ password: 'secret123' });
+    const response = await request(app).post('/api/v1/auth/login').send({ password: 'secret123' });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe('Потрібно вказати email');

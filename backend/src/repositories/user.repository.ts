@@ -111,7 +111,11 @@ export const userRepository = {
   },
 
   async deactivate(id: string) {
-    return prisma.user.update({ where: { id }, data: { isActive: false }, select: publicUserSelect });
+    return prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+      select: publicUserSelect,
+    });
   },
 
   /**

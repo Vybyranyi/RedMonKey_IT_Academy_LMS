@@ -6,7 +6,13 @@ import type { IGroupDto, IPopulatedGroup } from '@redmonkey/shared';
 import { apiGetGroups, apiCreateGroup } from '@/api/groups';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import EmptyState from '@/components/common/EmptyState';
@@ -90,7 +96,7 @@ export default function GroupsPage() {
           <Skeleton className="h-6 w-40" />
         ) : (
           <Badge variant="secondary">
-            {groups.filter(g => g.isActive).length} активних · {groups.length} всього
+            {groups.filter((g) => g.isActive).length} активних · {groups.length} всього
           </Badge>
         )}
 
@@ -112,7 +118,11 @@ export default function GroupsPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-busy="true" aria-label="Завантаження груп">
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          aria-busy="true"
+          aria-label="Завантаження груп"
+        >
           {[1, 2, 3].map((n) => (
             <Skeleton key={n} className="h-72 w-full rounded-xl" />
           ))}
@@ -135,11 +145,7 @@ export default function GroupsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {groups.map((group) => (
-            <GroupCard
-              key={group.id}
-              group={group}
-              onViewDetails={handleViewDetails}
-            />
+            <GroupCard key={group.id} group={group} onViewDetails={handleViewDetails} />
           ))}
         </div>
       )}

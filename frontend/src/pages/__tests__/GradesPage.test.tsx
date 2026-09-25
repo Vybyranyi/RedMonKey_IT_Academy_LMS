@@ -11,11 +11,31 @@ import GradesPage from '../GradesPage';
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
 
-const admin = { id: 'admin-1', role: UserRole.ADMIN, firstName: 'Ірина', lastName: 'Адміненко' } as IUser;
-const teacher = { id: 'teacher-1', role: UserRole.TEACHER, firstName: 'Олег', lastName: 'Петренко' } as IUser;
+const admin = {
+  id: 'admin-1',
+  role: UserRole.ADMIN,
+  firstName: 'Ірина',
+  lastName: 'Адміненко',
+} as IUser;
+const teacher = {
+  id: 'teacher-1',
+  role: UserRole.TEACHER,
+  firstName: 'Олег',
+  lastName: 'Петренко',
+} as IUser;
 const group = { id: 'group-1', name: 'JS-1', teachers: [], students: [] };
-const student = { id: 'student-1', firstName: 'Анна', lastName: 'Коваленко', role: UserRole.STUDENT } as IUser;
-const lesson = { id: 'lesson-1', title: 'Вступ', date: '2026-09-01T10:00:00.000Z', groupId: 'group-1' };
+const student = {
+  id: 'student-1',
+  firstName: 'Анна',
+  lastName: 'Коваленко',
+  role: UserRole.STUDENT,
+} as IUser;
+const lesson = {
+  id: 'lesson-1',
+  title: 'Вступ',
+  date: '2026-09-01T10:00:00.000Z',
+  groupId: 'group-1',
+};
 
 const savedGrade = {
   id: 'grade-1',
@@ -95,7 +115,10 @@ describe('GradesPage — оптимістичне збереження оцін�
 
     expect(await screen.findByRole('button', { name: '+' })).toBeEnabled();
     expect(screen.queryByText('9.0')).not.toBeInTheDocument();
-    expect(toast.error).toHaveBeenCalledWith('Студент не належить до групи цього заняття', expect.anything());
+    expect(toast.error).toHaveBeenCalledWith(
+      'Студент не належить до групи цього заняття',
+      expect.anything()
+    );
   });
 
   it('видаляє оцінку одразу і повертає її, якщо видалення не вдалося', async () => {

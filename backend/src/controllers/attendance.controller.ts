@@ -1,21 +1,19 @@
 import { bulkAttendanceSchema, updateAttendanceSchema } from '@redmonkey/shared';
 import { parseBody } from '../utils/validation.js';
 import { attendanceService } from '../services/attendance.service.js';
-import { Request, Response} from 'express';
+import { Request, Response } from 'express';
 import { handleError, UnauthorizedError } from '../utils/errors.js';
 
 export const getAttendance = async (req: Request, res: Response): Promise<void> => {
-  try{
+  try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
-    const {lessonId, studentId} = req.query;
+    const { lessonId, studentId } = req.query;
     const attendance = await attendanceService.getAttendance({ lessonId, studentId }, req.user);
     res.status(200).json(attendance);
   } catch (error) {
     handleError(res, error, 'Помилка при отриманні явки');
-
   }
-
-}
+};
 
 export const saveBulkAttendance = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -26,9 +24,7 @@ export const saveBulkAttendance = async (req: Request, res: Response): Promise<v
   } catch (error) {
     handleError(res, error, 'Помилка при збереженні явки');
   }
-
-
-}
+};
 export const updateAttendance = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
@@ -39,6 +35,4 @@ export const updateAttendance = async (req: Request, res: Response): Promise<voi
   } catch (error) {
     handleError(res, error, 'Помилка при оновленні явки');
   }
-
-
-}
+};

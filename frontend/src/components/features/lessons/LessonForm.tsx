@@ -14,7 +14,13 @@ import { validateWithZod } from '@/utils/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toastApiError } from '@/utils/apiError';
 
 /** Значення форми: дата й час — окремі поля, бекенд же чекає один ISO-рядок. */
@@ -133,7 +139,9 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                 />
               )}
             </Field>
-            {errors.title && touched.title && <p className="text-xs text-destructive">{errors.title}</p>}
+            {errors.title && touched.title && (
+              <p className="text-xs text-destructive">{errors.title}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -168,11 +176,15 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                 </SelectTrigger>
                 <SelectContent>
                   {groups.map((group) => (
-                    <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.groupId && touched.groupId && <p className="text-xs text-destructive">{errors.groupId}</p>}
+              {errors.groupId && touched.groupId && (
+                <p className="text-xs text-destructive">{errors.groupId}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -189,11 +201,15 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(LESSON_TYPE_META).map(([type, meta]) => (
-                    <SelectItem key={type} value={type}>{meta.label}</SelectItem>
+                    <SelectItem key={type} value={type}>
+                      {meta.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.type && touched.type && <p className="text-xs text-destructive">{errors.type}</p>}
+              {errors.type && touched.type && (
+                <p className="text-xs text-destructive">{errors.type}</p>
+              )}
             </div>
           </div>
 
@@ -210,7 +226,9 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                   />
                 )}
               </Field>
-              {errors.date && touched.date && <p className="text-xs text-destructive">{errors.date}</p>}
+              {errors.date && touched.date && (
+                <p className="text-xs text-destructive">{errors.date}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -225,9 +243,10 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                   />
                 )}
               </Field>
-              {errors.time && touched.time && <p className="text-xs text-destructive">{errors.time}</p>}
+              {errors.time && touched.time && (
+                <p className="text-xs text-destructive">{errors.time}</p>
+              )}
             </div>
-
           </div>
 
           <div className="space-y-2">
@@ -242,7 +261,9 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                 />
               )}
             </Field>
-            {errors.duration && touched.duration && <p className="text-xs text-destructive">{errors.duration}</p>}
+            {errors.duration && touched.duration && (
+              <p className="text-xs text-destructive">{errors.duration}</p>
+            )}
           </div>
 
           {isAdmin && (
