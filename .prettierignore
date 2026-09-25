@@ -1,0 +1,11 @@
+# Prettier 3 ще й сам пропускає все з .gitignore (node_modules, dist, .env)
+package-lock.json
+backend/prisma/migrations
+
+# ShadCN-компоненти копіює CLI (`npx shadcn add`). Лишаємо їх у стилі генератора,
+# щоб оновлення компонента давало чистий дифф, а не суміш із переформатуванням
+frontend/src/components/ui
+
+# Документацію пишемо руками: Prettier вирівнює таблиці пробілами, і правка
+# однієї клітинки перемальовувала б у диффі всю таблицю
+*.md
