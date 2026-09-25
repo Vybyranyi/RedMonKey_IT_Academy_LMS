@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { IUser } from '@redmonkey/shared';
+import { clearCache } from '../api/cache';
 
 interface AuthState {
     user: IUser | null;
@@ -19,11 +20,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     isAuthenticated: !!storedToken,
     setAuth: (user, accessToken) => {
         localStorage.setItem('accessToken', accessToken);
+        clearCache();
         set({ user, accessToken, isAuthenticated: true });
     },
     setUser: (user) => set({ user }),
     clearAuth: () => {
         localStorage.removeItem('accessToken');
+        clearCache();
         set({ user: null, accessToken: null, isAuthenticated: false });
     },
     updateAccessToken: (token) => {

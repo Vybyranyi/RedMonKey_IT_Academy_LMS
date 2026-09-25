@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/authStore';
-import { getApiErrorMessage } from '@/utils/apiError';
+import { toastApiError } from '@/utils/apiError';
 import { apiUpdateProfile, apiChangePassword } from '@/api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +31,7 @@ export default function ProfilePage() {
       <div className="space-y-6">
         <Skeleton className="h-10 w-64" />
         <Skeleton className="h-32 w-full rounded-2xl" />
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-10 w-40" />
         </div>
@@ -53,8 +53,7 @@ export default function ProfilePage() {
       toast.success('Профіль оновлено');
       setIsEditOpen(false);
     } catch (error) {
-      console.error('Помилка при оновленні профілю', error);
-      toast.error(getApiErrorMessage(error, 'Не вдалося оновити профіль'));
+      toastApiError(error, 'Не вдалося оновити профіль');
     } finally {
       setIsSavingProfile(false);
     }
@@ -69,8 +68,7 @@ export default function ProfilePage() {
       toast.success('Пароль успішно змінено');
       setIsPasswordOpen(false);
     } catch (error) {
-      console.error('Помилка при зміні пароля', error);
-      toast.error(getApiErrorMessage(error, 'Не вдалося змінити пароль'));
+      toastApiError(error, 'Не вдалося змінити пароль');
     } finally {
       setIsChangingPassword(false);
     }
@@ -78,7 +76,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-[#1A2645] rounded-2xl p-6 flex items-center gap-5 text-white shadow-sm">
+      <div className="bg-[#1A2645] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5 text-white shadow-sm">
         <Avatar className="h-20 w-20 border-2 border-white/20">
           <AvatarImage src={user.avatar || undefined} />
           <AvatarFallback className="bg-[#0070F3] text-2xl font-bold text-white">
@@ -86,10 +84,10 @@ export default function ProfilePage() {
             {user.lastName.charAt(0)}
           </AvatarFallback>
         </Avatar>
-        <div className="space-y-1.5 flex-1">
+        <div className="space-y-1.5 flex-1 min-w-0">
           <h3 className="text-2xl font-bold tracking-tight">{user.firstName} {user.lastName}</h3>
-          <p className="text-slate-300 text-sm">{user.email}</p>
-          <div className="flex items-center gap-2 pt-1">
+          <p className="text-slate-300 text-sm break-all">{user.email}</p>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <Badge className="bg-white/10 text-slate-100 hover:bg-white/20 border-none px-3 font-semibold">
               {roleLabel[user.role]}
             </Badge>
@@ -102,7 +100,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" className="flex items-center gap-2">

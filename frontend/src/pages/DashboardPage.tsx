@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { format, startOfWeek, endOfWeek, isToday } from 'date-fns';
 import { uk } from 'date-fns/locale';
-import { toast } from 'sonner';
 import {
   Users,
   GraduationCap,
@@ -29,7 +28,8 @@ import { apiGetLessons } from '@/api/lessons';
 import { apiGetUsers, apiGetUserStats } from '@/api/users';
 import { apiGetLeaderboard } from '@/api/coins';
 import { apiGetGroups } from '@/api/groups';
-import { getApiErrorMessage } from '@/utils/apiError';
+import { getApiErrorMessage, isSilentError } from '@/utils/apiError';
+import ErrorState from '@/components/common/ErrorState';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import StatCard from '@/components/features/dashboard/StatCard';
 import StudentStatsCards from '@/components/features/dashboard/StudentStatsCards';
@@ -41,6 +41,8 @@ export default function DashboardPage() {
   const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [weekLessons, setWeekLessons] = useState<IPopulatedLesson[]>([]);
   const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
   const [leaderboard, setLeaderboard] = useState<ILeaderboardRow[]>([]);
@@ -58,10 +60,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!userId) return;
-    let cancelled = false;
+    // Пішли з дашборду до відповіді — шість паралельних запитів скасовуються
+    const controller = new AbortController();
+    const { signal } = controller;
 
     const fetchData = async () => {
       setIsLoading(true);
+      setLoadError(null);
       try {
         const weekRange = {
           from: startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString(),
@@ -70,15 +75,15 @@ export default function DashboardPage() {
 
         const [lessonsData, studentsData, teachersData, groupsData, leaderboardData, statsData] =
           await Promise.all([
-            apiGetLessons(weekRange),
-            isAdmin ? apiGetUsers({ role: UserRole.STUDENT }) : Promise.resolve([]),
-            isAdmin ? apiGetUsers({ role: UserRole.TEACHER }) : Promise.resolve([]),
+            apiGetLessons(weekRange, { signal }),
+            isAdmin ? apiGetUsers({ role: UserRole.STUDENT }, { signal }) : Promise.resolve([]),
+            isAdmin ? apiGetUsers({ role: UserRole.TEACHER }, { signal }) : Promise.resolve([]),
             isAdmin || isTeacher ? apiGetGroups() : Promise.resolve([]),
-            apiGetLeaderboard({ limit: 5 }),
-            isStudent ? apiGetUserStats(userId) : Promise.resolve(null),
+            apiGetLeaderboard({ limit: 5 }, { signal }),
+            isStudent ? apiGetUserStats(userId, { signal }) : Promise.resolve(null),
           ]);
 
-        if (cancelled) return;
+        if (signal.aborted) return;
 
         setWeekLessons(lessonsData);
         setGroups(groupsData);
@@ -90,20 +95,18 @@ export default function DashboardPage() {
           groups: groupsData.length,
         });
       } catch (error) {
-        if (!cancelled) {
-          toast.error(getApiErrorMessage(error, 'Не вдалося завантажити дані дашборду'));
+        if (!signal.aborted && !isSilentError(error)) {
+          setLoadError(getApiErrorMessage(error, 'Не вдалося завантажити дані дашборду'));
         }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!signal.aborted) setIsLoading(false);
       }
     };
 
     fetchData();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, isAdmin, isTeacher, isStudent]);
+    return () => controller.abort();
+  }, [userId, isAdmin, isTeacher, isStudent, loadAttempt]);
 
   const now = new Date();
   const upcoming = weekLessons.filter((lesson) => new Date(lesson.date) >= now).slice(0, 5);
@@ -119,6 +122,16 @@ export default function DashboardPage() {
   const handleLessonSelect = () => {
     navigate('/schedule');
   };
+
+  if (loadError) {
+    return (
+      <ErrorState
+        title="Не вдалося завантажити дашборд"
+        description={loadError}
+        onRetry={() => setLoadAttempt((value) => value + 1)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

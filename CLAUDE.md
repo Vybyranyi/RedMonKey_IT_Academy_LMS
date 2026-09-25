@@ -71,7 +71,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 - Refresh-токен — httpOnly cookie, довгоживучий (дефолт 7d), містить `tokenVersion`.
 - Logout інкрементує `User.tokenVersion` → усі видані раніше refresh-токени (на всіх пристроях) миттєво стають невалідними (`auth.service.ts`).
 - Реєстрації через публічний ендпоінт немає — користувачів створює `admin` (`POST /users`) або сід-скрипт.
-- Фронтенд: `frontend/src/api/axios.ts` — interceptor ловить 401, чергує паралельні запити (`isRequesting`/`failedQueue`), рефрешить токен один раз і повторює оригінальний запит.
+- Фронтенд: `frontend/src/api/axios.ts` — interceptor ловить 401, чергує паралельні запити (`isRefreshing`/`failedQueue`), рефрешить токен один раз і повторює оригінальний запит. Якщо refresh відхилено (401/403) — сесія завершується **один раз** (`clearAuth` + toast), усі запити отримують `SessionExpiredError`, а 401 після логауту вже не запускає новий рефреш. Збій мережі під час рефрешу не розлогінює. `/auth/login`, `/auth/refresh`, `/auth/logout` рефреш не запускають — їхній 401 означає невірні облікові дані.
 
 ### База даних — важливі нюанси (не очевидні з коду)
 
@@ -86,11 +86,14 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 ## Архітектура frontend
 
-- `pages/` — по одній сторінці на роут (`DashboardPage`, `GroupsPage`, `StudentsPage`, `TeachersPage`, `GradesPage`, `CoinsPage`, `SchedulePage`, `ProfilePage`, `SettingsPage`, `LoginPage`).
+- `pages/` — по одній сторінці на роут (`DashboardPage`, `GroupsPage`, `StudentsPage`, `TeachersPage`, `GradesPage`, `CoinsPage`, `SchedulePage`, `ProfilePage`, `SettingsPage`, `LoginPage`) плюс `NotFoundPage` (catch-all `*` усередині layout) і `ForbiddenPage` (її рендерить `ProtectedRoute`, коли роль не пускає).
 - `components/ui/` — ShadCN-примітиви (не редагувати вручну під конкретну сторінку — розширюй композицією).
-- `components/layout/` — `AppLayout` (Sidebar + Header), `UserProfileWidget`.
+- `components/layout/` — `AppLayout` (Sidebar + Header + `BottomNav` на мобайлі), `UserProfileWidget`, `AppSkeleton`. Розділи й ролі для Sidebar і BottomNav — одне джерело, `navigation.ts`.
+- `components/common/` — `EmptyState` (порожній список + CTA), `ErrorState` (404/403/збій завантаження, `onRetry` дає кнопку «Спробувати знову»), `ErrorBoundary`. Boundary два: у `App.tsx` навколо всього роутера і в `AppLayout` навколо `<Outlet />` з `key={pathname}` — впала сторінка не забирає навігацію.
 - `components/features/` — фіча-специфічні складені компоненти.
-- `api/*.ts` — тонкі функції над `axiosInstance` (з `api/axios.ts`), по одному файлу на ресурс (`auth.ts`, `users.ts`, `groups.ts`, `lessons.ts`, `grades.ts`, `attendance.ts`, `coins.ts`).
+- `api/*.ts` — тонкі функції над `axiosInstance` (з `api/axios.ts`), по одному файлу на ресурс (`auth.ts`, `users.ts`, `groups.ts`, `lessons.ts`, `grades.ts`, `attendance.ts`, `coins.ts`). GET-функції, які сторінки викликають в ефектах, приймають `{ signal }` — ефект створює `AbortController` і скасовує запит у cleanup. `apiGetGroups` кешований (`api/cache.ts`, 60 с, дедуплікація одночасних викликів); мутації груп і користувачів скидають кеш, `setAuth`/`clearAuth` чистять його повністю. Масив із кешу спільний — змінюй лише через копію.
+- Помилки запитів показуй через `toastApiError(error, fallback)` з `utils/apiError.ts`, а не `toast.error(...)` напряму: він мовчить про скасовані запити й `SessionExpiredError` і дедуплікує однакові toast'и. Помилку первинного завантаження сторінки показуй inline через `ErrorState` з повтором (лічильник `loadAttempt` у залежностях ефекту).
+- **Мутації — оптимістично або точково, без перезапиту всього списку.** Хелпери в `lib/optimistic.ts` (`replaceById`, `removeById`, `upsertById`, `createTempId`, тип `Pending<T>`) зберігають незмінені записи тими самими об'єктами — на цьому тримається `React.memo` рядків журналу (`GradeJournalRow` з порівнянням клітинок за вмістом) і відвідуваності (`AttendanceRow`). Колбеки, які йдуть у мемоізовані рядки, — `useCallback` з функціональним `setState`. Відкат при помилці — точковий (зворотна дельта, повернення попереднього запису), не знімок усього стану.
 - `store/authStore.ts` — Zustand, тримає `user`/`accessToken`/`isAuthenticated`; `accessToken` дублюється в `localStorage` для відновлення сесії при перезавантаженні сторінки.
 - `router/index.tsx` — React Router з захищеними маршрутами; `ProtectedRoute` приймає `allowedRoles` і використовується вкладено (спершу авторизація, далі — рівень ролі).
 - **Теки `hooks/` немає** — на відміну від розділу 5.1 ТЗ. Дані компоненти тягнуть самі через `useEffect` + функції з `api/`; React Query в проєкті не використовується. Не орієнтуйся на структуру з ТЗ, дивись реальні теки.
@@ -143,7 +146,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 **Input:** `h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000]`.
 
-**Стани:** loading → ShadCN `Skeleton` (не спінер) + кнопка disabled з текстом `"Збереження..."`; error форми → `text-xs text-destructive`; server error → `bg-red-50 text-red-600 border border-red-200`; сповіщення → `Sonner` toast; порожні списки — текстовий empty state з CTA, не голий екран.
+**Стани:** loading → ShadCN `Skeleton` (не спінер) + кнопка disabled з текстом `"Збереження..."`; error форми → `text-xs text-destructive`; server error → `bg-red-50 text-red-600 border border-red-200`; сповіщення → `Sonner` toast через `toastApiError`; порожні списки — `EmptyState` з CTA, збій завантаження — `ErrorState` з «Спробувати знову» (обидва в `components/common/`), не голий екран.
 
 **Чекліст перед здачею UI-задачі:** кольори з палітри, шрифт Geist, radius за розміром елемента, стани loading/empty/error реалізовані, адаптивність (`sm`/`md`/`lg`) перевірена, іконки з lucide-react, admin-only кнопки приховані для інших ролей, форми — Zod + Formik з видимими помилками.
 
@@ -162,9 +165,9 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 | coins | `/coins/transactions`, `/coins/leaderboard`, `/coins/students/:id/balance` | `CoinsPage` (`CoinAwardForm`, `CoinBalanceCard`, `CoinHistory`, `CoinLeaderboard`) |
 | dashboard | `stats.repository.ts` | `DashboardPage` з контентом за роллю |
 
-Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)). З п. 6.1 закрито безпеку backend (helmet, rate-limit, ліміт тіла, глобальний error-handler + 404, аудит секретних полів) і базу даних (міграції, `EXPLAIN` журналу й leaderboard). Відкриті: деплой, стійкість UI (404/403/ErrorBoundary), ESLint у backend, демо-дані й документація. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
+Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)). З п. 6.1 закрито безпеку backend (helmet, rate-limit, ліміт тіла, глобальний error-handler + 404, аудит секретних полів) і базу даних (міграції, `EXPLAIN` журналу й leaderboard). П. 6.2 (стійкість UI) закрито повністю: 404/403, ErrorBoundary, втрата сесії, Bottom Nav, loading/empty/error стани, кеш і скасування запитів, оптимістичні оновлення. Відкриті: деплой, ESLint у backend, демо-дані й документація. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
 
-Свідомі борги, зафіксовані окремо: немає лінтера в backend, RLS вимкнений, `SettingsPage` — заглушка.
+Свідомі борги, зафіксовані окремо: немає лінтера в backend, RLS вимкнений, `SettingsPage` — заглушка (з empty state). `GET /grades/summary` лишився на backend, але журнал рахує середнє з уже завантажених оцінок і цей запит не робить.
 
 ## Тести
 
@@ -175,7 +178,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 - `backend` репозиторії — `repositories/__tests__/secret-fields.test.ts`: аудит проєкцій (див. «Секрети `User`» вище).
 - `backend` rate-limit — `src/__tests__/rateLimit.test.ts` окремим файлом: лічильники живуть у пам'яті модуля, а Vitest дає кожному файлу свіжий `app`, тож вичерпаний ліміт не зачіпає інші API-тести.
 - `backend` API — `src/__tests__/api.test.ts`: supertest ганяє справжні маршрути, middleware, контролери й сервіси, а моки стоять на найглибшому шарі (репозиторії + `lib/prisma.js`). Тому `app` зібрано в `src/app.ts` окремо від `listen()` у `src/index.ts` — не зливай їх назад.
-- `frontend` — jsdom + React Testing Library; HTTP підміняє адаптер axios (`axiosInstance.defaults.adapter`), а не реальні запити.
+- `frontend` — jsdom + React Testing Library; HTTP підміняє адаптер axios (`axiosInstance.defaults.adapter`), а не реальні запити. Для сторінок є хелпер `src/test/apiMock.ts`: `installApi({ 'POST /grades': ... })`, `deferred()` (щоб перевірити стан UI, поки «сервер» думає), `httpError()`, `callsTo()` (що сторінка не перезапитала зайве).
 - `backend/vitest.setup.ts` виставляє фіктивні JWT-секрети: без них `config/env.ts` падає прямо на імпорті.
 - Тести виключені з `tsc`-білду через `exclude` у tsconfig-ах кожного workspace — не прибирай, інакше `npm run build` почне тягнути їх у `dist`.
 

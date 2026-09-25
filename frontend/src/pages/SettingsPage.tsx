@@ -1,3 +1,12 @@
+import { Settings } from 'lucide-react';
+import EmptyState from '@/components/common/EmptyState';
+
 export default function SettingsPage() {
-  return <p className="text-slate-500">Розділ у розробці. Доступно лише для Admin.</p>;
+  return (
+    <EmptyState
+      icon={Settings}
+      title="Розділ у розробці"
+      description="Тут з'являться системні налаштування академії. Поки що всі параметри задаються на сервері."
+    />
+  );
 }

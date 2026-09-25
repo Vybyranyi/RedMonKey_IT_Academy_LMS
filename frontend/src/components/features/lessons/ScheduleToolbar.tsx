@@ -29,7 +29,7 @@ export default function ScheduleToolbar({ label, view, onView, onNavigate }: Sch
           <ChevronLeft className="h-4 w-4 text-slate-600" />
         </Button>
 
-        <span className="text-lg font-bold text-[#1A2645] text-center min-w-[210px]">{label}</span>
+        <span className="text-base sm:text-lg font-bold text-[#1A2645] text-center sm:min-w-[210px]">{label}</span>
 
         <Button
           variant="outline"

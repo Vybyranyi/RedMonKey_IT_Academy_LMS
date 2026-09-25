@@ -1,8 +1,9 @@
 import { useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
-import { UserRole } from '@redmonkey/shared';
+import { UserRole, type IUser } from '@redmonkey/shared';
 import { useAuthStore } from '@/store/authStore';
+import { navigationItems } from './navigation';
 
 interface PageMeta {
   title: string;
@@ -11,30 +12,37 @@ interface PageMeta {
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
-export default function Header() {
-  const location = useLocation();
-  const { user } = useAuthStore();
+const NOT_FOUND_META: PageMeta = { title: 'Сторінку не знайдено', subtitle: '' };
+const FORBIDDEN_META: PageMeta = { title: 'Доступ заборонено', subtitle: '' };
 
-  const getPageMeta = (path: string): PageMeta => {
-    if (path === '/') {
+/**
+ * Шлях порівнюємо точно, а не через startsWith: вкладених маршрутів немає, тож
+ * /students/abc — це вже 404, і заголовок «Студенти» над ним вводив би в оману.
+ */
+const getPageMeta = (rawPath: string, user: IUser | null): PageMeta => {
+  // React Router пускає /students/ на маршрут /students — заголовок має збігатися
+  const path = rawPath.replace(/\/+$/, '') || '/';
+
+  // Ролі розділів — ті самі, що бачить Sidebar. Якщо розділ ролі недоступний,
+  // ProtectedRoute показує стан 403, і заголовок розділу над ним був би зайвим
+  const navItem = navigationItems.find((item) => item.path === path);
+  if (navItem && user && !navItem.roles.includes(user.role)) return FORBIDDEN_META;
+
+  switch (path) {
+    case '/':
       return {
         title: `Вітаємо, ${user?.firstName ?? ''}!`,
         subtitle: capitalize(format(new Date(), 'eeee, d MMMM yyyy', { locale: uk })),
       };
-    }
-    if (path.startsWith('/students')) {
+    case '/students':
       return { title: 'Студенти', subtitle: 'Управління обліковими записами студентів та моніторинг успішності' };
-    }
-    if (path.startsWith('/teachers')) {
+    case '/teachers':
       return { title: 'Викладачі', subtitle: 'Викладацький склад IT Академії та напрямки їх роботи' };
-    }
-    if (path.startsWith('/groups')) {
+    case '/groups':
       return { title: 'Групи', subtitle: 'Управління академічними групами та перегляд їхнього складу' };
-    }
-    if (path.startsWith('/schedule')) {
+    case '/schedule':
       return { title: 'Розклад занять', subtitle: 'Календар навчальних подій' };
-    }
-    if (path.startsWith('/grades')) {
+    case '/grades':
       // Студент бачить у журналі лише власні оцінки, тож загальний підзаголовок
       // про успішність студентів для нього неточний
       return {
@@ -44,25 +52,27 @@ export default function Header() {
             ? 'Ваші оцінки за заняттями'
             : 'Успішність студентів за навчальними групами',
       };
-    }
-    if (path.startsWith('/coins')) {
+    case '/coins':
       return { title: 'RedCoins', subtitle: 'Внутрішня гейміфікована валюта академії' };
-    }
-    if (path.startsWith('/profile')) {
+    case '/profile':
       return { title: 'Мій профіль', subtitle: 'Перегляд та редагування власних даних' };
-    }
-    if (path.startsWith('/settings')) {
+    case '/settings':
       return { title: 'Налаштування', subtitle: 'Системні налаштування платформи' };
-    }
-    return { title: 'Панель керування', subtitle: '' };
-  };
+    default:
+      return NOT_FOUND_META;
+  }
+};
 
-  const { title, subtitle } = getPageMeta(location.pathname);
+export default function Header() {
+  const location = useLocation();
+  const { user } = useAuthStore();
+
+  const { title, subtitle } = getPageMeta(location.pathname, user);
 
   return (
-    <header className="px-8 pt-10 pb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-      <div>
-        <h1 className="text-[28px] leading-tight font-extrabold text-[#1A2645] tracking-tight">{title}</h1>
+    <header className="px-4 pt-6 pb-5 md:px-8 md:pt-10 md:pb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="min-w-0">
+        <h1 className="text-2xl md:text-[28px] leading-tight font-extrabold text-[#1A2645] tracking-tight">{title}</h1>
         {subtitle && (
           <p className="text-[14px] font-medium text-slate-500 mt-1">{subtitle}</p>
         )}

@@ -1,4 +1,4 @@
-import axiosInstance from './axios';
+import axiosInstance, { type RequestOptions } from './axios';
 import type {
   ICoinFilters,
   ICoinTransactionDto,
@@ -13,9 +13,10 @@ import type {
  * лише свої транзакції, викладач — лише своїх груп.
  */
 export const apiGetCoinTransactions = async (
-  filters?: Partial<ICoinFilters>
+  filters?: Partial<ICoinFilters>,
+  { signal }: RequestOptions = {}
 ): Promise<ICoinTransactionPage> => {
-  const response = await axiosInstance.get('/coins/transactions', { params: filters });
+  const response = await axiosInstance.get('/coins/transactions', { params: filters, signal });
   return response.data;
 };
 
@@ -27,11 +28,11 @@ export const apiCreateCoinTransaction = async (
 };
 
 /** position уже пораховано на бекенді — фронт його не перераховує. */
-export const apiGetLeaderboard = async (params?: {
-  groupId?: string;
-  limit?: number;
-}): Promise<ILeaderboardRow[]> => {
-  const response = await axiosInstance.get('/coins/leaderboard', { params });
+export const apiGetLeaderboard = async (
+  params?: { groupId?: string; limit?: number },
+  { signal }: RequestOptions = {}
+): Promise<ILeaderboardRow[]> => {
+  const response = await axiosInstance.get('/coins/leaderboard', { params, signal });
   return response.data;
 };
 
@@ -42,7 +43,10 @@ export interface ICoinBalance {
   spent: number;
 }
 
-export const apiGetStudentBalance = async (studentId: string): Promise<ICoinBalance> => {
-  const response = await axiosInstance.get(`/coins/students/${studentId}/balance`);
+export const apiGetStudentBalance = async (
+  studentId: string,
+  { signal }: RequestOptions = {}
+): Promise<ICoinBalance> => {
+  const response = await axiosInstance.get(`/coins/students/${studentId}/balance`, { signal });
   return response.data;
 };

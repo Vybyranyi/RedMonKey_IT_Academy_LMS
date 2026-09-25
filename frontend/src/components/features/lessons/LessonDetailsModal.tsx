@@ -1,5 +1,5 @@
 import { CalendarDays, Clock3, UserRound } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import {
@@ -28,22 +28,24 @@ import { apiGetUsers } from '@/api/users';
 import { LESSON_STATUS_META } from '@/lib/lessonStatuses';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import { useAuthStore } from '@/store/authStore';
-import { getApiErrorMessage } from '@/utils/apiError';
+import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { toast } from 'sonner';
+import ErrorState from '@/components/common/ErrorState';
 import AttendanceList from './AttendanceList';
 
 interface LessonDetailsModalProps {
   lesson: IPopulatedLesson | null;
   isOpen: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  /** Заняття стало проведеним — сторінка оновлює саме його, без перезапиту розкладу */
+  onLessonUpdated: (lesson: IPopulatedLesson) => void;
 }
 
 export default function LessonDetailsModal({
   lesson,
   isOpen,
   onClose,
-  onSaved,
+  onLessonUpdated,
 }: LessonDetailsModalProps) {
   const { user } = useAuthStore();
   const [students, setStudents] = useState<IUser[]>([]);
@@ -53,20 +55,25 @@ export default function LessonDetailsModal({
     Record<string, AttendanceStatus>
   >({});
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     if (!isOpen || !lesson) return;
-    let cancelled = false;
+    // Закрили модалку чи відкрили інше заняття до відповіді — запит скасовується
+    const controller = new AbortController();
+    const { signal } = controller;
 
     const fetchData = async () => {
       setIsLoading(true);
+      setLoadError(null);
       try {
         const [groupStudents, saved] = await Promise.all([
-          apiGetUsers({ role: UserRole.STUDENT, groupId: lesson.groupId }),
-          apiGetAttendance({ lessonId: lesson.id }),
+          apiGetUsers({ role: UserRole.STUDENT, groupId: lesson.groupId }, { signal }),
+          apiGetAttendance({ lessonId: lesson.id }, { signal }),
         ]);
 
-        if (cancelled) return;
+        if (signal.aborted) return;
 
         // Хто вже відмічений — бере збережений статус, решта дефолтом present
         const initial: Record<string, AttendanceStatus> = {};
@@ -80,22 +87,28 @@ export default function LessonDetailsModal({
         setAttendance(initial);
         setNotes(initialNotes);
       } catch (error) {
-        if (!cancelled) {
-          toast.error(
-            getApiErrorMessage(error, 'Не вдалося завантажити дані заняття'),
-          );
+        if (!signal.aborted && !isSilentError(error)) {
+          setLoadError(getApiErrorMessage(error, 'Не вдалося завантажити дані заняття'));
         }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!signal.aborted) setIsLoading(false);
       }
     };
 
     fetchData();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, lesson]);
+    return () => controller.abort();
+  }, [isOpen, lesson, loadAttempt]);
+
+  // Стабільні колбеки + функціональний setState: перемикання статусу одного
+  // студента перемальовує лише його рядок (AttendanceRow під memo)
+  const handleStatusChange = useCallback((studentId: string, status: AttendanceStatus) => {
+    setAttendance((current) => ({ ...current, [studentId]: status }));
+  }, []);
+
+  const handleNoteChange = useCallback((studentId: string, note: string) => {
+    setNotes((current) => ({ ...current, [studentId]: note }));
+  }, []);
 
   if (!lesson) return null;
 
@@ -117,19 +130,17 @@ export default function LessonDetailsModal({
     setIsSaving(true);
     try {
       if (complete) {
-        await apiCompleteLesson(lesson.id, records);
+        onLessonUpdated(await apiCompleteLesson(lesson.id, records));
       } else {
+        // Явка на календарі не видна — оновлювати розклад нема чого
         await apiSaveBulkAttendance({ lessonId: lesson.id, records });
       }
       toast.success(
         complete ? 'Заняття позначено проведеним' : 'Явку збережено',
       );
-      onSaved();
       onClose();
     } catch (error) {
-      toast.error(
-        getApiErrorMessage(error, 'Не вдалося зберегти дані заняття'),
-      );
+      toastApiError(error, 'Не вдалося зберегти дані заняття');
     } finally {
       setIsSaving(false);
     }
@@ -188,22 +199,22 @@ export default function LessonDetailsModal({
                 <Skeleton key={item} className="h-16 w-full rounded-xl" />
               ))}
             </div>
+          ) : loadError ? (
+            <ErrorState
+              title="Не вдалося завантажити відвідуваність"
+              description={loadError}
+              onRetry={() => setLoadAttempt((value) => value + 1)}
+              className="p-6 md:p-8"
+            />
           ) : (
             <AttendanceList
-                students={students}
-                value={attendance}
-                onChange={(studentId, status) =>
-                  setAttendance((current) => ({
-                    ...current,
-                    [studentId]: status,
-                  }))
-                }
-                notes={notes}
-                onNoteChange={(studentId, note) =>
-                  setNotes((current) => ({ ...current, [studentId]: note }))
-                }
-                readOnly={!canManage || isSaving}
-              />
+              students={students}
+              value={attendance}
+              onChange={handleStatusChange}
+              notes={notes}
+              onNoteChange={handleNoteChange}
+              readOnly={!canManage || isSaving}
+            />
           )}
         </div>
 
@@ -211,14 +222,14 @@ export default function LessonDetailsModal({
           <DialogFooter className="bg-white px-6 pb-6">
             <Button
               variant="outline"
-              disabled={isSaving}
+              disabled={isSaving || isLoading || Boolean(loadError)}
               onClick={() => void saveAttendance(false)}
             >
               {isSaving ? 'Збереження...' : 'Зберегти явку'}
             </Button>
             {canComplete && (
               <Button
-                disabled={isSaving}
+                disabled={isSaving || isLoading || Boolean(loadError)}
                 onClick={() => void saveAttendance(true)}
               >
                 {isSaving ? 'Збереження...' : 'Позначити проведеним'}

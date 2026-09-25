@@ -12,6 +12,7 @@ import GradesPage from '@/pages/GradesPage';
 import CoinsPage from '@/pages/CoinsPage';
 import SettingsPage from '@/pages/SettingsPage';
 import ProfilePage from '@/pages/ProfilePage';
+import NotFoundPage from '@/pages/NotFoundPage';
 
 export default function AppRouter() {
   return (
@@ -40,6 +41,9 @@ export default function AppRouter() {
               <Route path="/groups" element={<GroupsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
+
+            {/* Невідомий URL — 404 всередині layout, щоб лишалась навігація */}
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
       </Routes>

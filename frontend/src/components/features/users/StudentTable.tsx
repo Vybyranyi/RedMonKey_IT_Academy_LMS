@@ -108,6 +108,7 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                         size="icon"
                         className="h-8 w-8 text-slate-500 hover:text-slate-900"
                         onClick={() => onViewDetails(student.id)}
+                        aria-label="Переглянути картку студента"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -117,6 +118,7 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                           size="icon"
                           className="h-8 w-8 text-slate-500 hover:text-slate-900"
                           onClick={() => onEdit(student)}
+                          aria-label="Редагувати студента"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>

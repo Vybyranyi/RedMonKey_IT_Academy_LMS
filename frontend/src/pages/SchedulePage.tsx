@@ -20,8 +20,10 @@ import { UserRole } from '@redmonkey/shared';
 import type { ILessonDto, IPopulatedLesson } from '@redmonkey/shared';
 import { apiCreateLesson, apiGetLessons } from '@/api/lessons';
 import { useAuthStore } from '@/store/authStore';
-import { getApiErrorMessage } from '@/utils/apiError';
+import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
+import { replaceById } from '@/lib/optimistic';
+import ErrorState from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -65,10 +67,10 @@ export default function SchedulePage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<IPopulatedLesson | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Лічильник перезавантаження: після створення заняття збільшуємо його,
-  // і ефект перечитує список тим самим запитом.
-  const [reloadKey, setReloadKey] = useState(0);
+  // «Спробувати знову» після помилки завантаження — ефект перечитує той самий діапазон
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   const range = useMemo(() => {
     return view === 'week'
@@ -83,28 +85,32 @@ export default function SchedulePage() {
   const isLoading = loadedRangeKey !== rangeKey;
 
   useEffect(() => {
-    let cancelled = false;
+    // Гортаємо тижні швидше, ніж відповідає сервер — запити проміжних
+    // тижнів скасовуються, і календар не блимає чужими даними
+    const controller = new AbortController();
+    const { signal } = controller;
 
     const loadLessons = async () => {
+      setLoadError(null);
       try {
-        const data = await apiGetLessons({
-          from: range.from.toISOString(),
-          to: range.to.toISOString(),
-        });
-        if (!cancelled) setLessons(data);
+        const data = await apiGetLessons(
+          { from: range.from.toISOString(), to: range.to.toISOString() },
+          { signal }
+        );
+        if (!signal.aborted) setLessons(data);
       } catch (error) {
-        if (!cancelled) toast.error(getApiErrorMessage(error, 'Не вдалося завантажити розклад'));
+        if (!signal.aborted && !isSilentError(error)) {
+          setLoadError(getApiErrorMessage(error, 'Не вдалося завантажити розклад'));
+        }
       } finally {
-        if (!cancelled) setLoadedRangeKey(rangeKey);
+        if (!signal.aborted) setLoadedRangeKey(rangeKey);
       }
     };
 
     loadLessons();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [range, rangeKey, reloadKey]);
+    return () => controller.abort();
+  }, [range, rangeKey, loadAttempt]);
 
   const events = useMemo<ScheduleEvent[]>(
     () =>
@@ -139,15 +145,28 @@ export default function SchedulePage() {
     setIsSubmitting(true);
     try {
       // Без initialValues форма віддає повний payload — це створення
-      await apiCreateLesson(values as ILessonDto);
+      const created = await apiCreateLesson(values as ILessonDto);
       setIsCreateOpen(false);
       toast.success('Заняття створено');
-      setReloadKey((key) => key + 1);
+
+      // Додаємо відповідь сервера на місце замість перезапиту всього діапазону.
+      // Заняття поза видимим тижнем/місяцем підтягнеться, коли туди перейдуть
+      const start = new Date(created.date);
+      if (start >= range.from && start <= range.to) {
+        setLessons((current) =>
+          [...current, created].sort((a, b) => +new Date(a.date) - +new Date(b.date))
+        );
+      }
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Не вдалося створити заняття'));
+      toastApiError(error, 'Не вдалося створити заняття');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Заняття стало проведеним: міняємо один запис, а не перечитуємо весь календар
+  const handleLessonUpdated = (lesson: IPopulatedLesson) => {
+    setLessons((current) => replaceById(current, lesson.id, lesson));
   };
 
   return (
@@ -167,49 +186,67 @@ export default function SchedulePage() {
 
       <LessonTypeLegend />
 
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
-        {isLoading ? (
-          <Skeleton className="h-[700px] w-full rounded-lg" />
-        ) : (
-          <Calendar<ScheduleEvent>
-            localizer={localizer}
-            events={events}
-            date={date}
-            view={view}
-            onNavigate={setDate}
-            onView={(next) => setView(next as ScheduleView)}
-            views={CALENDAR_VIEWS}
-            toolbar={false}
-            culture="uk"
-            step={30}
-            min={new Date(1970, 0, 1, 8, 0)}
-            max={new Date(1970, 0, 1, 21, 0)}
-            style={{ height: 700 }}
-            eventPropGetter={(event) => ({
-              // Вибране заняття підсвічуємо, поки відкрита модалка деталей
-              className: `${LESSON_TYPE_META[event.resource.type].event}${
-                selectedLesson?.id === event.resource.id ? ' ring-2 ring-[#BA0000]' : ''
-              }`,
-            })}
-            components={{ event: LessonEvent }}
-            onSelectEvent={(event) => setSelectedLesson(event.resource)}
-            messages={{
-              next: 'Далі',
-              previous: 'Назад',
-              today: 'Сьогодні',
-              month: 'Місяць',
-              week: 'Тиждень',
-              noEventsInRange: 'Занять у цьому періоді немає',
-            }}
-          />
-        )}
-      </div>
+      {!isLoading && !loadError && events.length === 0 && (
+        <p className="text-sm font-medium text-slate-400">
+          {view === 'week' ? 'На цьому тижні' : 'У цьому місяці'} занять немає
+          {canManage ? ' — додайте перше кнопкою «Додати заняття»' : ''}
+        </p>
+      )}
+
+      {loadError ? (
+        <ErrorState
+          title="Не вдалося завантажити розклад"
+          description={loadError}
+          onRetry={() => setLoadAttempt((value) => value + 1)}
+        />
+      ) : (
+        // На телефоні 7 колонок тижня не вміщаються — календар гортається горизонтально
+        <div className="bg-white rounded-xl border border-slate-200 p-2 sm:p-4 overflow-x-auto">
+          {isLoading ? (
+            <Skeleton className="h-[700px] w-full rounded-lg" />
+          ) : (
+            <div className="min-w-[640px]">
+              <Calendar<ScheduleEvent>
+                localizer={localizer}
+                events={events}
+                date={date}
+                view={view}
+                onNavigate={setDate}
+                onView={(next) => setView(next as ScheduleView)}
+                views={CALENDAR_VIEWS}
+                toolbar={false}
+                culture="uk"
+                step={30}
+                min={new Date(1970, 0, 1, 8, 0)}
+                max={new Date(1970, 0, 1, 21, 0)}
+                style={{ height: 700 }}
+                eventPropGetter={(event) => ({
+                  // Вибране заняття підсвічуємо, поки відкрита модалка деталей
+                  className: `${LESSON_TYPE_META[event.resource.type].event}${
+                    selectedLesson?.id === event.resource.id ? ' ring-2 ring-[#BA0000]' : ''
+                  }`,
+                })}
+                components={{ event: LessonEvent }}
+                onSelectEvent={(event) => setSelectedLesson(event.resource)}
+                messages={{
+                  next: 'Далі',
+                  previous: 'Назад',
+                  today: 'Сьогодні',
+                  month: 'Місяць',
+                  week: 'Тиждень',
+                  noEventsInRange: 'Занять у цьому періоді немає',
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       <LessonDetailsModal
         lesson={selectedLesson}
         isOpen={Boolean(selectedLesson)}
         onClose={() => setSelectedLesson(null)}
-        onSaved={() => setReloadKey((key) => key + 1)}
+        onLessonUpdated={handleLessonUpdated}
       />
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

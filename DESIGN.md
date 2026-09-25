@@ -180,23 +180,28 @@
 
 ```tsx
 // flex: Sidebar | flex-1 (column)
-<div className="flex bg-[#F8F9FA] min-h-screen font-sans">
-  <Sidebar />
-  <div className="flex-1 flex flex-col h-screen overflow-hidden">
+<div className="flex bg-[#F8F9FA] min-h-dvh font-sans">
+  <Sidebar />                                   {/* hidden md:flex */}
+  <div className="flex-1 min-w-0 flex flex-col h-dvh overflow-hidden">
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-[1400px] mx-auto">
         <Header />
-        <main className="px-8 pb-10">
-          <Outlet />
+        <main className="px-4 pb-28 md:px-8 md:pb-10">
+          <ErrorBoundary key={pathname} fallback={...}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>
   </div>
+  <BottomNav />                                 {/* md:hidden */}
 </div>
 ```
 
 **Важливо:**
-- `h-screen overflow-hidden` на wrapper + `flex-1 overflow-y-auto` на inner — так сайдбар і шапка залишаються фіксованими, а контент скролиться
+- `h-dvh overflow-hidden` на wrapper + `flex-1 overflow-y-auto` на inner — так сайдбар і шапка залишаються фіксованими, а контент скролиться
+- `min-w-0` на колонці контенту — без нього широка таблиця розпирає flex і дає горизонтальний скрол усієї сторінки
+- `ErrorBoundary` з `key={pathname}` — помилка рендеру сторінки показує `ErrorState` на місці вмісту, Sidebar лишається робочим, перехід на інший розділ знімає помилку
 - `max-w-[1400px] mx-auto` — обмежує ширину на великих моніторах
 
 ---
@@ -459,7 +464,9 @@
 
 ### Loading states
 
-- ShadCN `Skeleton` UI — замість порожніх місць під час завантаження
+- ShadCN `Skeleton` UI — замість порожніх місць під час завантаження. Форма скелетона повторює форму вмісту: картки — `h-72 rounded-xl`, рядки таблиці — `h-16 rounded-xl`
+- Скелетон — лише для першого завантаження. Зміна фільтра чи пошуку лишає попередній список видимим (`opacity-60`), щоб таблиця не блимала на кожну літеру
+- Після мутації скелетон не показуємо взагалі: зміна застосовується до локального стану одразу (оптимістично), а запис, що чекає підтвердження, приглушений (`opacity-60`/`animate-pulse`, «Зберігається…»)
 - Кнопка Submit: текст змінюється на `"Вхід..."` / `"Збереження..."` + `disabled`
 
 ### Error states
@@ -477,13 +484,17 @@
 <p className="text-xs text-destructive">{errors.fieldName}</p>
 ```
 
+**Збій завантаження, 404, 403 — `ErrorState`** (`components/common/ErrorState.tsx`): біла картка `rounded-xl border-slate-200`, іконка на плашці `bg-red-50 text-primary rounded-xl`, опційний код (`404`/`403`) червоним з розрядкою, заголовок `h3 text-xl font-bold text-[#1A2645]`, опис `text-sm text-slate-500`. `onRetry` додає червону кнопку «Спробувати знову».
+
 ### Empty states
 
-- Для порожніх списків — текстовий Empty State з описом і CTA кнопкою (не просто пустий екран)
+- `EmptyState` (`components/common/EmptyState.tsx`): картка з `border-dashed border-slate-200`, іконка на сірій плашці `bg-slate-50 text-slate-400`, заголовок `text-slate-700 font-semibold`, опис `text-slate-400`, CTA-кнопки дочірніми елементами
+- Текст пояснює, **чому** порожньо і що робити: «Груп ще немає» + «Створити першу групу» (admin), «Нікого не знайдено» + «Скинути фільтри», «Ви ще не закріплені за жодною групою» (викладач). Admin-only CTA ховаємо від інших ролей
 
 ### Toast notifications
 
 - ShadCN `Sonner` — для підтверджень і нарахування RedCoins
+- Помилки запитів — лише через `toastApiError`: однакові повідомлення паралельних запитів схлопуються в один toast, скасовані запити й завершена сесія не показуються
 
 ### Журнал оцінок (inline editing UX)
 
@@ -522,14 +533,23 @@
 
 | Брейкпойнт | Ширина | Поведінка |
 |------------|--------|-----------|
+| `< md` | <768px | Sidebar прихований, замість нього `BottomNav`; H1 у Header — `text-2xl`, відступи сторінки `px-4` |
 | `sm` | ≥640px | Header: `flex-col → flex-row` |
-| `md` | ≥768px | Grid: `grid-cols-1 → grid-cols-2` |
-| `lg` | ≥1024px | Grid: `grid-cols-2 → grid-cols-3` |
+| `md` | ≥768px | Grid: `grid-cols-1 → grid-cols-2`; з'являється Sidebar, H1 — `text-[28px]`, відступи `px-8` |
+| `lg` | ≥1024px | Grid: `grid-cols-2 → grid-cols-3`; Sidebar стартує розгорнутим |
 
 ### Sidebar collapse
 
-- Desktop: sidebar завжди видимий, може бути `w-65` або `w-20`
-- Mobile: bottom navigation (Bottom Nav) — запланована реалізація
+- Desktop (`lg`+): sidebar видимий, стартує розгорнутим `w-65`, можна згорнути до `w-20`
+- Планшет (`md`–`lg`): стартує згорнутим `w-20`, щоб не забирати третину ширини
+- Mobile (`< md`): `BottomNav` унизу — `bg-[#29425D]`, 4 розділи з ТЗ (Головна / Розклад / Оцінки / Монети) + «Ще» (Sheet знизу, `rounded-t-[20px]`: профіль, решта розділів ролі, «Вийти»). Активний пункт — іконка на червоній плашці `bg-[#C10000] rounded-[12px]`. Під нижню панель у `main` зарезервовано `pb-28`
+
+### Мобайл: що не має ламатися
+
+- Жодного горизонтального скролу **всієї сторінки**. Широкий вміст (журнал, таблиця студентів, календар) гортається всередині своєї картки: `overflow-x-auto` на картці, `min-w-0` на flex-колонці layout
+- Діалоги обмежені висотою екрана (`max-h-[calc(100dvh-2rem)] overflow-y-auto` у `DialogContent`)
+- Дії, що з'являються на hover (кнопки на `TeacherCard`), на мобайлі видимі завжди: `opacity-100 md:opacity-0 md:group-hover:opacity-100`
+- Висота layout — `h-dvh`/`min-h-dvh`, а не `h-screen`: на телефоні `100vh` включає панель браузера і ховає низ сторінки
 
 ### Login page
 

@@ -12,6 +12,7 @@ import type { IUserDto } from '@redmonkey/shared';
 import { apiGetGroups } from '@/api/groups';
 import { RefreshCw, Wand2 } from 'lucide-react';
 import { transliterate, generateRandomPassword } from '@/utils/stringUtils';
+import { toastApiError } from '@/utils/apiError';
 
 const userSchema = z.object({
   firstName: z.string().min(2, "Ім'я має містити не менше 2 символів"),
@@ -49,7 +50,7 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
         const data = await apiGetGroups();
         setGroups(data);
       } catch (error) {
-        console.error('Не вдалося завантажити групи:', error);
+        toastApiError(error, 'Не вдалося завантажити список груп');
       }
     };
     fetchGroups();

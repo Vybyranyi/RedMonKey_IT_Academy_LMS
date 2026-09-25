@@ -13,6 +13,7 @@ import { getGradeColor } from '@/lib/gradeColors';
 interface GradeCellProps {
   grade: IPopulatedGrade | null;
   editable: boolean;
+  /** Оцінку вже видно (оптимістично), але сервер ще не підтвердив — клітинку блокуємо */
   isSaving?: boolean;
   onSave: (value: number, comment: string) => void;
   onDelete?: () => void;
@@ -77,17 +78,19 @@ export default function GradeCell({
           type="button"
           disabled={isSaving}
           title={
-            grade
-              ? `${grade.teacher.firstName} ${grade.teacher.lastName}, ${format(new Date(grade.createdAt), 'd MMM yyyy', { locale: uk })}`
-              : 'Виставити оцінку'
+            isSaving
+              ? 'Зберігається…'
+              : grade
+                ? `${grade.teacher.firstName} ${grade.teacher.lastName}, ${format(new Date(grade.createdAt), 'd MMM yyyy', { locale: uk })}`
+                : 'Виставити оцінку'
           }
-          className={`mx-auto flex h-9 w-9 items-center justify-center rounded-md border text-sm font-bold transition-colors disabled:opacity-50 ${
+          className={`mx-auto flex h-9 w-9 items-center justify-center rounded-md border text-sm font-bold transition-colors disabled:animate-pulse disabled:opacity-60 ${
             grade
               ? getGradeColor(grade.value)
               : 'border-dashed border-slate-200 text-slate-300 hover:border-slate-300 hover:text-slate-400'
           }`}
         >
-          {isSaving ? '…' : (grade?.value ?? '+')}
+          {grade?.value ?? '+'}
         </button>
       </PopoverTrigger>
 

@@ -1,8 +1,11 @@
-import axiosInstance from './axios';
+import axiosInstance, { type RequestOptions } from './axios';
 import type { IPopulatedAttendance, IBulkAttendanceDto, IPopulatedLesson } from '@redmonkey/shared';
 
-export const apiGetAttendance = async (params: { lessonId?: string; studentId?: string }): Promise<IPopulatedAttendance[]> => {
-  const response = await axiosInstance.get('/attendance', { params });
+export const apiGetAttendance = async (
+  params: { lessonId?: string; studentId?: string },
+  { signal }: RequestOptions = {}
+): Promise<IPopulatedAttendance[]> => {
+  const response = await axiosInstance.get('/attendance', { params, signal });
   return response.data;
 };
 
