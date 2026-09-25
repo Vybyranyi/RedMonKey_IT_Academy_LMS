@@ -11,6 +11,22 @@ import { accessPolicy } from './access.policy.js';
 import { assertGroupStudents } from './attendance.service.js';
 import type { IAttendanceRecordDto } from '@redmonkey/shared';
 
+/**
+ * Вести заняття може лише активний викладач. Без перевірки неіснуючий id падав би
+ * на FK як 500, а id студента тихо ставав би «викладачем» — як і в групах.
+ */
+const assertActiveTeacher = async (teacherId: string) => {
+  const teacher = await userRepository.findById(teacherId);
+  if (!teacher || !teacher.isActive || teacher.role !== UserRole.TEACHER) {
+    throw new BadRequestError('teacherId має належати активному викладачу');
+  }
+};
+
+const assertActiveGroup = async (groupId: string) => {
+  const group = await groupRepository.findByIdActive(groupId);
+  if (!group) throw new NotFoundError('Групу не знайдено');
+};
+
 export const lessonService = {
   async getLessons(filters: ILessonFilters, actor: TokenPayload) {
     const { groupId, teacherId, from, to } = filters;
@@ -55,8 +71,8 @@ export const lessonService = {
 
     const finalTeacherId = actor.role === UserRole.ADMIN ? teacherId || actor.userId : actor.userId;
 
-    const group = await groupRepository.findByIdActive(groupId);
-    if (!group) throw new NotFoundError('Групу не знайдено');
+    await assertActiveGroup(groupId);
+    if (finalTeacherId !== actor.userId) await assertActiveTeacher(finalTeacherId);
 
     const academyId = await academyRepository.getDefaultId();
 
@@ -89,9 +105,15 @@ export const lessonService = {
     if (duration !== undefined) data.duration = duration;
     if (type !== undefined) data.type = type;
     if (status !== undefined) data.status = status;
-    if (groupId !== undefined) data.groupId = groupId;
+    if (groupId !== undefined) {
+      await assertActiveGroup(groupId);
+      data.groupId = groupId;
+    }
     // Перепризначити викладача може тільки адмін
-    if (teacherId !== undefined && actor.role === UserRole.ADMIN) data.teacherId = teacherId;
+    if (teacherId !== undefined && actor.role === UserRole.ADMIN) {
+      await assertActiveTeacher(teacherId);
+      data.teacherId = teacherId;
+    }
 
     return lessonRepository.update(id, data);
   },

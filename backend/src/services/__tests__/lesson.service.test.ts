@@ -50,6 +50,9 @@ const student: TokenPayload = { userId: 'student-1', role: UserRole.STUDENT };
 const OWN_GROUP = 'group-own';
 const LESSON_ID = 'lesson-1';
 
+const activeTeacherRow = { id: 'teacher-9', role: UserRole.TEACHER, isActive: true };
+const activeTeacher = activeTeacherRow as never;
+
 const lessonPayload = {
   title: 'Вступ до TypeScript',
   description: '',
@@ -122,9 +125,26 @@ describe('createLesson', () => {
   });
 
   it('адмін може призначити заняття іншому викладачу', async () => {
+    userFindById.mockResolvedValue(activeTeacher);
+
     await lessonService.createLesson({ ...lessonPayload, teacherId: 'teacher-9' }, admin);
 
+    expect(userFindById).toHaveBeenCalledWith('teacher-9');
     expect(lessonCreate).toHaveBeenCalledWith(expect.objectContaining({ teacherId: 'teacher-9' }));
+  });
+
+  // Раніше неіснуючий teacherId падав на FK як 500, а id студента ставав «викладачем»
+  it.each([
+    ['неіснуючому користувачу', null],
+    ['студенту', { ...activeTeacherRow, role: UserRole.STUDENT }],
+    ['деактивованому викладачу', { ...activeTeacherRow, isActive: false }],
+  ])('не призначає заняття %s', async (_label, user) => {
+    userFindById.mockResolvedValue(user as never);
+
+    await expect(
+      lessonService.createLesson({ ...lessonPayload, teacherId: 'teacher-9' }, admin)
+    ).rejects.toThrow('teacherId має належати активному викладачу');
+    expect(lessonCreate).not.toHaveBeenCalled();
   });
 
   it('адмін без teacherId стає викладачем заняття', async () => {
@@ -157,9 +177,37 @@ describe('updateLesson', () => {
   });
 
   it('дає адміну перепризначити викладача', async () => {
+    userFindById.mockResolvedValue(activeTeacher);
+
     await lessonService.updateLesson(LESSON_ID, { teacherId: 'teacher-9' }, admin);
 
     expect(lessonUpdate).toHaveBeenCalledWith(LESSON_ID, { teacherId: 'teacher-9' });
+  });
+
+  it('не перепризначає заняття студенту', async () => {
+    userFindById.mockResolvedValue({ ...activeTeacherRow, role: UserRole.STUDENT } as never);
+
+    await expect(
+      lessonService.updateLesson(LESSON_ID, { teacherId: 'student-1' }, admin)
+    ).rejects.toThrow(BadRequestError);
+    expect(lessonUpdate).not.toHaveBeenCalled();
+  });
+
+  // createLesson групу перевіряв, а PATCH — ні: неіснуюча група давала 500 на FK
+  it('не переносить заняття в неіснуючу чи деактивовану групу', async () => {
+    findGroup.mockResolvedValue(null as never);
+
+    await expect(
+      lessonService.updateLesson(LESSON_ID, { groupId: 'group-gone' }, teacher)
+    ).rejects.toThrow(NotFoundError);
+    expect(lessonUpdate).not.toHaveBeenCalled();
+  });
+
+  it('переносить заняття в іншу активну групу', async () => {
+    await lessonService.updateLesson(LESSON_ID, { groupId: 'group-2' }, teacher);
+
+    expect(findGroup).toHaveBeenCalledWith('group-2');
+    expect(lessonUpdate).toHaveBeenCalledWith(LESSON_ID, { groupId: 'group-2' });
   });
 });
 
