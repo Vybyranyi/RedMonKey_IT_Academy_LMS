@@ -57,6 +57,7 @@ export default function ScheduleToolbar({ label, view, onView, onNavigate }: Sch
           <button
             key={option.value}
             type="button"
+            aria-pressed={view === option.value}
             onClick={() => onView(option.value)}
             className={`px-4 h-8 rounded-md text-sm font-semibold transition-colors ${
               view === option.value

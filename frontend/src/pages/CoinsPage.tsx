@@ -25,6 +25,7 @@ import { applyCoinsToLeaderboard } from '@/lib/leaderboard';
 import { createTempId, removeById, replaceById, type Pending } from '@/lib/optimistic';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -289,8 +290,14 @@ export default function CoinsPage() {
 
       {!isStudent && (
         <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+          <Label htmlFor="coins-group" className="sr-only">
+            Група
+          </Label>
           <Select value={groupId} onValueChange={setGroupId}>
-            <SelectTrigger className="w-full sm:w-64 h-11 bg-white border-slate-200">
+            <SelectTrigger
+              id="coins-group"
+              className="w-full sm:w-64 h-11 bg-white border-slate-200"
+            >
               <SelectValue placeholder="Оберіть групу" />
             </SelectTrigger>
             <SelectContent>

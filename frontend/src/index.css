@@ -128,4 +128,17 @@
   html {
     @apply font-sans;
   }
+  /*
+   * Видимий фокус з клавіатури для всього, що не має власного: ShadCN-компоненти
+   * ставлять outline-none + ring, а посилання меню й кастомні кнопки лишались без
+   * жодного індикатора. Утиліти (outline-none тощо) перекривають цей базовий шар.
+   */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  /* На темно-синьому Sidebar і Bottom Nav червоний контур майже не видно */
+  .focus-on-dark :focus-visible {
+    outline-color: white;
+  }
 }
