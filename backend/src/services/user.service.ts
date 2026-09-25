@@ -9,7 +9,19 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.
 import { TokenPayload } from '../utils/jwt.js';
 import { coinRepository } from '../repositories/coin.repository.js';
 import { statsRepository } from '../repositories/stats.repository.js';
-import type { IUserStats } from '@redmonkey/shared';
+import type { ICreateUserDto, IUpdateUserDto, IUserStats } from '@redmonkey/shared';
+
+/**
+ * Помилки обмежень БД, які означають некоректний ввід, а не збій сервера:
+ * email уже зайнятий (@@unique([academyId, email])) або групи з таким id немає (FK).
+ */
+const rethrowAsBadRequest = (error: unknown): never => {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2002') throw new BadRequestError('Користувач з таким email вже існує');
+    if (error.code === 'P2003') throw new BadRequestError('Вказаної групи не існує');
+  }
+  throw error;
+};
 
 export const userService = {
   async getUsers(query: { role?: any; groupId?: any; q?: any }, currentUserRole?: UserRole) {
@@ -89,7 +101,8 @@ export const userService = {
   },
 
 
-  async createUser(userData: any) {
+  // Тіло вже пройшло createUserSchema: поля поза білим списком сюди не доходять
+  async createUser(userData: ICreateUserDto) {
     const { firstName, lastName, email, password, role, phone, group } = userData;
 
     if (await userRepository.existsByEmail(email)) {
@@ -100,20 +113,24 @@ export const userService = {
     const passwordHash = await bcrypt.hash(password || 'TemporaryPassword123!', SALT_ROUNDS);
 
     // Членство в групі — це FK users.group_id. Жодних масивів для синхронізації.
-    return userRepository.create({
-      academyId,
-      firstName,
-      lastName,
-      email,
-      passwordHash,
-      role,
-      phone: phone ?? null,
-      groupId: role === UserRole.STUDENT ? group || null : null,
-      redCoins: 0,
-    });
+    return userRepository
+      .create({
+        academyId,
+        firstName,
+        lastName,
+        email,
+        passwordHash,
+        role,
+        phone: phone ?? null,
+        groupId: role === UserRole.STUDENT ? group ?? null : null,
+        redCoins: 0,
+      })
+      .catch(rethrowAsBadRequest);
   },
 
-  async updateUser(id: string, updateBody: any) {
+  // rest — лише firstName/lastName/email/phone/avatar/isActive з updateUserSchema.
+  // redCoins, tokenVersion, passwordHash тощо схема відкинула ще в контролері.
+  async updateUser(id: string, updateBody: IUpdateUserDto) {
     const { password, group, role, ...rest } = updateBody;
 
     const oldUser = await userRepository.findById(id);
@@ -131,7 +148,7 @@ export const userService = {
       data.groupId = finalRole === UserRole.STUDENT ? group ?? null : null;
     }
 
-    return userRepository.update(id, data);
+    return userRepository.update(id, data).catch(rethrowAsBadRequest);
   },
 
   async deleteUser(id: string) {

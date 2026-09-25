@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import request from 'supertest';
 import { CoinCategory, UserRole } from '@redmonkey/shared';
@@ -24,7 +25,7 @@ vi.mock('../repositories/coin.repository.js', () => ({
   },
 }));
 vi.mock('../repositories/group.repository.js', () => ({
-  groupRepository: { findIdsByTeacher: vi.fn() },
+  groupRepository: { findIdsByTeacher: vi.fn(), findByName: vi.fn(), create: vi.fn(), update: vi.fn() },
 }));
 vi.mock('../repositories/user.repository.js', () => ({
   userRepository: {
@@ -33,6 +34,9 @@ vi.mock('../repositories/user.repository.js', () => ({
     findByIdActive: vi.fn(),
     findCredentialsByEmail: vi.fn(),
     findCredentialsById: vi.fn(),
+    existsByEmail: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
     incrementTokenVersion: vi.fn(),
   },
   toPublicUser: (user: Record<string, unknown>) => {
@@ -45,12 +49,24 @@ const getDefaultId = vi.mocked(academyRepository.getDefaultId);
 const createWithBalance = vi.mocked(coinRepository.createWithBalance);
 const sumByDirection = vi.mocked(coinRepository.sumByDirection);
 const findIdsByTeacher = vi.mocked(groupRepository.findIdsByTeacher);
+const groupFindByName = vi.mocked(groupRepository.findByName);
+const groupCreate = vi.mocked(groupRepository.create);
+const groupUpdate = vi.mocked(groupRepository.update);
 const userFindAll = vi.mocked(userRepository.findAll);
 const userFindById = vi.mocked(userRepository.findById);
+const userCreate = vi.mocked(userRepository.create);
+const userUpdate = vi.mocked(userRepository.update);
+const existsByEmail = vi.mocked(userRepository.existsByEmail);
 const findCredentialsByEmail = vi.mocked(userRepository.findCredentialsByEmail);
 
 const OWN_GROUP = 'group-own';
 const STUDENT_ID = '11111111-1111-4111-8111-111111111111';
+const GROUP_ID = '44444444-4444-4444-8444-444444444444';
+const TEACHER_ID = '55555555-5555-4555-8555-555555555555';
+
+/** Помилка обмеження БД так, як її кидає Prisma Client. */
+const prismaError = (code: string) =>
+  new Prisma.PrismaClientKnownRequestError('constraint failed', { code, clientVersion: 'test' });
 
 const adminToken = generateAccessToken({ userId: 'admin-1', role: UserRole.ADMIN });
 const teacherToken = generateAccessToken({ userId: 'teacher-1', role: UserRole.TEACHER });
@@ -85,6 +101,12 @@ beforeEach(() => {
   userFindAll.mockResolvedValue([] as never);
   userFindById.mockResolvedValue(activeStudent as never);
   createWithBalance.mockResolvedValue({ id: 'tx-1' } as never);
+  existsByEmail.mockResolvedValue(false);
+  userCreate.mockResolvedValue({ id: STUDENT_ID } as never);
+  userUpdate.mockResolvedValue({ id: STUDENT_ID } as never);
+  groupFindByName.mockResolvedValue(null as never);
+  groupCreate.mockResolvedValue({ id: GROUP_ID } as never);
+  groupUpdate.mockResolvedValue({ id: GROUP_ID } as never);
 });
 
 describe('GET /api/v1/health', () => {
@@ -196,6 +218,182 @@ describe('GET /api/v1/users', () => {
     await request(app).get('/api/v1/users').set('Authorization', `Bearer ${adminToken}`);
 
     expect(userFindAll).toHaveBeenCalledWith({ isActive: true });
+  });
+});
+
+// Mass assignment: раніше тіло PATCH /users/:id ішло в Prisma як є, і адмін
+// (або викрадений адмінський токен) міг переписати баланс чи tokenVersion
+describe('PATCH /api/v1/users/:id — білий список полів', () => {
+  const patchUser = (body: object) =>
+    request(app)
+      .patch(`/api/v1/users/${STUDENT_ID}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(body);
+
+  it('не передає в БД redCoins, tokenVersion і passwordHash', async () => {
+    const response = await patchUser({
+      firstName: 'Анна',
+      redCoins: 999_999,
+      tokenVersion: 0,
+      passwordHash: '$2a$10$fake',
+      academyId: 'academy-evil',
+    });
+
+    expect(response.status).toBe(200);
+    expect(userUpdate).toHaveBeenCalledWith(STUDENT_ID, { firstName: 'Анна' });
+  });
+
+  it('тіло лише із забороненими полями відхиляє з 400', async () => {
+    const response = await patchUser({ redCoins: 999_999, tokenVersion: 0 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Не передано жодного поля для оновлення');
+    expect(userUpdate).not.toHaveBeenCalled();
+  });
+
+  it('невалідний тип поля відхиляє з 400, а не 500 від Prisma', async () => {
+    const response = await patchUser({ firstName: 123 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Імʼя: очікується рядок');
+  });
+
+  it('пароль хешує, а не пише як є', async () => {
+    await patchUser({ password: 'newSecret1' });
+
+    const [, data] = userUpdate.mock.calls[0] as [string, Record<string, unknown>];
+    expect(data).not.toHaveProperty('password');
+    expect(await bcrypt.compare('newSecret1', data.passwordHash as string)).toBe(true);
+  });
+
+  it('зайнятий email віддає 400 замість 500', async () => {
+    userUpdate.mockRejectedValue(prismaError('P2002'));
+
+    const response = await patchUser({ email: 'taken@academy.com' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Користувач з таким email вже існує');
+  });
+});
+
+describe('POST /api/v1/users', () => {
+  const newStudent = {
+    firstName: 'Іван',
+    lastName: 'Петренко',
+    email: 'ivan@academy.com',
+    role: UserRole.STUDENT,
+    password: 'secret123',
+    group: GROUP_ID,
+  };
+
+  it('ігнорує баланс і службові поля з тіла', async () => {
+    const response = await request(app)
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ ...newStudent, redCoins: 1000, tokenVersion: 7, passwordHash: 'plain', academyId: 'x' });
+
+    expect(response.status).toBe(201);
+    const [data] = userCreate.mock.calls[0] as [Record<string, unknown>];
+    expect(data).toMatchObject({ academyId: 'academy-1', redCoins: 0, groupId: GROUP_ID });
+    expect(data).not.toHaveProperty('tokenVersion');
+    expect(data.passwordHash).not.toBe('plain');
+  });
+
+  it('невалідний email відхиляє з 400', async () => {
+    const response = await request(app)
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ ...newStudent, email: 'not-an-email' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Некоректний email');
+    expect(userCreate).not.toHaveBeenCalled();
+  });
+
+  it('неіснуючу групу відхиляє з 400', async () => {
+    userCreate.mockRejectedValue(prismaError('P2003'));
+
+    const response = await request(app)
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(newStudent);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Вказаної групи не існує');
+  });
+});
+
+describe('POST /api/v1/groups', () => {
+  const postGroup = (body: object) =>
+    request(app).post('/api/v1/groups').set('Authorization', `Bearer ${adminToken}`).send(body);
+
+  // Саме це тіло шле GroupForm; раніше '' в датах падав у Prisma з 500
+  it('приймає тіло з форми з порожніми датами', async () => {
+    const response = await postGroup({
+      name: 'JS-2026-A',
+      description: '',
+      startDate: '',
+      endDate: '',
+      teachers: [],
+      students: [],
+      academyId: 'academy-evil',
+    });
+
+    expect(response.status).toBe(201);
+    expect(groupCreate).toHaveBeenCalledWith(
+      { name: 'JS-2026-A', description: '', startDate: null, endDate: null, academyId: 'academy-1' },
+      []
+    );
+  });
+
+  it('не дає призначити викладачем того, хто не є активним викладачем', async () => {
+    userFindAll.mockResolvedValue([] as never);
+
+    const response = await postGroup({ name: 'JS-2026-A', teachers: [TEACHER_ID] });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Серед teachers є id, які не належать активним викладачам');
+    expect(userFindAll).toHaveBeenCalledWith({
+      id: { in: [TEACHER_ID] },
+      role: UserRole.TEACHER,
+      isActive: true,
+    });
+    expect(groupCreate).not.toHaveBeenCalled();
+  });
+
+  it('відхиляє дату завершення раніше за дату початку', async () => {
+    const response = await postGroup({
+      name: 'JS-2026-A',
+      startDate: '2026-09-01',
+      endDate: '2026-06-01',
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Дата завершення має бути пізніше за дату початку');
+  });
+});
+
+describe('PATCH /api/v1/groups/:id', () => {
+  const patchGroup = (body: object) =>
+    request(app)
+      .patch(`/api/v1/groups/${GROUP_ID}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(body);
+
+  it('не передає в БД поля поза білим списком', async () => {
+    const response = await patchGroup({ description: 'Новий опис', isActive: false, academyId: 'x' });
+
+    expect(response.status).toBe(200);
+    expect(groupUpdate).toHaveBeenCalledWith(GROUP_ID, { description: 'Новий опис' }, undefined);
+  });
+
+  it('зайняту назву відхиляє з 400', async () => {
+    groupUpdate.mockRejectedValue(prismaError('P2002'));
+
+    const response = await patchGroup({ name: 'JS-2026-B' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Група з такою назвою вже існує');
   });
 });
 

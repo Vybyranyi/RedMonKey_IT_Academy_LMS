@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
+import { createGroupSchema, updateGroupSchema } from '@redmonkey/shared';
 import { groupService } from '../services/group.service.js';
 import { UnauthorizedError, handleError } from '../utils/errors.js';
+import { parseBody } from '../utils/validation.js';
 
 export const getGroups = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -25,7 +27,8 @@ export const getGroupById = async (req: Request, res: Response): Promise<void> =
 
 export const createGroup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const newGroup = await groupService.createGroup(req.body);
+    const data = parseBody(createGroupSchema, req.body);
+    const newGroup = await groupService.createGroup(data);
     res.status(201).json(newGroup);
   } catch (error) {
     handleError(res, error, 'Помилка при створенні групи');
@@ -35,7 +38,8 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
 export const updateGroup = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const updatedGroup = await groupService.updateGroup(id, req.body);
+    const data = parseBody(updateGroupSchema, req.body);
+    const updatedGroup = await groupService.updateGroup(id, data);
     res.status(200).json(updatedGroup);
   } catch (error) {
     handleError(res, error, 'Помилка при оновленні групи');
