@@ -31,7 +31,8 @@ vi.mock('../repositories/user.repository.js', () => ({
     findAll: vi.fn(),
     findById: vi.fn(),
     findByIdActive: vi.fn(),
-    findByEmail: vi.fn(),
+    findCredentialsByEmail: vi.fn(),
+    findCredentialsById: vi.fn(),
     incrementTokenVersion: vi.fn(),
   },
   toPublicUser: (user: Record<string, unknown>) => {
@@ -46,7 +47,7 @@ const sumByDirection = vi.mocked(coinRepository.sumByDirection);
 const findIdsByTeacher = vi.mocked(groupRepository.findIdsByTeacher);
 const userFindAll = vi.mocked(userRepository.findAll);
 const userFindById = vi.mocked(userRepository.findById);
-const findByEmail = vi.mocked(userRepository.findByEmail);
+const findCredentialsByEmail = vi.mocked(userRepository.findCredentialsByEmail);
 
 const OWN_GROUP = 'group-own';
 const STUDENT_ID = '11111111-1111-4111-8111-111111111111';
@@ -289,8 +290,19 @@ describe('POST /api/v1/auth/login', () => {
     tokenVersion: 1,
   });
 
+  // Без email Prisma отримала б where: { email: undefined } — тобто першого-ліпшого користувача
+  it('запит без email відхиляє з 400, не звертаючись до БД', async () => {
+    const response = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ password: 'secret123' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Потрібно вказати email');
+    expect(findCredentialsByEmail).not.toHaveBeenCalled();
+  });
+
   it('невірний пароль повертає 401', async () => {
-    findByEmail.mockResolvedValue(dbUser() as never);
+    findCredentialsByEmail.mockResolvedValue(dbUser() as never);
 
     const response = await request(app)
       .post('/api/v1/auth/login')
@@ -301,7 +313,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   it('успішний вхід повертає access-токен і профіль', async () => {
-    findByEmail.mockResolvedValue(dbUser() as never);
+    findCredentialsByEmail.mockResolvedValue(dbUser() as never);
 
     const response = await request(app)
       .post('/api/v1/auth/login')
@@ -313,7 +325,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   it('не віддає хеш пароля у відповіді', async () => {
-    findByEmail.mockResolvedValue(dbUser() as never);
+    findCredentialsByEmail.mockResolvedValue(dbUser() as never);
 
     const response = await request(app)
       .post('/api/v1/auth/login')
@@ -324,7 +336,7 @@ describe('POST /api/v1/auth/login', () => {
 
   // Refresh живе лише в httpOnly-куці — інакше його дістав би будь-який скрипт на сторінці
   it('кладе refresh-токен у httpOnly-куку, а не в тіло відповіді', async () => {
-    findByEmail.mockResolvedValue(dbUser() as never);
+    findCredentialsByEmail.mockResolvedValue(dbUser() as never);
 
     const response = await request(app)
       .post('/api/v1/auth/login')

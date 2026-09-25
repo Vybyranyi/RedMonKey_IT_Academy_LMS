@@ -9,14 +9,14 @@ import { userRepository } from '../repositories/user.repository.js';
 // файлу свіжий app, тож вичерпаний тут ліміт не зачепить api.test.ts.
 vi.mock('../lib/prisma.js', () => ({ prisma: {} }));
 vi.mock('../repositories/user.repository.js', () => ({
-  userRepository: { findByEmail: vi.fn() },
+  userRepository: { findCredentialsByEmail: vi.fn() },
   toPublicUser: (user: Record<string, unknown>) => {
     const { passwordHash, tokenVersion, ...publicUser } = user;
     return publicUser;
   },
 }));
 
-const findByEmail = vi.mocked(userRepository.findByEmail);
+const findCredentialsByEmail = vi.mocked(userRepository.findCredentialsByEmail);
 
 const LOGIN_FAILURES_ALLOWED = 10;
 const REFRESH_REQUESTS_ALLOWED = 60;
@@ -25,7 +25,7 @@ const login = (password: string) =>
   request(app).post('/api/v1/auth/login').send({ email: 'teacher@academy.com', password });
 
 beforeEach(async () => {
-  findByEmail.mockResolvedValue({
+  findCredentialsByEmail.mockResolvedValue({
     id: 'teacher-1',
     email: 'teacher@academy.com',
     role: UserRole.TEACHER,
@@ -59,12 +59,12 @@ describe('POST /api/v1/auth/login — ліміт невдалих спроб', (
 
   // Заблокований клієнт не може «вгадати» пароль навіть правильним: запит не доходить до bcrypt
   it('блокує і правильний пароль до кінця вікна', async () => {
-    findByEmail.mockClear();
+    findCredentialsByEmail.mockClear();
 
     const response = await login('secret123');
 
     expect(response.status).toBe(429);
-    expect(findByEmail).not.toHaveBeenCalled();
+    expect(findCredentialsByEmail).not.toHaveBeenCalled();
   });
 });
 

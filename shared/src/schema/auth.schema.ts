@@ -24,6 +24,23 @@ const nameField = (label: string) =>
     .min(2, `${label} має містити не менше 2 символів`)
     .max(50, `${label} не може бути довшим за 50 символів`);
 
+/**
+ * Тіло POST /auth/login. Лише форма даних, без правил складності пароля —
+ * вони діють при створенні/зміні, а не при вході. Без цієї перевірки
+ * відсутній email ставав би `where: { email: undefined }` (тобто «перший-ліпший
+ * користувач»), а обʼєкт замість рядка — Prisma-фільтром на кшталт { contains }.
+ */
+export const loginCredentialsSchema = z.object({
+  email: z
+    .string({ error: 'Потрібно вказати email' })
+    .trim()
+    .min(1, 'Потрібно вказати email')
+    .max(254, 'Email задовгий'),
+  password: z
+    .string({ error: 'Потрібно вказати пароль' })
+    .min(1, 'Потрібно вказати пароль'),
+});
+
 export const updateProfileSchema = z
   .object({
     firstName: nameField('Імʼя').optional(),
@@ -60,5 +77,6 @@ export const changePasswordSchema = z
     path: ['newPassword'],
   });
 
+export type ILoginCredentialsDto = z.infer<typeof loginCredentialsSchema>;
 export type IUpdateProfileDto = z.infer<typeof updateProfileSchema>;
 export type IChangePasswordDto = z.infer<typeof changePasswordSchema>;

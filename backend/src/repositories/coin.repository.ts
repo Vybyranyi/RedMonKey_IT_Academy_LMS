@@ -46,6 +46,7 @@ export const coinRepository = {
       await tx.user.update({
         where: { id: data.studentId },
         data: { redCoins: { increment: data.amount } },
+        select: { id: true },
       });
 
       return tx.coinTransaction.create({ data, include: transactionInclude });

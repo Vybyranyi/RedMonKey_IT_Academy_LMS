@@ -12,7 +12,8 @@ vi.mock('bcryptjs', () => ({
 
 vi.mock('../../repositories/user.repository.js', () => ({
   userRepository: {
-    findByEmail: vi.fn(),
+    findCredentialsByEmail: vi.fn(),
+    findCredentialsById: vi.fn(),
     findById: vi.fn(),
     update: vi.fn(),
     updatePassword: vi.fn(),
@@ -27,7 +28,8 @@ vi.mock('../../repositories/user.repository.js', () => ({
 
 const compare = vi.mocked(bcrypt.compare);
 const hash = vi.mocked(bcrypt.hash);
-const findByEmail = vi.mocked(userRepository.findByEmail);
+const findCredentialsByEmail = vi.mocked(userRepository.findCredentialsByEmail);
+const findCredentialsById = vi.mocked(userRepository.findCredentialsById);
 const findById = vi.mocked(userRepository.findById);
 const update = vi.mocked(userRepository.update);
 const updatePassword = vi.mocked(userRepository.updatePassword);
@@ -52,19 +54,19 @@ beforeEach(() => {
 
 describe('login', () => {
   it('не пускає неіснуючого користувача', async () => {
-    findByEmail.mockResolvedValue(null as never);
+    findCredentialsByEmail.mockResolvedValue(null as never);
 
     await expect(authService.login('nobody@academy.com', 'pass')).rejects.toThrow(UnauthorizedError);
   });
 
   it('не пускає деактивованого користувача', async () => {
-    findByEmail.mockResolvedValue(dbUser({ isActive: false }));
+    findCredentialsByEmail.mockResolvedValue(dbUser({ isActive: false }));
 
     await expect(authService.login('teacher@academy.com', 'pass')).rejects.toThrow(UnauthorizedError);
   });
 
   it('не пускає з невірним паролем', async () => {
-    findByEmail.mockResolvedValue(dbUser());
+    findCredentialsByEmail.mockResolvedValue(dbUser());
     compare.mockResolvedValue(false as never);
 
     await expect(authService.login('teacher@academy.com', 'wrong')).rejects.toThrow(
@@ -75,10 +77,10 @@ describe('login', () => {
   // Однаковий текст для «нема такого email» і «невірний пароль» — щоб не можна
   // було перебором дізнатися, які email зареєстровані
   it('не розрізняє в тексті невідомий email і невірний пароль', async () => {
-    findByEmail.mockResolvedValue(null as never);
+    findCredentialsByEmail.mockResolvedValue(null as never);
     const unknownEmail = await authService.login('nobody@academy.com', 'pass').catch((e) => e.message);
 
-    findByEmail.mockResolvedValue(dbUser());
+    findCredentialsByEmail.mockResolvedValue(dbUser());
     compare.mockResolvedValue(false as never);
     const wrongPassword = await authService.login('teacher@academy.com', 'x').catch((e) => e.message);
 
@@ -86,7 +88,7 @@ describe('login', () => {
   });
 
   it('видає пару токенів із правильним payload', async () => {
-    findByEmail.mockResolvedValue(dbUser());
+    findCredentialsByEmail.mockResolvedValue(dbUser());
 
     const result = await authService.login('teacher@academy.com', 'pass');
 
@@ -98,7 +100,7 @@ describe('login', () => {
   });
 
   it('не віддає клієнту хеш пароля і tokenVersion', async () => {
-    findByEmail.mockResolvedValue(dbUser());
+    findCredentialsByEmail.mockResolvedValue(dbUser());
 
     const result = await authService.login('teacher@academy.com', 'pass');
 
@@ -124,21 +126,21 @@ describe('refresh', () => {
 
   // Розбіжність версій означає, що сесію відкликано (logout або зміна пароля)
   it('відхиляє токен зі старою tokenVersion', async () => {
-    findById.mockResolvedValue(dbUser({ tokenVersion: 2 }));
+    findCredentialsById.mockResolvedValue(dbUser({ tokenVersion: 2 }));
     const stale = generateRefreshToken({ userId: 'user-1', role: UserRole.TEACHER, tokenVersion: 1 });
 
     await expect(authService.refresh(stale)).rejects.toThrow('Сесію завершено. Увійдіть у систему повторно');
   });
 
   it('відхиляє токен деактивованого користувача', async () => {
-    findById.mockResolvedValue(dbUser({ isActive: false }));
+    findCredentialsById.mockResolvedValue(dbUser({ isActive: false }));
     const token = generateRefreshToken({ userId: 'user-1', role: UserRole.TEACHER, tokenVersion: 1 });
 
     await expect(authService.refresh(token)).rejects.toThrow(UnauthorizedError);
   });
 
   it('видає новий access-токен за актуальним refresh', async () => {
-    findById.mockResolvedValue(dbUser({ tokenVersion: 1 }));
+    findCredentialsById.mockResolvedValue(dbUser({ tokenVersion: 1 }));
     const token = generateRefreshToken({ userId: 'user-1', role: UserRole.TEACHER, tokenVersion: 1 });
 
     const { accessToken } = await authService.refresh(token);
@@ -198,7 +200,7 @@ describe('updateProfile', () => {
 
 describe('changePassword', () => {
   it('відхиляє невірний поточний пароль', async () => {
-    findById.mockResolvedValue(dbUser());
+    findCredentialsById.mockResolvedValue(dbUser());
     compare.mockResolvedValue(false as never);
 
     await expect(authService.changePassword('user-1', 'wrong', 'newPass123')).rejects.toThrow(
@@ -208,7 +210,7 @@ describe('changePassword', () => {
   });
 
   it('зберігає хеш нового пароля', async () => {
-    findById.mockResolvedValue(dbUser());
+    findCredentialsById.mockResolvedValue(dbUser());
     updatePassword.mockResolvedValue(2 as never);
 
     await authService.changePassword('user-1', 'oldPass1', 'newPass123');
@@ -219,7 +221,7 @@ describe('changePassword', () => {
 
   // Зміна пароля розлогінює решту пристроїв, але поточну сесію лишає живою
   it('видає нову пару токенів під новою версією', async () => {
-    findById.mockResolvedValue(dbUser());
+    findCredentialsById.mockResolvedValue(dbUser());
     updatePassword.mockResolvedValue(2 as never);
 
     const result = await authService.changePassword('user-1', 'oldPass1', 'newPass123');

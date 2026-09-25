@@ -22,27 +22,63 @@ const publicUserSelect = {
 /** Форма користувача, яку бачить клієнт. Одна на login, GET /auth/me і PATCH /auth/me. */
 export type PublicUser = Prisma.UserGetPayload<{ select: typeof publicUserSelect }>;
 
-const fullUserInclude = { group: { select: { id: true, name: true } } } satisfies Prisma.UserInclude;
-
-type FullUser = Prisma.UserGetPayload<{ include: typeof fullUserInclude }>;
+/** Мінімум для перевірок доступу й бізнес-правил у сервісах — без секретів. */
+const userSubjectSelect = {
+  id: true,
+  role: true,
+  groupId: true,
+  isActive: true,
+  redCoins: true,
+} satisfies Prisma.UserSelect;
 
 /**
- * Дзеркалить publicUserSelect для випадків, коли запис уже прочитано повністю
- * (логін читає passwordHash). Тип PublicUser гарантує, що обидва шляхи не розійдуться.
+ * Секрети читають лише ці дві проєкції (плюс updatePassword, що повертає нову
+ * tokenVersion) і лише для auth.service. Будь-який інший шлях до passwordHash/
+ * tokenVersion — потенційний витік, його ловить repositories/__tests__/secret-fields.test.ts.
  */
-export const toPublicUser = (user: FullUser): PublicUser => {
+const loginUserSelect = {
+  ...publicUserSelect,
+  passwordHash: true,
+  tokenVersion: true,
+} satisfies Prisma.UserSelect;
+
+const credentialsSelect = {
+  id: true,
+  role: true,
+  isActive: true,
+  passwordHash: true,
+  tokenVersion: true,
+} satisfies Prisma.UserSelect;
+
+type LoginUser = Prisma.UserGetPayload<{ select: typeof loginUserSelect }>;
+
+/**
+ * Дзеркалить publicUserSelect для випадку, коли запис уже прочитано разом із секретами
+ * (логін звіряє passwordHash). Тип PublicUser гарантує, що обидва шляхи не розійдуться.
+ */
+export const toPublicUser = (user: LoginUser): PublicUser => {
   const { passwordHash, tokenVersion, ...publicUser } = user;
   return publicUser;
 };
 
 export const userRepository = {
-  /** Повний запис (з passwordHash/tokenVersion) — лише для внутрішньої логіки auth. */
-  async findByEmail(email: string) {
-    return prisma.user.findFirst({ where: { email }, include: fullUserInclude });
+  /** Для логіну: публічний профіль + секрети. Клієнту — лише через toPublicUser. */
+  async findCredentialsByEmail(email: string) {
+    return prisma.user.findFirst({ where: { email }, select: loginUserSelect });
+  },
+
+  /** Для refresh і зміни пароля: tokenVersion і passwordHash без решти профілю. */
+  async findCredentialsById(id: string) {
+    return prisma.user.findUnique({ where: { id }, select: credentialsSelect });
+  },
+
+  async existsByEmail(email: string): Promise<boolean> {
+    const user = await prisma.user.findFirst({ where: { email }, select: { id: true } });
+    return user !== null;
   },
 
   async findById(id: string) {
-    return prisma.user.findUnique({ where: { id } });
+    return prisma.user.findUnique({ where: { id }, select: userSubjectSelect });
   },
 
   async findAll(where: Prisma.UserWhereInput) {
@@ -85,6 +121,10 @@ export const userRepository = {
 
   /** Відкликає всі раніше видані refresh-токени користувача. */
   async incrementTokenVersion(id: string) {
-    await prisma.user.update({ where: { id }, data: { tokenVersion: { increment: 1 } } });
+    await prisma.user.update({
+      where: { id },
+      data: { tokenVersion: { increment: 1 } },
+      select: { id: true },
+    });
   },
 };

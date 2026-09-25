@@ -92,8 +92,7 @@ export const userService = {
   async createUser(userData: any) {
     const { firstName, lastName, email, password, role, phone, group } = userData;
 
-    const existingUser = await userRepository.findByEmail(email);
-    if (existingUser) {
+    if (await userRepository.existsByEmail(email)) {
       throw new BadRequestError('Користувач з таким email вже існує');
     }
 
