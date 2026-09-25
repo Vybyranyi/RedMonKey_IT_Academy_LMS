@@ -1,5 +1,5 @@
-import { ZodType } from 'zod';
-import { BadRequestError } from './errors.js';
+import { z, ZodType } from 'zod';
+import { BadRequestError, NotFoundError } from './errors.js';
 
 /**
  * Єдина точка входу для валідації тіла запиту: помилку Zod згортаємо
@@ -17,3 +17,15 @@ export const parseBody = <T>(schema: ZodType<T>, body: unknown): T => {
 
 /** Те саме, що parseBody, але для query-рядка: ?from=...&groupId=... */
 export const parseQuery = <T>(schema: ZodType<T>, query: unknown): T => parseBody(schema, query);
+
+const uuid = z.uuid();
+
+/**
+ * :id з URL. Рядок, що не є UUID, Prisma на колонці uuid зустрічає помилкою P2023,
+ * і handleError віддавав її як 500. Запису з таким id бути не може — відповідаємо
+ * тим самим 404, що й на неіснуючий id.
+ */
+export const parseIdParam = (id: unknown, notFoundMessage: string): string => {
+  if (!uuid.safeParse(id).success) throw new NotFoundError(notFoundMessage);
+  return id as string;
+};

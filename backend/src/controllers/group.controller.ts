@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { createGroupSchema, updateGroupSchema } from '@redmonkey/shared';
 import { groupService } from '../services/group.service.js';
 import { UnauthorizedError, handleError } from '../utils/errors.js';
-import { parseBody } from '../utils/validation.js';
+import { parseBody, parseIdParam } from '../utils/validation.js';
 
 export const getGroups = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -17,7 +17,7 @@ export const getGroupById = async (req: Request, res: Response): Promise<void> =
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
 
-    const id = req.params.id as string;
+    const id = parseIdParam(req.params.id, 'Групу не знайдено');
     const group = await groupService.getGroupById(id, req.user);
     res.status(200).json(group);
   } catch (error) {
@@ -37,7 +37,7 @@ export const createGroup = async (req: Request, res: Response): Promise<void> =>
 
 export const updateGroup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = req.params.id as string;
+    const id = parseIdParam(req.params.id, 'Групу не знайдено');
     const data = parseBody(updateGroupSchema, req.body);
     const updatedGroup = await groupService.updateGroup(id, data);
     res.status(200).json(updatedGroup);
@@ -48,7 +48,7 @@ export const updateGroup = async (req: Request, res: Response): Promise<void> =>
 
 export const deleteGroup = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = req.params.id as string;
+    const id = parseIdParam(req.params.id, 'Групу не знайдено');
     await groupService.deleteGroup(id);
     res.status(200).json({ message: 'Група успішно видалена (деактивована)' });
   } catch (error) {

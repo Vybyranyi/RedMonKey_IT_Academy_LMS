@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { createUserSchema, updateUserSchema, userFiltersSchema } from '@redmonkey/shared';
 import { userService } from '../services/user.service.js';
 import { UnauthorizedError, handleError } from '../utils/errors.js';
-import { parseBody, parseQuery } from '../utils/validation.js';
+import { parseBody, parseIdParam, parseQuery } from '../utils/validation.js';
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -18,7 +18,7 @@ export const getUserById = async (req: Request, res: Response): Promise<void> =>
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
 
-    const id = req.params.id as string;
+    const id = parseIdParam(req.params.id, 'Користувача не знайдено');
     const user = await userService.getUserById(id, req.user);
     res.status(200).json(user);
   } catch (error) {
@@ -38,7 +38,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = req.params.id as string;
+    const id = parseIdParam(req.params.id, 'Користувача не знайдено');
     const data = parseBody(updateUserSchema, req.body);
     const updatedUser = await userService.updateUser(id, data);
     res.status(200).json(updatedUser);
@@ -49,7 +49,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
 
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = req.params.id as string;
+    const id = parseIdParam(req.params.id, 'Користувача не знайдено');
     await userService.deleteUser(id);
     res.status(200).json({ message: 'Користувач успішно видалений (деактивований)' });
   } catch (error) {
@@ -60,7 +60,10 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 export const getUserStats = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
-    const stats = await userService.getUserStats(req.params.id as string, req.user);
+    const stats = await userService.getUserStats(
+      parseIdParam(req.params.id, 'Користувача не знайдено'),
+      req.user
+    );
     res.status(200).json(stats);
   } catch (error) {
     handleError(res, error, 'Помилка при отриманні статистики');

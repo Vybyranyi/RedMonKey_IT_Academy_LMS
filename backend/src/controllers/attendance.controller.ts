@@ -3,7 +3,7 @@ import {
   bulkAttendanceSchema,
   updateAttendanceSchema,
 } from '@redmonkey/shared';
-import { parseBody, parseQuery } from '../utils/validation.js';
+import { parseBody, parseIdParam, parseQuery } from '../utils/validation.js';
 import { attendanceService } from '../services/attendance.service.js';
 import { Request, Response } from 'express';
 import { handleError, UnauthorizedError } from '../utils/errors.js';
@@ -32,7 +32,7 @@ export const saveBulkAttendance = async (req: Request, res: Response): Promise<v
 export const updateAttendance = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
-    const { id } = req.params as { id: string };
+    const id = parseIdParam(req.params.id, 'Запис явки не знайдено');
     const data = parseBody(updateAttendanceSchema, req.body);
     const updated = await attendanceService.updateStatus(id, data, req.user);
     res.status(200).json(updated);

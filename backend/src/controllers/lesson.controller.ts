@@ -7,7 +7,7 @@ import {
 import { Request, Response } from 'express';
 import { lessonService } from '../services/lesson.service.js';
 import { UnauthorizedError, handleError } from '../utils/errors.js';
-import { parseBody, parseQuery } from '../utils/validation.js';
+import { parseBody, parseIdParam, parseQuery } from '../utils/validation.js';
 
 export const getLessons = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -23,7 +23,10 @@ export const getLessons = async (req: Request, res: Response): Promise<void> => 
 export const getLessonById = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
-    const lesson = await lessonService.getLessonById(req.params.id as string, req.user);
+    const lesson = await lessonService.getLessonById(
+      parseIdParam(req.params.id, 'Заняття не знайдено'),
+      req.user
+    );
     res.status(200).json(lesson);
   } catch (error) {
     handleError(res, error, 'Помилка при отриманні заняття');
@@ -45,7 +48,11 @@ export const updateLesson = async (req: Request, res: Response): Promise<void> =
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
     const lessonData = parseBody(updateLessonSchema, req.body);
-    const lesson = await lessonService.updateLesson(req.params.id as string, lessonData, req.user);
+    const lesson = await lessonService.updateLesson(
+      parseIdParam(req.params.id, 'Заняття не знайдено'),
+      lessonData,
+      req.user
+    );
     res.status(200).json(lesson);
   } catch (error) {
     handleError(res, error, 'Помилка при оновленні заняття');
@@ -59,7 +66,10 @@ export const updateLesson = async (req: Request, res: Response): Promise<void> =
 export const deleteLesson = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
-    const lesson = await lessonService.cancelLesson(req.params.id as string, req.user);
+    const lesson = await lessonService.cancelLesson(
+      parseIdParam(req.params.id, 'Заняття не знайдено'),
+      req.user
+    );
     res.status(200).json(lesson);
   } catch (error) {
     handleError(res, error, 'Помилка при скасуванні заняття');
@@ -70,7 +80,11 @@ export const completeLesson = async (req: Request, res: Response): Promise<void>
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
     const { records } = parseBody(completeLessonSchema, req.body);
-    const lesson = await lessonService.completeLesson(req.params.id as string, records, req.user);
+    const lesson = await lessonService.completeLesson(
+      parseIdParam(req.params.id, 'Заняття не знайдено'),
+      records,
+      req.user
+    );
     res.status(200).json(lesson);
   } catch (error) {
     handleError(res, error, 'Помилка при завершенні заняття');

@@ -262,6 +262,25 @@ describe('GET /api/v1/users', () => {
   });
 });
 
+describe('ідентифікатор у шляху', () => {
+  // Prisma на колонці uuid відповідала на «abc» помилкою P2023 → 500
+  it('на id, що не є UUID, відповідає 404 і не йде в БД', async () => {
+    const response = await request(app)
+      .get('/api/v1/users/abc')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('Користувача не знайдено');
+    expect(userRepository.findByIdActive).not.toHaveBeenCalled();
+  });
+
+  it('автентифікацію перевіряє раніше за id', async () => {
+    const response = await request(app).get('/api/v1/users/abc');
+
+    expect(response.status).toBe(401);
+  });
+});
+
 describe('GET /api/v1/attendance', () => {
   it('на lessonId, що не є UUID, відповідає 400, а не 500', async () => {
     const response = await request(app)
