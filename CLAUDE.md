@@ -32,6 +32,9 @@
 npm install              # ставить залежності для всіх workspace-ів одразу
 npm run dev               # shared (watch) + backend (nodemon/tsx) + frontend (vite), паралельно
 npm run build              # build --workspaces (shared → backend → frontend)
+npm test                     # Vitest у всіх workspace-ах (shared → backend → frontend)
+npm run test -w backend       # тести одного workspace
+npm run test:watch -w frontend # watch-режим
 npm run lint -w frontend    # ESLint (у backend лінтера поки немає)
 npm run seed -w backend      # тестові користувачі/групи (backend/src/scripts/seed.ts)
 
@@ -140,6 +143,19 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 Реалізовано (backend + frontend): **auth** (login/refresh/logout/me), **users** CRUD, **groups** CRUD.
 Ще не реалізовано (є моделі в Prisma-схемі та сторінки-заглушки на фронті, але без API): **lessons/schedule**, **grades**, **attendance**, **coin transactions**. Плануй роботу над ними по [ТЗ, розділ 4](./IT_Academy_LMS_ТЗ.md) і [roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md).
+
+## Тести
+
+Раннер — **Vitest**, один на весь монорепо. Тести лежать у теках `__tests__/` поруч із кодом (`*.test.ts` / `*.test.tsx`) і **не торкаються ні БД, ні мережі**.
+
+- `shared` — Zod-схеми: межі діапазонів і тексти помилок (`Grade.value` 1..12 і `CoinTransaction.amount ≠ 0` живуть лише тут, у БД CHECK-обмежень немає).
+- `backend` unit — утиліти, `access.policy` (матриця ролей), сервіси з `vi.mock()` на репозиторії.
+- `backend` API — `src/__tests__/api.test.ts`: supertest ганяє справжні маршрути, middleware, контролери й сервіси, а моки стоять на найглибшому шарі (репозиторії + `lib/prisma.js`). Тому `app` зібрано в `src/app.ts` окремо від `listen()` у `src/index.ts` — не зливай їх назад.
+- `frontend` — jsdom + React Testing Library; HTTP підміняє адаптер axios (`axiosInstance.defaults.adapter`), а не реальні запити.
+- `backend/vitest.setup.ts` виставляє фіктивні JWT-секрети: без них `config/env.ts` падає прямо на імпорті.
+- Тести виключені з `tsc`-білду через `exclude` у tsconfig-ах кожного workspace — не прибирай, інакше `npm run build` почне тягнути їх у `dist`.
+
+Додаєш бізнес-логіку або правило доступу — додай тест; CI ганяє `npm test` на кожен PR.
 
 ## Конвенції коду
 

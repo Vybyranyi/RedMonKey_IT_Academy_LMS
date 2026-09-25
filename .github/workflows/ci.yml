@@ -29,3 +29,8 @@ jobs:
 
       - name: Build (shared → backend → frontend)
         run: npm run build
+
+      # Тести не ходять у БД: Prisma Client уже згенеровано на кроці build,
+      # репозиторії в тестах підмінені моками.
+      - name: Test (shared → backend → frontend)
+        run: npm test
