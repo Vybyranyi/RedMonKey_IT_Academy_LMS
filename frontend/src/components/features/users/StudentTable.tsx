@@ -10,15 +10,21 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Eye, Pencil } from 'lucide-react';
-import type { IUser } from '@redmonkey/shared';
-import type { IUserWithStats } from '@/types/userStats';
-import { getGradeColor } from '@/lib/gradeColors';
+import type { IUser, IUserWithListStats } from '@redmonkey/shared';
+import { getAverageColor } from '@/lib/gradeColors';
 
 interface StudentTableProps {
-  students: IUserWithStats[];
+  students: IUserWithListStats[];
   onViewDetails: (id: string) => void;
   onEdit?: (student: IUser) => void;
 }
+
+/** Підказка до «—»: даних ще немає чи їх не можна показувати. */
+const emptyHint = (student: IUserWithListStats, value: number | null, noDataHint: string) => {
+  if (value !== null) return undefined;
+  // stats: null — студент чужої групи: список викладачу видно, статистику — ні
+  return student.stats === null ? 'Статистика доступна лише для студентів ваших груп' : noDataHint;
+};
 
 export default function StudentTable({ students, onViewDetails, onEdit }: StudentTableProps) {
   return (
@@ -44,8 +50,9 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
             </TableRow>
           ) : (
             students.map((student) => {
-              const avgScore = student.averageScore || 0;
-              const attendance = student.attendance || 0;
+              // null — оцінок чи відміток ще немає: це «—», а не нуль у червоній плашці
+              const average = student.stats?.averageGrade ?? null;
+              const attendance = student.stats?.attendanceRate ?? null;
               const displayCoins = student.redCoins || 0;
 
               return (
@@ -85,14 +92,12 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-7 h-7 rounded flex items-center justify-center font-bold text-xs ${getGradeColor(avgScore)}`}
-                      >
-                        {Math.round(avgScore)}
-                      </div>
-                      <span className="text-sm font-medium text-slate-600">{avgScore}</span>
-                    </div>
+                    <span
+                      className={`inline-flex h-7 min-w-[40px] items-center justify-center rounded-md border px-2 text-xs font-bold ${getAverageColor(average)}`}
+                      title={emptyHint(student, average, 'Оцінок ще немає')}
+                    >
+                      {average === null ? '—' : average.toFixed(1)}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <span className="font-bold text-slate-700 flex items-center gap-1.5">
@@ -101,14 +106,23 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-3 w-32">
+                    <div
+                      className="flex items-center gap-3 w-32"
+                      title={emptyHint(student, attendance, 'Відміток явки ще немає')}
+                    >
                       <div className="w-full bg-slate-100 rounded-full h-1.5">
-                        <div
-                          className={`${attendance > 0 ? 'bg-emerald-600' : 'bg-slate-300'} h-1.5 rounded-full`}
-                          style={{ width: `${attendance}%` }}
-                        />
+                        {attendance !== null && (
+                          <div
+                            className="bg-emerald-600 h-1.5 rounded-full"
+                            style={{ width: `${attendance}%` }}
+                          />
+                        )}
                       </div>
-                      <span className="text-xs font-semibold text-slate-600">{attendance}%</span>
+                      <span
+                        className={`text-xs font-semibold ${attendance === null ? 'text-slate-400' : 'text-slate-600'}`}
+                      >
+                        {attendance === null ? '—' : `${attendance}%`}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>

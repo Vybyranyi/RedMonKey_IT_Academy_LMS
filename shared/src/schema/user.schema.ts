@@ -63,6 +63,9 @@ export const userFiltersSchema = z.object({
     .trim()
     .max(100, 'Задовгий пошуковий запит')
     .optional(),
+  // Агрегати коштують два запити GROUP BY — їх просить лише таблиця студентів,
+  // а не форми й дашборд, яким потрібен сам список
+  withStats: z.stringbool({ error: 'withStats має бути true або false' }).optional(),
 });
 
 export type ICreateUserDto = z.infer<typeof createUserSchema>;

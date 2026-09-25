@@ -42,6 +42,27 @@ export const accessPolicy = {
     return false;
   },
 
+  /**
+   * canViewUser для цілого списку: групи викладача читаються один раз, а не на кожен рядок.
+   * Повертає id тих, чий профіль і статистику актору можна бачити. Що правила не
+   * розійшлися з canViewUser, перевіряє access.policy.test.ts.
+   */
+  async filterViewableUsers(actor: TokenPayload, targets: UserSubject[]): Promise<Set<string>> {
+    if (actor.role === UserRole.ADMIN) return new Set(targets.map((target) => target.id));
+
+    const ownGroupIds =
+      actor.role === UserRole.TEACHER ? await groupRepository.findIdsByTeacher(actor.userId) : [];
+
+    const visible = targets.filter(
+      (target) =>
+        target.id === actor.userId ||
+        (target.role === UserRole.STUDENT &&
+          target.groupId !== null &&
+          ownGroupIds.includes(target.groupId))
+    );
+    return new Set(visible.map((target) => target.id));
+  },
+
   async canViewGroup(actor: TokenPayload, target: GroupSubject): Promise<boolean> {
     if (actor.role === UserRole.ADMIN) return true;
     if (actor.role === UserRole.TEACHER) return target.teacherIds.includes(actor.userId);

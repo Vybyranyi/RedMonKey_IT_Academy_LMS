@@ -164,7 +164,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 | Домен | Backend | Frontend |
 |---|---|---|
 | auth | `/auth` — login/refresh/logout/me, `PATCH /me`, `PATCH /me/password` | `LoginPage`, `ProfilePage` |
-| users | `/users` CRUD + `GET /users/:id/stats` | `StudentsPage`, `TeachersPage` |
+| users | `/users` CRUD (`?withStats=true` — бал і відвідуваність для таблиці студентів) + `GET /users/:id/stats` | `StudentsPage`, `TeachersPage` |
 | groups | `/groups` CRUD | `GroupsPage` |
 | lessons | `/lessons` CRUD + `POST /lessons/:id/complete` | `SchedulePage` (календар, `LessonForm`, `LessonDetailsModal`) |
 | attendance | `GET /attendance`, `POST /attendance/bulk`, `PATCH /attendance/:id` | `AttendanceList` усередині деталей заняття |

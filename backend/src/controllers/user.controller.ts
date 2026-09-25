@@ -6,8 +6,10 @@ import { parseBody, parseIdParam, parseQuery } from '../utils/validation.js';
 
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
+
     const filters = parseQuery(userFiltersSchema, req.query);
-    const users = await userService.getUsers(filters, req.user?.role);
+    const users = await userService.getUsers(filters, req.user);
     res.status(200).json(users);
   } catch (error) {
     handleError(res, error, 'Помилка при отриманні користувачів');

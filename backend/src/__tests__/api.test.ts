@@ -7,6 +7,7 @@ import { app } from '../app.js';
 import { academyRepository } from '../repositories/academy.repository.js';
 import { coinRepository } from '../repositories/coin.repository.js';
 import { groupRepository } from '../repositories/group.repository.js';
+import { statsRepository } from '../repositories/stats.repository.js';
 import { userRepository } from '../repositories/user.repository.js';
 import { generateAccessToken } from '../utils/jwt.js';
 
@@ -31,6 +32,9 @@ vi.mock('../repositories/group.repository.js', () => ({
     create: vi.fn(),
     update: vi.fn(),
   },
+}));
+vi.mock('../repositories/stats.repository.js', () => ({
+  statsRepository: { averageGrades: vi.fn(), attendanceRates: vi.fn() },
 }));
 vi.mock('../repositories/user.repository.js', () => ({
   userRepository: {
@@ -59,6 +63,8 @@ const findIdsByTeacher = vi.mocked(groupRepository.findIdsByTeacher);
 const groupFindByName = vi.mocked(groupRepository.findByName);
 const groupCreate = vi.mocked(groupRepository.create);
 const groupUpdate = vi.mocked(groupRepository.update);
+const averageGrades = vi.mocked(statsRepository.averageGrades);
+const attendanceRates = vi.mocked(statsRepository.attendanceRates);
 const userFindAll = vi.mocked(userRepository.findAll);
 const userFindById = vi.mocked(userRepository.findById);
 const userCreate = vi.mocked(userRepository.create);
@@ -259,6 +265,50 @@ describe('GET /api/v1/users', () => {
         OR: expect.arrayContaining([{ lastName: { contains: 'Коваль', mode: 'insensitive' } }]),
       })
     );
+  });
+});
+
+describe('GET /api/v1/users?withStats=true', () => {
+  const ownStudent = { id: STUDENT_ID, role: UserRole.STUDENT, groupId: OWN_GROUP };
+  const otherStudent = { id: 'student-9', role: UserRole.STUDENT, groupId: 'group-other' };
+
+  beforeEach(() => {
+    userFindAll.mockResolvedValue([ownStudent, otherStudent] as never);
+    averageGrades.mockResolvedValue(new Map([[STUDENT_ID, 9.5]]));
+    attendanceRates.mockResolvedValue(new Map([[STUDENT_ID, 75]]));
+  });
+
+  it('викладачу додає бал і відвідуваність лише студентів своїх груп', async () => {
+    const response = await request(app)
+      .get('/api/v1/users?role=student&withStats=true')
+      .set('Authorization', `Bearer ${teacherToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([
+      { ...ownStudent, stats: { averageGrade: 9.5, attendanceRate: 75 } },
+      { ...otherStudent, stats: null },
+    ]);
+  });
+
+  // Query — рядок: Boolean('false') було б true
+  it('withStats=false не рахує агрегатів', async () => {
+    const response = await request(app)
+      .get('/api/v1/users?withStats=false')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body[0]).not.toHaveProperty('stats');
+    expect(averageGrades).not.toHaveBeenCalled();
+  });
+
+  it('на невідоме значення withStats відповідає 400', async () => {
+    const response = await request(app)
+      .get('/api/v1/users?withStats=maybe')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('withStats має бути true або false');
+    expect(userFindAll).not.toHaveBeenCalled();
   });
 });
 

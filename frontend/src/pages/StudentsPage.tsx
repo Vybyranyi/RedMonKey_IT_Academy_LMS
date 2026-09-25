@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { apiGetUsers, apiCreateUser, apiUpdateUser } from '@/api/users';
+import { apiGetStudentsWithStats, apiCreateUser, apiUpdateUser } from '@/api/users';
 import { apiGetGroups } from '@/api/groups';
-import { UserRole, type IPopulatedGroup, type IUser, type IUserDto } from '@redmonkey/shared';
+import {
+  UserRole,
+  type IPopulatedGroup,
+  type IUser,
+  type IUserDto,
+  type IUserWithListStats,
+} from '@redmonkey/shared';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,7 +34,7 @@ const groupIdOf = (user: IUser) =>
 
 export default function StudentsPage() {
   const { user: currentUser } = useAuthStore();
-  const [students, setStudents] = useState<IUser[]>([]);
+  const [students, setStudents] = useState<IUserWithListStats[]>([]);
   const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
@@ -40,7 +46,7 @@ export default function StudentsPage() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<IUser | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<IUserWithListStats | null>(null);
   const [editingStudent, setEditingStudent] = useState<IUser | null>(null);
 
   useEffect(() => {
@@ -53,8 +59,8 @@ export default function StudentsPage() {
       setIsLoading(true);
       setLoadError(null);
       try {
-        const data = await apiGetUsers(
-          { role: UserRole.STUDENT, groupId: selectedGroup, q: search },
+        const data = await apiGetStudentsWithStats(
+          { groupId: selectedGroup, q: search },
           { signal }
         );
         if (signal.aborted) return;
@@ -111,8 +117,12 @@ export default function StudentsPage() {
     try {
       const created = await apiCreateUser({ ...values, role: UserRole.STUDENT });
       setIsCreateOpen(false);
-      // Замість перезапиту — відповідь сервера на початок (список від нових до старих)
-      if (matchesFilters(created)) setStudents((current) => [created, ...current]);
+      // Замість перезапиту — відповідь сервера на початок (список від нових до старих).
+      // Новий студент ще без оцінок і явки, а створює його адмін, якому статистику видно
+      if (matchesFilters(created)) {
+        const row = { ...created, stats: { averageGrade: null, attendanceRate: null } };
+        setStudents((current) => [row, ...current]);
+      }
       toast.success(`Студента ${created.firstName} ${created.lastName} додано`);
     } catch (error) {
       toastApiError(error, 'Не вдалося створити студента');

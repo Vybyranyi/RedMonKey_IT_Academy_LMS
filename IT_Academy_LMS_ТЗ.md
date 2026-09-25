@@ -263,7 +263,9 @@ PATCH  /auth/me/password    — зміна пароля: інші сесії в�
 ### 4.2 Users Routes
 
 ```
-GET    /users               — список активних (?role=&groupId=&q=) [admin, teacher; викладач бачить лише студентів]
+GET    /users               — список активних (?role=&groupId=&q=&withStats=) [admin, teacher; викладач бачить лише студентів]
+                               withStats=true додає студентам stats { averageGrade, attendanceRate } — як у /users/:id/stats;
+                               викладачу — лише для студентів своїх груп, решті stats: null
 POST   /users               — створити користувача, пароль обов'язковий [admin]
 GET    /users/:id           — профіль [admin | сам користувач | викладач групи студента]
 GET    /users/:id/stats     — статистика: оцінки, відвідуваність, RedCoins [ті самі права, що й на профіль]

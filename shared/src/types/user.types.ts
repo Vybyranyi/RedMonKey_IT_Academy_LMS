@@ -19,6 +19,23 @@ export interface IUser extends IUserBase {
   updatedAt: string | Date;
 }
 
+/**
+ * Агрегати для рядка таблиці студентів (GET /users?withStats=true) — рахуються так само,
+ * як у GET /users/:id/stats. null — оцінок чи відміток явки ще немає, а не «нуль».
+ */
+export interface IStudentListStats {
+  averageGrade: number | null;
+  attendanceRate: number | null;
+}
+
+/**
+ * stats: null — це не студент або його статистику актору не видно
+ * (викладач бачить її лише для студентів своїх груп, як і GET /users/:id/stats).
+ */
+export interface IUserWithListStats extends IUser {
+  stats: IStudentListStats | null;
+}
+
 export interface IUserDto {
   firstName: string;
   lastName: string;

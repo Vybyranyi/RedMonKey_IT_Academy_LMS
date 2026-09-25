@@ -102,6 +102,8 @@ const ARGS: Record<string, unknown[]> = {
     [{ studentId: 'student-1', status: 'present', note: '' }],
   ],
   'coinRepository.findLeaderboard': [{}, 10],
+  'statsRepository.averageGrades': [['student-1']],
+  'statsRepository.attendanceRates': [['student-1']],
 };
 const DEFAULT_ARGS = ['id-1', {}];
 
