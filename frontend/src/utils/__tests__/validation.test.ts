@@ -9,16 +9,12 @@ describe('loginSchema', () => {
     );
   });
 
-  it('відхиляє некоректний email', () => {
-    const errors = validateWithZod(loginSchema)({ email: 'not-an-email', password: 'secret123' });
-    expect(errors.email).toBe('Некоректний формат email');
-  });
-
-  // Порожній email порушує одразу два правила (min(1) і email()), тож текст
-  // залежить від порядку issues — фіксуємо лише сам факт помилки
-  it('відхиляє порожній email', () => {
-    const errors = validateWithZod(loginSchema)({ email: '', password: 'secret123' });
-    expect(errors.email).toBeTruthy();
+  it.each([
+    ['', 'Email обовʼязковий'],
+    ['not-an-email', 'Некоректний формат email'],
+  ])('відхиляє email "%s"', (email, message) => {
+    const errors = validateWithZod(loginSchema)({ email, password: 'secret123' });
+    expect(errors.email).toBe(message);
   });
 
   it('відхиляє закороткий пароль', () => {
@@ -38,5 +34,14 @@ describe('validateWithZod', () => {
     const errors = validateWithZod(loginSchema)({ email: '', password: '' });
 
     expect(Object.keys(errors).sort()).toEqual(['email', 'password']);
+  });
+
+  // Поле може порушити кілька правил одразу — показуємо перше, як і parseBody на бекенді
+  it('лишає перше порушення поля, а не останнє', () => {
+    const schema = z.object({
+      code: z.string().min(3, 'Закоротко').regex(/^\d+$/, 'Лише цифри'),
+    });
+
+    expect(validateWithZod(schema)({ code: 'ab' }).code).toBe('Закоротко');
   });
 });
