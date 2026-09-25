@@ -1,6 +1,7 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../../store/authStore';
 import { UserRole } from '@redmonkey/shared';
+import ForbiddenPage from '@/pages/ForbiddenPage';
 
 interface ProtectedRouteProps {
   allowedRoles?: UserRole[];
@@ -8,15 +9,16 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const { isAuthenticated, user } = useAuthStore();
+  const location = useLocation();
 
   if (!isAuthenticated) {
-    // Перенаправляємо на сторінку входу
-    return <Navigate to="/login" replace />;
+    // Запам'ятовуємо, куди йшли: після входу (зокрема після протухлої сесії)
+    // LoginPage поверне саме сюди, а не на головну
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    // Якщо немає права доступу, повертаємо на головну
-    return <Navigate to="/" replace />;
+    return <ForbiddenPage />;
   }
 
   // Відображаємо дочірні маршрути

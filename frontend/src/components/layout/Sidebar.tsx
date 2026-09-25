@@ -6,9 +6,14 @@ import { NavLink } from "react-router-dom";
 import { navigationItems } from "./navigation";
 import UserProfileWidget from "./UserProfileWidget";
 
+// На планшеті (md..lg) розгорнутий sidebar забирає третину ширини — стартуємо згорнутими
+const isTabletWidth = () =>
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(max-width: 1023px)").matches;
+
 export default function Sidebar() {
   const { user } = useAuthStore();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(isTabletWidth);
 
   if (!user) return null;
 
@@ -18,7 +23,8 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`${isCollapsed ? "w-20" : "w-65"} bg-[#29425D] text-slate-100 h-screen flex flex-col shadow-xl z-20 shrink-0 transition-all duration-300 ease-in-out`}
+      // На мобайлі замість sidebar — BottomNav
+      className={`${isCollapsed ? "w-20" : "w-65"} bg-[#29425D] text-slate-100 h-dvh hidden md:flex flex-col shadow-xl z-20 shrink-0 transition-all duration-300 ease-in-out`}
     >
       {/* Logo Section */}
       <div
