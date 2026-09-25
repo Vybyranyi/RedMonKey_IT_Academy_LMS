@@ -27,11 +27,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint (frontend)
-        run: npm run lint -w frontend
+      # Першим — найшвидший крок. Упав: `npm run format` локально і закомітити.
+      - name: Format (Prettier)
+        run: npm run format:check
 
       - name: Build (shared → backend → frontend)
         run: npm run build
+
+      # Після build: правила backend на кшталт no-floating-promises читають
+      # типи Prisma Client і shared, які з'являються саме на цьому кроці.
+      - name: Lint (shared, backend, frontend)
+        run: npm run lint
 
       # Тести не ходять у БД: Prisma Client уже згенеровано на кроці build,
       # репозиторії в тестах підмінені моками.
