@@ -93,6 +93,40 @@ describe('canViewUser', () => {
   });
 });
 
+describe('filterViewableUsers', () => {
+  const ownStudent = { id: 'student-2', role: UserRole.STUDENT, groupId: OWN_GROUP };
+  const otherStudent = { id: 'student-3', role: UserRole.STUDENT, groupId: OTHER_GROUP };
+  const noGroupStudent = { id: 'student-4', role: UserRole.STUDENT, groupId: null };
+  const otherTeacher = { id: 'teacher-2', role: UserRole.TEACHER, groupId: null };
+  const targets = [ownStudent, otherStudent, noGroupStudent, otherTeacher];
+
+  it('адміну віддає всіх і не читає груп', async () => {
+    const visible = await accessPolicy.filterViewableUsers(admin, targets);
+
+    expect([...visible]).toEqual(targets.map((target) => target.id));
+    expect(findIdsByTeacher).not.toHaveBeenCalled();
+  });
+
+  it('викладачу — лише студентів своїх груп, групи читає один раз на весь список', async () => {
+    const visible = await accessPolicy.filterViewableUsers(teacher, targets);
+
+    expect([...visible]).toEqual([ownStudent.id]);
+    expect(findIdsByTeacher).toHaveBeenCalledTimes(1);
+  });
+
+  // Пакетний варіант не має розійтися з правилом для одного профілю
+  it.each([admin, teacher, student])('для $role збігається з canViewUser', async (actor) => {
+    const self = { id: actor.userId, role: actor.role, groupId: OWN_GROUP };
+    const all = [...targets, self];
+
+    const visible = await accessPolicy.filterViewableUsers(actor, all);
+
+    for (const target of all) {
+      expect(visible.has(target.id)).toBe(await accessPolicy.canViewUser(actor, target));
+    }
+  });
+});
+
 describe('canViewGroup', () => {
   const group = { teacherIds: [teacher.userId], studentIds: [student.userId] };
 

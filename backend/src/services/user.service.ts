@@ -9,7 +9,13 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.
 import { TokenPayload } from '../utils/jwt.js';
 import { coinRepository } from '../repositories/coin.repository.js';
 import { statsRepository } from '../repositories/stats.repository.js';
-import type { ICreateUserDto, IUpdateUserDto, IUserFilters, IUserStats } from '@redmonkey/shared';
+import type {
+  ICreateUserDto,
+  IStudentListStats,
+  IUpdateUserDto,
+  IUserFilters,
+  IUserStats,
+} from '@redmonkey/shared';
 
 /**
  * Помилки обмежень БД, які означають некоректний ввід, а не збій сервера:
@@ -24,12 +30,12 @@ const rethrowAsBadRequest = (error: unknown): never => {
 };
 
 export const userService = {
-  async getUsers(filters: IUserFilters, currentUserRole?: UserRole) {
-    const { role, groupId, q } = filters;
+  async getUsers(filters: IUserFilters, actor: TokenPayload) {
+    const { role, groupId, q, withStats } = filters;
     const where: Prisma.UserWhereInput = { isActive: true };
 
     // Викладач бачить лише студентів — це обмеження перекриває будь-який фільтр role.
-    if (currentUserRole === UserRole.TEACHER) {
+    if (actor.role === UserRole.TEACHER) {
       where.role = UserRole.STUDENT;
     } else if (role) {
       where.role = role;
@@ -47,7 +53,33 @@ export const userService = {
       ];
     }
 
-    return userRepository.findAll(where);
+    const users = await userRepository.findAll(where);
+    if (!withStats) return users;
+
+    // Список студентів викладач бачить увесь, а статистику — як у GET /users/:id/stats,
+    // лише студентів своїх груп. Решті рядків stats: null
+    const students = users.filter((user) => user.role === UserRole.STUDENT);
+    const visibleIds = await accessPolicy.filterViewableUsers(
+      actor,
+      students.map((user) => ({ id: user.id, role: UserRole.STUDENT, groupId: user.groupId }))
+    );
+    const studentIds = [...visibleIds];
+
+    // Два GROUP BY на весь список замість двох запитів на кожен рядок
+    const [averages, rates] =
+      studentIds.length > 0
+        ? await Promise.all([
+            statsRepository.averageGrades(studentIds),
+            statsRepository.attendanceRates(studentIds),
+          ])
+        : [new Map<string, number | null>(), new Map<string, number | null>()];
+
+    const statsOf = (id: string): IStudentListStats | null =>
+      visibleIds.has(id)
+        ? { averageGrade: averages.get(id) ?? null, attendanceRate: rates.get(id) ?? null }
+        : null;
+
+    return users.map((user) => ({ ...user, stats: statsOf(user.id) }));
   },
 
   async getUserById(id: string, actor: TokenPayload) {

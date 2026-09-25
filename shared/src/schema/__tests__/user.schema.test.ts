@@ -128,4 +128,17 @@ describe('userFiltersSchema', () => {
       'groupId має бути UUID'
     );
   });
+
+  // Query-параметри — завжди рядки: «false» не має стати true, як у Boolean('false')
+  it('withStats розбирає рядки true/false з query', () => {
+    expect(userFiltersSchema.parse({ withStats: 'true' }).withStats).toBe(true);
+    expect(userFiltersSchema.parse({ withStats: 'false' }).withStats).toBe(false);
+    expect(userFiltersSchema.parse({}).withStats).toBeUndefined();
+  });
+
+  it('відхиляє withStats, що не є булевим', () => {
+    expect(firstIssue(userFiltersSchema.safeParse({ withStats: 'maybe' }))).toBe(
+      'withStats має бути true або false'
+    );
+  });
 });
