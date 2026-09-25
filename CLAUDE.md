@@ -79,13 +79,14 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 ## Архітектура frontend
 
-- `pages/` — по одній сторінці на роут (`GroupsPage`, `StudentsPage`, `TeachersPage`, `GradesPage`, `CoinsPage`, `SchedulePage`, `DashboardPage`, `SettingsPage`, `LoginPage`).
+- `pages/` — по одній сторінці на роут (`DashboardPage`, `GroupsPage`, `StudentsPage`, `TeachersPage`, `GradesPage`, `CoinsPage`, `SchedulePage`, `ProfilePage`, `SettingsPage`, `LoginPage`).
 - `components/ui/` — ShadCN-примітиви (не редагувати вручну під конкретну сторінку — розширюй композицією).
 - `components/layout/` — `AppLayout` (Sidebar + Header), `UserProfileWidget`.
 - `components/features/` — фіча-специфічні складені компоненти.
-- `api/*.ts` — тонкі функції над `axiosInstance` (з `api/axios.ts`), по одному файлу на ресурс (`groups.ts`, `users.ts`).
+- `api/*.ts` — тонкі функції над `axiosInstance` (з `api/axios.ts`), по одному файлу на ресурс (`auth.ts`, `users.ts`, `groups.ts`, `lessons.ts`, `grades.ts`, `attendance.ts`, `coins.ts`).
 - `store/authStore.ts` — Zustand, тримає `user`/`accessToken`/`isAuthenticated`; `accessToken` дублюється в `localStorage` для відновлення сесії при перезавантаженні сторінки.
-- `router/index.tsx` — React Router з захищеними маршрутами.
+- `router/index.tsx` — React Router з захищеними маршрутами; `ProtectedRoute` приймає `allowedRoles` і використовується вкладено (спершу авторизація, далі — рівень ролі).
+- **Теки `hooks/` немає** — на відміну від розділу 5.1 ТЗ. Дані компоненти тягнуть самі через `useEffect` + функції з `api/`; React Query в проєкті не використовується. Не орієнтуйся на структуру з ТЗ, дивись реальні теки.
 - Типи ролей/enum'ів (`UserRole`, `GradeType` тощо) і спільні інтерфейси (`IUser`, ...) імпортуються з `@redmonkey/shared`, а не дублюються локально.
 
 ## Дизайн-система (стисло — повна версія в [DESIGN.md](./DESIGN.md))
@@ -141,8 +142,22 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 ## Поточний стан реалізації
 
-Реалізовано (backend + frontend): **auth** (login/refresh/logout/me), **users** CRUD, **groups** CRUD.
-Ще не реалізовано (є моделі в Prisma-схемі та сторінки-заглушки на фронті, але без API): **lessons/schedule**, **grades**, **attendance**, **coin transactions**. Плануй роботу над ними по [ТЗ, розділ 4](./IT_Academy_LMS_ТЗ.md) і [roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md).
+Тижні 1–5 з roadmap закриті — весь основний функціонал є і на backend, і на фронті:
+
+| Домен | Backend | Frontend |
+|---|---|---|
+| auth | `/auth` — login/refresh/logout/me, `PATCH /me`, `PATCH /me/password` | `LoginPage`, `ProfilePage` |
+| users | `/users` CRUD + `GET /users/:id/stats` | `StudentsPage`, `TeachersPage` |
+| groups | `/groups` CRUD | `GroupsPage` |
+| lessons | `/lessons` CRUD + `POST /lessons/:id/complete` | `SchedulePage` (календар, `LessonForm`, `LessonDetailsModal`) |
+| attendance | `GET /attendance`, `POST /attendance/bulk`, `PATCH /attendance/:id` | `AttendanceList` усередині деталей заняття |
+| grades | `/grades` CRUD + `POST /grades/bulk` + `GET /grades/summary` | `GradesPage` (`GradeJournal` з inline-editing, `BulkGradeForm`, `StudentGrades`) |
+| coins | `/coins/transactions`, `/coins/leaderboard`, `/coins/students/:id/balance` | `CoinsPage` (`CoinAwardForm`, `CoinBalanceCard`, `CoinHistory`, `CoinLeaderboard`) |
+| dashboard | `stats.repository.ts` | `DashboardPage` з контентом за роллю |
+
+Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)): безпека backend (helmet/rate-limit/глобальний error-handler), міграції Prisma, деплой, стійкість UI (404/403/ErrorBoundary), ESLint у backend, демо-дані й документація. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
+
+Свідомі борги, зафіксовані окремо: немає `prisma/migrations` (схема через `db push`), немає лінтера в backend, RLS вимкнений, `SettingsPage` — заглушка.
 
 ## Тести
 
