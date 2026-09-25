@@ -20,6 +20,7 @@ import { UserRole } from '@redmonkey/shared';
 import type { ILessonDto, IPopulatedLesson } from '@redmonkey/shared';
 import { apiCreateLesson, apiGetLessons } from '@/api/lessons';
 import { useAuthStore } from '@/store/authStore';
+import { calendarHours } from '@/lib/calendarHours';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import { replaceById } from '@/lib/optimistic';
@@ -126,6 +127,8 @@ export default function SchedulePage() {
     [lessons]
   );
 
+  const visibleHours = useMemo(() => calendarHours(events), [events]);
+
   const rangeLabel =
     view === 'week'
       ? `${format(range.from, 'd')} — ${capitalize(format(range.to, 'd MMMM yyyy', { locale: uk }))}`
@@ -222,8 +225,8 @@ export default function SchedulePage() {
                 toolbar={false}
                 culture="uk"
                 step={30}
-                min={new Date(1970, 0, 1, 8, 0)}
-                max={new Date(1970, 0, 1, 21, 0)}
+                min={visibleHours.min}
+                max={visibleHours.max}
                 style={{ height: 700 }}
                 eventPropGetter={(event) => ({
                   // Вибране заняття підсвічуємо, поки відкрита модалка деталей
