@@ -41,12 +41,16 @@
 
 | Назва | HEX | Tailwind клас | Де використовується |
 |-------|-----|---------------|---------------------|
-| **Brand Red** | `#C10000` | `bg-[#C10000]` | Активний пункт навігації, primary CTA |
+| **Brand Red** | `#C10000` | `bg-[#C10000]`, токен `primary` | Активний пункт навігації, primary CTA, іконка на плашці картки |
 | **Brand Red Hover** | `#A00000` / `#BA0000` | `hover:bg-[#A00000]` | Hover-стан кнопки |
-| **Brand Red Focus** | `#BA0000/20` | `focus-visible:ring-[#BA0000]/20` | Ring фокусу на інпутах |
+| **Brand Red Focus** | `#BA0000/20` | `focus-visible:ring-[#BA0000]/20`, токен `ring` | Ring фокусу на інпутах і кнопках |
 | **Red Icon BG** | `#FEF2F2` (`red-50`) | `bg-red-50` | Фон під іконку в картці |
 
-> ⚠️ Токен `--primary` у `frontend/src/index.css` лишився стандартним для ShadCN (майже чорний), тому `bg-primary` / `text-primary` — **не** брендовий червоний, а дефолтний `<Button>` без класів — темний. Брендову кнопку задавай явно: `bg-[#C10000] hover:bg-[#A00000] text-white`.
+**Токени ShadCN** (`:root` у `frontend/src/index.css`) узгоджені з палітрою: `--primary` = `#C10000`, `--primary-foreground` = білий, `--ring` = `#BA0000`. Тож `bg-primary` / `text-primary` / `accent-primary`, дефолтні `<Button>` і `<Badge>` та фокус-кільця примітивів — брендові.
+
+Брендову CTA-кнопку все одно пиши явним класом `bg-[#C10000] hover:bg-[#A00000] text-white` (так зроблено в усіх кнопках застосунку): дефолтний варіант `<Button>` на hover світлішає (`hover:bg-primary/80`), а за палітрою кнопка має темнішати до `#A00000`. Змінюється бренд — міняй і токени, і ці класи.
+
+Блок `.dark` в `index.css` лишився дефолтним ShadCN: темної теми в застосунку немає, клас `.dark` ніде не вмикається.
 
 ### Sidebar / Auth-screen palette
 
@@ -349,7 +353,7 @@ Header сам визначає заголовок і підзаголовок з
 
 Якщо лічильника немає (`SchedulePage`), лишається сама кнопка: `<div className="flex justify-end">`.
 
-**CTA кнопка (admin only):**
+**CTA кнопка (admin only)** — брендовий колір явним класом, як у решти CTA (див. розділ 2):
 ```tsx
 <Button className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white">
   <Plus className="h-4 w-4" /> Нова група
@@ -388,7 +392,7 @@ Header сам визначає заголовок і підзаголовок з
 
 **Деталі:**
 - Верхня кольорова межа: `border-t-2 border-t-slate-200` (можна брендувати кольором)
-- Іконка у header: `p-3 bg-red-50 text-primary rounded-xl`
+- Іконка у header: `p-3 bg-red-50 text-primary rounded-xl` — червона іконка на блідо-червоній плашці (`text-primary` = `#C10000`)
 - Badge активності: `bg-emerald-50 text-emerald-700 border-emerald-200` (active) / `bg-slate-100 text-slate-600` (inactive)
 - Hover: `hover:shadow-md transition-shadow`
 - Footer кнопка: `variant="ghost" size="sm" text-slate-600 hover:text-slate-900 font-semibold`
@@ -416,6 +420,10 @@ Header сам визначає заголовок і підзаголовок з
 <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 font-semibold">
 ```
 
+- Кожна червона кнопка — з явним `bg-[#C10000] hover:bg-[#A00000] text-white`, навіть якщо це дефолтний `<Button>`: без класу вона теж червона (токен `--primary`), але на hover світлішає замість темнішати
+- Друга дія поруч із головною («Зберегти явку» біля «Позначити проведеним», видалення оцінки біля «Зберегти» в журналі) — `variant="outline"`, щоб у рядку була одна червона кнопка
+- Фокус з клавіатури у всіх варіантів — червоне кільце з токена `--ring` (`#BA0000`)
+
 ### Input
 
 ```tsx
@@ -431,6 +439,7 @@ Header сам визначає заголовок і підзаголовок з
 - Border: `border-slate-200` за замовчуванням, `border-destructive` при помилці
 - Focus ring: брендовий `ring-[#BA0000]/20` + `border-[#BA0000]`
 - Іконки в полі: ліворуч `pl-10` + абсолютне позиціонування, `text-slate-400`
+- Нативний чекбокс (вибір викладачів у `GroupForm`): `accent-primary` — галочка брендового кольору
 
 ### Dialog / Modal
 
