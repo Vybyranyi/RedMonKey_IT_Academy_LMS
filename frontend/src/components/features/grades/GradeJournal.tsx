@@ -215,6 +215,7 @@ const GradeJournalRow = memo(function GradeJournalRow({
             <GradeCell
               grade={grade}
               editable={canEdit}
+              cellLabel={`${student.firstName} ${student.lastName}, ${format(new Date(lesson.date), 'd MMM', { locale: uk })} «${lesson.title}»`}
               isSaving={grade?.isPending}
               onSave={(value, comment) => onSaveGrade(student, lesson, grade, value, comment)}
               onDelete={grade ? () => onDeleteGrade(grade) : undefined}

@@ -62,7 +62,7 @@ const renderPage = () =>
 /** Відкрити порожню клітинку, ввести оцінку і натиснути «Зберегти» */
 const enterGrade = async (value: string) => {
   const user = userEvent.setup();
-  await user.click(await screen.findByRole('button', { name: '+' }));
+  await user.click(await screen.findByRole('button', { name: /виставити оцінку/ }));
   await user.type(await screen.findByLabelText(/Оцінка/), value);
   await user.click(screen.getByRole('button', { name: 'Зберегти' }));
 };
@@ -88,12 +88,12 @@ describe('GradesPage — оптимістичне збереження оцін�
     await enterGrade('9');
 
     // Сервер ще не відповів, а оцінка вже в клітинці (заблокованій до підтвердження)
-    expect(screen.getByRole('button', { name: '9' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /оцінка 9$/ })).toBeDisabled();
     expect(screen.getByText('9.0')).toBeInTheDocument();
 
     post.resolve(savedGrade);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: '9' })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: /оцінка 9$/ })).toBeEnabled());
     expect(callsTo(adapter, 'GET', '/grades')).toHaveLength(1);
     expect(callsTo(adapter, 'GET', '/users')).toHaveLength(1);
     expect(toast.error).not.toHaveBeenCalled();
@@ -113,7 +113,7 @@ describe('GradesPage — оптимістичне збереження оцін�
 
     await enterGrade('9');
 
-    expect(await screen.findByRole('button', { name: '+' })).toBeEnabled();
+    expect(await screen.findByRole('button', { name: /виставити оцінку/ })).toBeEnabled();
     expect(screen.queryByText('9.0')).not.toBeInTheDocument();
     expect(toast.error).toHaveBeenCalledWith(
       'Студент не належить до групи цього заняття',
@@ -133,14 +133,14 @@ describe('GradesPage — оптимістичне збереження оцін�
     renderPage();
     const user = userEvent.setup();
 
-    await user.click(await screen.findByRole('button', { name: '9' }));
+    await user.click(await screen.findByRole('button', { name: /оцінка 9$/ }));
     await user.click(await screen.findByRole('button', { name: 'Видалити оцінку' }));
 
-    expect(await screen.findByRole('button', { name: '+' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /виставити оцінку/ })).toBeInTheDocument();
 
     remove.reject(new Error('Network Error'));
 
-    expect(await screen.findByRole('button', { name: '9' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /оцінка 9$/ })).toBeInTheDocument();
     expect(toast.error).toHaveBeenCalled();
   });
 });
@@ -174,6 +174,6 @@ describe('GradesPage — порожні стани', () => {
     fail = false;
     await userEvent.click(screen.getByRole('button', { name: 'Спробувати знову' }));
 
-    expect(await screen.findByRole('button', { name: '+' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /виставити оцінку/ })).toBeInTheDocument();
   });
 });
