@@ -4,6 +4,8 @@ import {
   COIN_AMOUNT_MAX,
   COIN_AMOUNT_MIN,
   LEADERBOARD_DEFAULT_LIMIT,
+  COIN_HISTORY_DEFAULT_LIMIT,
+  COIN_HISTORY_MAX_LIMIT,
   coinFiltersSchema,
   createCoinTransactionSchema,
   leaderboardFiltersSchema,
@@ -74,6 +76,25 @@ describe('coinFiltersSchema', () => {
 
   it('відхиляє некоректний studentId', () => {
     expect(coinFiltersSchema.safeParse({ studentId: 'abc' }).success).toBe(false);
+  });
+
+  it('без limit бере сторінку за замовчуванням', () => {
+    expect(coinFiltersSchema.parse({}).limit).toBe(COIN_HISTORY_DEFAULT_LIMIT);
+  });
+
+  // Query-рядок завжди приходить текстом — '50' має стати числом
+  it('приводить limit із query-рядка до числа', () => {
+    expect(coinFiltersSchema.parse({ limit: '50' }).limit).toBe(50);
+  });
+
+  it.each([
+    [{ limit: '0' }, 'limit не може бути меншим за 1'],
+    [{ limit: String(COIN_HISTORY_MAX_LIMIT + 1) }, `limit не може бути більшим за ${COIN_HISTORY_MAX_LIMIT}`],
+    [{ limit: '2.5' }, 'limit має бути цілим числом'],
+    [{ cursor: 'last' }, 'cursor має бути UUID транзакції'],
+    [{ groupId: 'group-1' }, 'groupId має бути UUID'],
+  ])('відхиляє %o', (query, message) => {
+    expect(firstIssue(coinFiltersSchema.safeParse(query))).toBe(message);
   });
 });
 

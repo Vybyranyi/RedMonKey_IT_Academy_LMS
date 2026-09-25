@@ -303,7 +303,7 @@ DELETE /grades/:id          — видалити [admin]
 ### 4.6 Coins Routes
 
 ```
-GET    /coins/transactions          — список транзакцій (?studentId=)
+GET    /coins/transactions          — історія сторінками (?studentId=&groupId=&category=&limit=&cursor=) → { items, nextCursor }
 POST   /coins/transactions          — нарахувати/списати монети [admin, teacher]
 GET    /coins/leaderboard           — топ студентів за монетами (?groupId=)
 GET    /coins/students/:id/balance  — баланс конкретного студента

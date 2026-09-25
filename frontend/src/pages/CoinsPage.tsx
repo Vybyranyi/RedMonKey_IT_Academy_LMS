@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { UserRole } from '@redmonkey/shared';
@@ -44,13 +44,17 @@ export default function CoinsPage() {
   const [students, setStudents] = useState<IUser[]>([]);
   const [leaderboard, setLeaderboard] = useState<ILeaderboardRow[]>([]);
   const [transactions, setTransactions] = useState<IPopulatedCoinTransaction[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [balance, setBalance] = useState<ICoinBalance | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [awardStudentId, setAwardStudentId] = useState('');
-  const [reloadKey, setReloadKey] = useState(0);
+  // Лічильник завантажень історії з нуля: сторінка, що догрузилась після
+  // перемикання групи, належить старій групі і має бути відкинута
+  const historyRequestRef = useRef(0);
 
   const userId = user?.id;
   const isStudent = user?.role === UserRole.STUDENT;
@@ -94,11 +98,13 @@ export default function CoinsPage() {
     let cancelled = false;
 
     const loadCoins = async () => {
+      historyRequestRef.current += 1;
       setIsLoading(true);
       try {
-        const [leaderboardData, transactionsData, studentList, balanceData] = await Promise.all([
+        const [leaderboardData, transactionsPage, studentList, balanceData] = await Promise.all([
           apiGetLeaderboard({ groupId: isStudent ? undefined : groupId, limit: LEADERBOARD_LIMIT }),
-          apiGetCoinTransactions(),
+          // Лише перша сторінка — решту історії користувач догружає кнопкою
+          apiGetCoinTransactions({ groupId: isStudent ? undefined : groupId }),
           isStudent
             ? Promise.resolve<IUser[]>([])
             : apiGetUsers({ role: UserRole.STUDENT, groupId }),
@@ -107,7 +113,8 @@ export default function CoinsPage() {
 
         if (cancelled) return;
         setLeaderboard(leaderboardData);
-        setTransactions(transactionsData);
+        setTransactions(transactionsPage.items);
+        setNextCursor(transactionsPage.nextCursor);
         setStudents(studentList);
         setBalance(balanceData);
 
@@ -129,38 +136,68 @@ export default function CoinsPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, isStudent, groupId, reloadKey, setUser]);
+  }, [userId, isStudent, groupId, setUser]);
 
   const openForm = (studentId: string) => {
     setAwardStudentId(studentId);
     setIsFormOpen(true);
   };
 
-  const handleSubmit = async (data: ICoinTransactionDto) => {
-    setIsSubmitting(true);
+  const loadMoreTransactions = async () => {
+    if (!nextCursor) return;
+    const request = historyRequestRef.current;
+
+    setIsLoadingMore(true);
     try {
-      const transaction = await apiCreateCoinTransaction(data);
-      toast.success(
-        transaction.amount > 0
-          ? `Нараховано ${transaction.amount} монет: ${transaction.student.firstName} ${transaction.student.lastName}`
-          : `Списано ${Math.abs(transaction.amount)} монет: ${transaction.student.firstName} ${transaction.student.lastName}`
-      );
-      setIsFormOpen(false);
-      setReloadKey((key) => key + 1);
+      const page = await apiGetCoinTransactions({
+        groupId: isStudent ? undefined : groupId,
+        cursor: nextCursor,
+      });
+      if (request !== historyRequestRef.current) return;
+
+      setTransactions((current) => [...current, ...page.items]);
+      setNextCursor(page.nextCursor);
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Не вдалося провести операцію'));
+      toast.error(getApiErrorMessage(error, 'Не вдалося завантажити історію'));
     } finally {
-      setIsSubmitting(false);
+      setIsLoadingMore(false);
     }
   };
 
-  // GET /coins/transactions фільтрує лише за studentId і category, групи там немає.
-  // Без цього фільтра адмін обирає одну групу, а в історії бачить усю академію.
-  const visibleTransactions = isStudent
-    ? transactions
-    : transactions.filter((transaction) =>
-        students.some((student) => student.id === transaction.student.id)
-      );
+  // Бали в рейтингу рахує сервер (User.redCoins), тож після нарахування
+  // перезапитуємо лише рейтинг, а не всю сторінку
+  const refreshLeaderboard = async () => {
+    try {
+      setLeaderboard(await apiGetLeaderboard({ groupId, limit: LEADERBOARD_LIMIT }));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Не вдалося оновити рейтинг'));
+    }
+  };
+
+  const handleSubmit = async (data: ICoinTransactionDto) => {
+    setIsSubmitting(true);
+    let transaction: IPopulatedCoinTransaction;
+    try {
+      transaction = await apiCreateCoinTransaction(data);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Не вдалося провести операцію'));
+      return;
+    } finally {
+      setIsSubmitting(false);
+    }
+
+    toast.success(
+      transaction.amount > 0
+        ? `Нараховано ${transaction.amount} монет: ${transaction.student.firstName} ${transaction.student.lastName}`
+        : `Списано ${Math.abs(transaction.amount)} монет: ${transaction.student.firstName} ${transaction.student.lastName}`
+    );
+    setIsFormOpen(false);
+
+    // Нова транзакція — найсвіжіша, тож стає першою без повторного запиту історії:
+    // уже підвантажені сторінки не скидаються, а курсор лишається дійсним
+    setTransactions((current) => [transaction, ...current]);
+    refreshLeaderboard();
+  };
 
   if (!user) return null;
 
@@ -218,9 +255,12 @@ export default function CoinsPage() {
 
         <div className={isStudent ? 'lg:col-span-3' : 'lg:col-span-1'}>
           <CoinHistory
-            transactions={visibleTransactions}
+            transactions={transactions}
             isLoading={isLoading}
             showStudent={!isStudent}
+            hasMore={nextCursor !== null}
+            isLoadingMore={isLoadingMore}
+            onLoadMore={loadMoreTransactions}
           />
         </div>
       </div>

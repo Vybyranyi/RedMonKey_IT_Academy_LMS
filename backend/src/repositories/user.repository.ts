@@ -89,6 +89,15 @@ export const userRepository = {
     });
   },
 
+  /** Id усіх студентів груп, разом із деактивованими — їхня історія лишається в журналі. */
+  async findStudentIdsByGroups(groupIds: string[]): Promise<string[]> {
+    const rows = await prisma.user.findMany({
+      where: { role: 'student', groupId: { in: groupIds } },
+      select: { id: true },
+    });
+    return rows.map((row) => row.id);
+  },
+
   async findByIdActive(id: string) {
     return prisma.user.findFirst({ where: { id, isActive: true }, select: publicUserSelect });
   },

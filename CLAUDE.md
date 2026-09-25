@@ -76,6 +76,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 ### База даних — важливі нюанси (не очевидні з коду)
 
 - **Схема змінюється лише міграціями** (`backend/prisma/migrations/`, baseline `0_init` = стан, який раніше давав `db push`). `db push` більше не використовуємо. Процес і одноразовий перехід наявної БД (`migrate resolve --applied 0_init`) — у [`backend/prisma/MIGRATIONS.md`](./backend/prisma/MIGRATIONS.md).
+- **Історія RedCoins — keyset-пагінація** (`coinRepository.findPage`): `{ items, nextCursor }`, курсор — id останньої транзакції, умова `created_at <= X AND (created_at < X OR id < Y)` будується вручну, а не через Prisma `cursor` (той генерує `OR`, з яким Postgres не стартує скан індексу з курсора). Група фільтрується через `studentId IN (...)`. Нових списків без `take` не додавай.
 - **Фільтр оцінок за групою — через `lessonId IN (...)`, а не через зв'язок `lesson: { groupId }`**: зв'язок Prisma перетворює на JOIN, і Postgres сканує всю `grades` (~30 мс проти ~5 мс). Заміри й рішення щодо індексів — у [`backend/prisma/QUERY_PLANS.md`](./backend/prisma/QUERY_PLANS.md).
 - **Single-tenant перехідний стан**: у кожній таблиці є `academy_id` (готовність до майбутньої мульти-тенантності), але академія в системі рівно одна. `academyRepository.getDefaultId()` її резолвить. Коли з'явиться друга академія — замінити на `actor.academyId` з JWT-пейлоада.
 - **RLS не увімкнено**: увесь доступ до БД іде через `backend/src/lib/prisma.ts`, а `access.policy.ts` централізує правила авторизації — вони транслюються в RLS-політики майже 1:1, коли прийде час. Не покладайся на RLS зараз — авторизація повністю на рівні застосунку.
@@ -163,7 +164,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)). З п. 6.1 закрито безпеку backend (helmet, rate-limit, ліміт тіла, глобальний error-handler + 404, аудит секретних полів) і базу даних (міграції, `EXPLAIN` журналу й leaderboard). Відкриті: деплой, стійкість UI (404/403/ErrorBoundary), ESLint у backend, демо-дані й документація. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
 
-Свідомі борги, зафіксовані окремо: немає лінтера в backend, RLS вимкнений, `SettingsPage` — заглушка, `GET /coins/transactions` без пагінації.
+Свідомі борги, зафіксовані окремо: немає лінтера в backend, RLS вимкнений, `SettingsPage` — заглушка.
 
 ## Тести
 

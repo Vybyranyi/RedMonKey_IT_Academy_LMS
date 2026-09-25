@@ -18,7 +18,7 @@ vi.mock('../repositories/academy.repository.js', () => ({
 }));
 vi.mock('../repositories/coin.repository.js', () => ({
   coinRepository: {
-    findAll: vi.fn(),
+    findPage: vi.fn(),
     createWithBalance: vi.fn(),
     findLeaderboard: vi.fn(),
     sumByDirection: vi.fn(),
@@ -35,6 +35,7 @@ vi.mock('../repositories/user.repository.js', () => ({
     findCredentialsByEmail: vi.fn(),
     findCredentialsById: vi.fn(),
     existsByEmail: vi.fn(),
+    findStudentIdsByGroups: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     incrementTokenVersion: vi.fn(),
@@ -48,6 +49,7 @@ vi.mock('../repositories/user.repository.js', () => ({
 const getDefaultId = vi.mocked(academyRepository.getDefaultId);
 const createWithBalance = vi.mocked(coinRepository.createWithBalance);
 const sumByDirection = vi.mocked(coinRepository.sumByDirection);
+const findPage = vi.mocked(coinRepository.findPage);
 const findIdsByTeacher = vi.mocked(groupRepository.findIdsByTeacher);
 const groupFindByName = vi.mocked(groupRepository.findByName);
 const groupCreate = vi.mocked(groupRepository.create);
@@ -394,6 +396,49 @@ describe('PATCH /api/v1/groups/:id', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe('Група з такою назвою вже існує');
+  });
+});
+
+describe('GET /api/v1/coins/transactions', () => {
+  const getHistory = (query = '') =>
+    request(app)
+      .get(`/api/v1/coins/transactions${query}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+  it('віддає сторінку { items, nextCursor } з limit за замовчуванням', async () => {
+    findPage.mockResolvedValue({ items: [{ id: 'tx-1' }], nextCursor: 'tx-1' } as never);
+
+    const response = await getHistory();
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ items: [{ id: 'tx-1' }], nextCursor: 'tx-1' });
+    expect(findPage).toHaveBeenCalledWith({}, 20, undefined);
+  });
+
+  it('передає limit і cursor із query-рядка', async () => {
+    findPage.mockResolvedValue({ items: [], nextCursor: null } as never);
+
+    await getHistory(`?limit=50&cursor=${STUDENT_ID}`);
+
+    expect(findPage).toHaveBeenCalledWith({}, 50, STUDENT_ID);
+  });
+
+  // Без верхньої межі limit=100000 знову віддав би весь ledger одним запитом
+  it('limit понад 100 відхиляє з 400', async () => {
+    const response = await getHistory('?limit=101');
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('limit не може бути більшим за 100');
+    expect(findPage).not.toHaveBeenCalled();
+  });
+
+  it('невідомий курсор відхиляє з 400', async () => {
+    findPage.mockResolvedValue(null as never);
+
+    const response = await getHistory(`?cursor=${STUDENT_ID}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Некоректний курсор пагінації');
   });
 });
 
