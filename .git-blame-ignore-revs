@@ -1,0 +1,6 @@
+# Коміти, які `git blame` пропускає: масове форматування без зміни логіки.
+# GitHub читає цей файл сам; локально — один раз:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: переформатувати монорепо Prettier'ом
+4a3eefd7a0bb19aa6168d392e71316f25a2de87a
