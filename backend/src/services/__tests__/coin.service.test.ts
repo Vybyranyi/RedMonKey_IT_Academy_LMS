@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { UserRole } from '@redmonkey/shared';
 import { CoinCategory } from '@redmonkey/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -207,6 +208,28 @@ describe('createTransaction', () => {
     await expect(coinService.createTransaction({ ...payload, amount: -50 }, admin)).rejects.toThrow(
       BadRequestError
     );
+  });
+
+  // Раніше неіснуючий relatedLessonId падав на FK і повертався як 500
+  it('на неіснуюче заняття відповідає 400, а не 500', async () => {
+    findById.mockResolvedValue(activeStudent());
+    createWithBalance.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('FK failed', {
+        code: 'P2003',
+        clientVersion: 'test',
+      })
+    );
+
+    await expect(
+      coinService.createTransaction({ ...payload, relatedLessonId: 'lesson-gone' }, admin)
+    ).rejects.toThrow('Заняття relatedLessonId не існує');
+  });
+
+  it('інші помилки БД не маскує', async () => {
+    findById.mockResolvedValue(activeStudent());
+    createWithBalance.mockRejectedValue(new Error('connection lost'));
+
+    await expect(coinService.createTransaction(payload, admin)).rejects.toThrow('connection lost');
   });
 
   it('повідомляє поточний баланс, коли монет не вистачає', async () => {
