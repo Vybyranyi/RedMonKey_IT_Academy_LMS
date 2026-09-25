@@ -1,15 +1,13 @@
 import type { IUser } from '@redmonkey/shared';
 
 /**
- * Поля, яких бекенд не віддає: картки викладача (studentsCount, subjects, groups) і списки
- * оцінок та транзакцій у StudentDetailsModal. UI читає їх як опційні — краще так, ніж
- * `as any` у кожному компоненті. Середній бал і відвідуваність студента вже справжні —
- * IUserWithListStats із shared (GET /users?withStats=true).
+ * Поля картки викладача, яких бекенд не віддає. UI читає їх як опційні — краще так,
+ * ніж `as any` у кожному компоненті. Дані студента вже справжні: бал і відвідуваність —
+ * IUserWithListStats із shared (GET /users?withStats=true), оцінки й транзакції
+ * StudentDetailsModal завантажує сама.
  */
 export interface IUserWithStats extends IUser {
   studentsCount?: number;
   subjects?: string[];
   groups?: string[];
-  grades?: { score: number; topic: string }[];
-  transactions?: { amount: number; reason: string; author: string; date: string }[];
 }

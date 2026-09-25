@@ -2,10 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { IUserWithListStats } from '@redmonkey/shared';
-import type { IUserWithStats } from '@/types/userStats';
+import StudentActivity from './StudentActivity';
 
 interface StudentDetailsModalProps {
-  student: (IUserWithListStats & Pick<IUserWithStats, 'grades' | 'transactions'>) | null;
+  student: IUserWithListStats | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -24,10 +24,6 @@ export default function StudentDetailsModal({
   const enrollDate = student.createdAt
     ? new Date(student.createdAt).toLocaleDateString('uk-UA', { year: 'numeric', month: 'short' })
     : '—';
-
-  // Real data arrays would go here when backend supports them
-  const grades = student.grades ?? [];
-  const transactions = student.transactions ?? [];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -116,66 +112,18 @@ export default function StudentDetailsModal({
               </div>
             </div>
 
-            {/* Grades Section */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-slate-800 text-lg">Оцінки</h4>
-              {grades.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
-                  {grades.map((grade, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white border border-slate-100 rounded-xl p-3 flex items-center gap-3 shadow-sm"
-                    >
-                      <div className="bg-emerald-100 text-emerald-700 font-bold w-9 h-9 rounded flex items-center justify-center shrink-0">
-                        {grade.score}
-                      </div>
-                      <span className="text-sm font-medium text-slate-700 line-clamp-1">
-                        {grade.topic}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-white border border-slate-100 border-dashed rounded-xl p-6 text-center shadow-sm">
-                  <p className="text-slate-400 text-sm font-medium">Оцінки ще не виставлені</p>
-                </div>
-              )}
-            </div>
-
-            {/* Transactions Section */}
-            <div className="space-y-3">
-              <h4 className="font-bold text-slate-800 text-lg">Транзакції RedCoins</h4>
-              {transactions.length > 0 ? (
-                <div className="space-y-3">
-                  {transactions.map((tx, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white border border-slate-100 rounded-xl p-4 flex items-center justify-between shadow-sm"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="text-2xl opacity-80">{tx.amount > 0 ? '🪙' : '💸'}</div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-700">{tx.reason}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">
-                            {tx.author} - {tx.date}
-                          </p>
-                        </div>
-                      </div>
-                      <div
-                        className={`font-bold text-lg ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}
-                      >
-                        {tx.amount > 0 ? '+' : ''}
-                        {tx.amount}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-white border border-slate-100 border-dashed rounded-xl p-6 text-center shadow-sm">
-                  <p className="text-slate-400 text-sm font-medium">Історія транзакцій порожня</p>
-                </div>
-              )}
-            </div>
+            {/* stats: null — студент чужої групи. GET /grades і /coins/transactions для нього
+                не дають 403, а мовчки звужують вибірку до занять і груп викладача — і картка
+                показала б порожню історію, наче її немає. Тому не питаємо зовсім */}
+            {student.stats === null ? (
+              <div className="bg-white border border-slate-100 border-dashed rounded-xl p-6 text-center shadow-sm">
+                <p className="text-slate-400 text-sm font-medium">
+                  Оцінки й історію RedCoins видно лише для студентів ваших груп
+                </p>
+              </div>
+            ) : (
+              <StudentActivity key={student.id} studentId={student.id} />
+            )}
           </div>
         </div>
       </DialogContent>
