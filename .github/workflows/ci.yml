@@ -16,9 +16,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Node 22+: jsdom (через власний undici) використовує
+      # webidl.util.markAsUncloneable, якого немає в Node 20 — на ньому
+      # падають усі frontend-тести. Node 20 до того ж deprecated на раннерах.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies

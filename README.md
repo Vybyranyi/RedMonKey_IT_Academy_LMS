@@ -10,7 +10,7 @@
 
 ### Вимоги
 
-- Node.js ≥ 20
+- Node.js ≥ 22 (jsdom у frontend-тестах не працює на Node 20)
 - npm ≥ 10
 - PostgreSQL (напр. безкоштовний проєкт на [Neon](https://neon.tech))
 
