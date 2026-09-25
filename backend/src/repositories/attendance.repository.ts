@@ -36,23 +36,33 @@ export const attendanceRepository = {
    * того самого заняття безпечним — дублікатів не буде.
    */
   async upsertMany(academyId: string, lessonId: string, records: IAttendanceRecordDto[]) {
-    return prisma.$transaction(
-      records.map((record) =>
-        prisma.attendance.upsert({
-          where: { lessonId_studentId: { lessonId, studentId: record.studentId } },
-          create: {
-            academyId,
-            lessonId,
-            studentId: record.studentId,
-            status: record.status,
-            note: record.note,
-          },
-          update: {
-            status: record.status,
-            note: record.note,
-          },
-        })
-      )
-    );
+    return prisma.$transaction(attendanceUpserts(academyId, lessonId, records));
   },
 };
+
+/**
+ * Запити upsert явки, ще не виконані: Prisma запускає їх лише в $transaction
+ * або на await. Окремо — щоб проведення заняття (lessonRepository) клало явку
+ * в одну транзакцію зі зміною статусу.
+ */
+export const attendanceUpserts = (
+  academyId: string,
+  lessonId: string,
+  records: IAttendanceRecordDto[]
+) =>
+  records.map((record) =>
+    prisma.attendance.upsert({
+      where: { lessonId_studentId: { lessonId, studentId: record.studentId } },
+      create: {
+        academyId,
+        lessonId,
+        studentId: record.studentId,
+        status: record.status,
+        note: record.note,
+      },
+      update: {
+        status: record.status,
+        note: record.note,
+      },
+    })
+  );

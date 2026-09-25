@@ -1,7 +1,9 @@
 import { Prisma } from '@prisma/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { attendanceRepository } from '../attendance.repository.js';
 import { coinRepository } from '../coin.repository.js';
 import { gradeRepository } from '../grade.repository.js';
+import { lessonRepository } from '../lesson.repository.js';
 
 /**
  * Транзакційна логіка без БД. Фейковий Prisma розрізняє запити в транзакції й поза нею:
@@ -151,5 +153,58 @@ describe('gradeRepository.upsertMany — масове виставлення', (
         update: expect.objectContaining({ comment: null }),
       })
     );
+  });
+});
+
+describe('attendanceRepository.upsertMany — масова явка', () => {
+  it('уся явка — однією транзакцією, upsert за заняттям і студентом', async () => {
+    await attendanceRepository.upsertMany('academy-1', 'lesson-1', [
+      { studentId: 'student-1', status: 'present', note: '' },
+      { studentId: 'student-2', status: 'absent', note: 'Хворіє' },
+    ]);
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(batch()).toHaveLength(2);
+    expect(prisma.attendance.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { lessonId_studentId: { lessonId: 'lesson-1', studentId: 'student-2' } },
+        update: { status: 'absent', note: 'Хворіє' },
+      })
+    );
+  });
+});
+
+describe('lessonRepository.completeWithAttendance — проведення заняття', () => {
+  // Раніше явка й статус ішли двома транзакціями: збій другої лишав заняття
+  // «запланованим» із уже збереженою явкою
+  it('статус completed і явка — в одній транзакції', async () => {
+    await lessonRepository.completeWithAttendance('lesson-1', 'academy-1', [
+      { studentId: 'student-1', status: 'present', note: '' },
+      { studentId: 'student-2', status: 'late', note: '' },
+    ]);
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(batch().map((query) => `${query.model}.${query.method}`)).toEqual([
+      'lesson.update',
+      'attendance.upsert',
+      'attendance.upsert',
+    ]);
+    expect(prisma.lesson.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'lesson-1' }, data: { status: 'completed' } })
+    );
+  });
+
+  it('повертає оновлене заняття, а не запис явки', async () => {
+    const lesson = await lessonRepository.completeWithAttendance('lesson-1', 'academy-1', [
+      { studentId: 'student-1', status: 'present', note: '' },
+    ]);
+
+    expect(lesson).toMatchObject({ model: 'lesson', method: 'update' });
+  });
+
+  it('без явки лише закриває заняття', async () => {
+    await lessonRepository.completeWithAttendance('lesson-1', 'academy-1', []);
+
+    expect(batch().map((query) => query.model)).toEqual(['lesson']);
   });
 });

@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { UserRole } from '@redmonkey/shared';
 import type {
   IAttendanceFilters,
+  IAttendanceRecordDto,
   IBulkAttendanceDto,
   IUpdateAttendanceDto,
 } from '@redmonkey/shared';
@@ -12,6 +13,24 @@ import { academyRepository } from '../repositories/academy.repository.js';
 import { accessPolicy } from './access.policy.js';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.js';
 import { TokenPayload } from '../utils/jwt.js';
+
+/**
+ * Відмітити можна лише активних студентів групи заняття — інакше викладач
+ * поставив би явку чужим студентам. Спільне для масової явки й проведення заняття.
+ */
+export const assertGroupStudents = async (groupId: string, records: IAttendanceRecordDto[]) => {
+  if (records.length === 0) return;
+
+  const groupStudents = await userRepository.findAll({
+    role: UserRole.STUDENT,
+    groupId,
+    isActive: true,
+  });
+  const allowedIds = new Set(groupStudents.map((student) => student.id));
+  if (records.some((record) => !allowedIds.has(record.studentId))) {
+    throw new BadRequestError('Серед записів є студенти, які не належать до групи заняття');
+  }
+};
 
 export const attendanceService = {
   async getAttendance(filters: IAttendanceFilters, actor: TokenPayload) {
@@ -56,17 +75,7 @@ export const attendanceService = {
       throw new ForbiddenError('Відмічати явку може лише адмін або викладач-власник заняття');
     }
 
-    // Не даємо відмітити чужих студентів: усі мають бути з групи цього заняття
-    const groupStudents = await userRepository.findAll({
-      role: UserRole.STUDENT,
-      groupId: subject.groupId,
-      isActive: true,
-    });
-    const allowedIds = new Set(groupStudents.map((student) => student.id));
-    const foreign = records.filter((record) => !allowedIds.has(record.studentId));
-    if (foreign.length > 0) {
-      throw new BadRequestError('Серед записів є студенти, які не належать до групи заняття');
-    }
+    await assertGroupStudents(subject.groupId, records);
 
     const academyId = await academyRepository.getDefaultId();
     return attendanceRepository.upsertMany(academyId, lessonId, records);

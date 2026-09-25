@@ -96,6 +96,11 @@ const ARGS: Record<string, unknown[]> = {
   'groupRepository.create': [{ academyId: 'academy-1', name: 'JS-1' }, ['teacher-1']],
   'groupRepository.update': ['group-1', {}, ['teacher-1']],
   'coinRepository.createWithBalance': [{ studentId: 'student-1', amount: 5 }],
+  'lessonRepository.completeWithAttendance': [
+    'lesson-1',
+    'academy-1',
+    [{ studentId: 'student-1', status: 'present', note: '' }],
+  ],
   'coinRepository.findLeaderboard': [{}, 10],
 };
 const DEFAULT_ARGS = ['id-1', {}];

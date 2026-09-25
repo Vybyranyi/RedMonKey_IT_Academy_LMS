@@ -4,9 +4,9 @@ import { academyRepository } from '../../repositories/academy.repository.js';
 import { groupRepository } from '../../repositories/group.repository.js';
 import { lessonRepository } from '../../repositories/lesson.repository.js';
 import { userRepository } from '../../repositories/user.repository.js';
-import { ForbiddenError, NotFoundError } from '../../utils/errors.js';
+import { BadRequestError, ForbiddenError, NotFoundError } from '../../utils/errors.js';
 import type { TokenPayload } from '../../utils/jwt.js';
-import { attendanceService } from '../attendance.service.js';
+import { assertGroupStudents } from '../attendance.service.js';
 import { lessonService } from '../lesson.service.js';
 
 vi.mock('../../repositories/academy.repository.js', () => ({
@@ -22,13 +22,14 @@ vi.mock('../../repositories/lesson.repository.js', () => ({
     findSubjectById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    completeWithAttendance: vi.fn(),
   },
 }));
 vi.mock('../../repositories/user.repository.js', () => ({
   userRepository: { findById: vi.fn() },
 }));
 vi.mock('../attendance.service.js', () => ({
-  attendanceService: { saveBulk: vi.fn() },
+  assertGroupStudents: vi.fn(),
 }));
 
 const getDefaultId = vi.mocked(academyRepository.getDefaultId);
@@ -39,7 +40,8 @@ const lessonCreate = vi.mocked(lessonRepository.create);
 const lessonUpdate = vi.mocked(lessonRepository.update);
 const findSubjectById = vi.mocked(lessonRepository.findSubjectById);
 const userFindById = vi.mocked(userRepository.findById);
-const saveBulk = vi.mocked(attendanceService.saveBulk);
+const completeWithAttendance = vi.mocked(lessonRepository.completeWithAttendance);
+const checkGroupStudents = vi.mocked(assertGroupStudents);
 
 const admin: TokenPayload = { userId: 'admin-1', role: UserRole.ADMIN };
 const teacher: TokenPayload = { userId: 'teacher-1', role: UserRole.TEACHER };
@@ -65,6 +67,7 @@ beforeEach(() => {
   lessonFindAll.mockResolvedValue([] as never);
   lessonCreate.mockResolvedValue({ id: LESSON_ID } as never);
   lessonUpdate.mockResolvedValue({ id: LESSON_ID } as never);
+  completeWithAttendance.mockResolvedValue({ id: LESSON_ID } as never);
   findSubjectById.mockResolvedValue({ teacherId: teacher.userId, groupId: OWN_GROUP } as never);
 });
 
@@ -182,20 +185,49 @@ describe('cancelLesson', () => {
 });
 
 describe('completeLesson', () => {
-  it('зберігає явку і закриває заняття', async () => {
-    const records = [{ studentId: 'student-1', status: 'present' as never, note: '' }];
+  const records = [{ studentId: 'student-1', status: 'present' as never, note: '' }];
 
+  // Явка і статус — одна транзакція: раніше це були два окремі записи
+  it('закриває заняття і зберігає явку однією транзакцією', async () => {
     await lessonService.completeLesson(LESSON_ID, records, teacher);
 
-    expect(saveBulk).toHaveBeenCalledWith({ lessonId: LESSON_ID, records }, teacher);
-    expect(lessonUpdate).toHaveBeenCalledWith(LESSON_ID, { status: LessonStatus.COMPLETED });
+    expect(completeWithAttendance).toHaveBeenCalledWith(LESSON_ID, 'academy-1', records);
+    expect(lessonUpdate).not.toHaveBeenCalled();
+  });
+
+  it('відмічає лише студентів групи заняття', async () => {
+    await lessonService.completeLesson(LESSON_ID, records, teacher);
+
+    expect(checkGroupStudents).toHaveBeenCalledWith(OWN_GROUP, records);
+  });
+
+  it('на чужих студентах нічого не записує', async () => {
+    checkGroupStudents.mockRejectedValueOnce(new BadRequestError('чужі студенти'));
+
+    await expect(lessonService.completeLesson(LESSON_ID, records, teacher)).rejects.toThrow(
+      BadRequestError
+    );
+    expect(completeWithAttendance).not.toHaveBeenCalled();
   });
 
   it('закриває заняття без записів явки', async () => {
     await lessonService.completeLesson(LESSON_ID, [], teacher);
 
-    expect(saveBulk).not.toHaveBeenCalled();
-    expect(lessonUpdate).toHaveBeenCalledWith(LESSON_ID, { status: LessonStatus.COMPLETED });
+    expect(completeWithAttendance).toHaveBeenCalledWith(LESSON_ID, 'academy-1', []);
+  });
+
+  // У UI кнопки «Провести» для скасованого заняття немає — API має поводитись так само
+  it('не проводить скасоване заняття', async () => {
+    findSubjectById.mockResolvedValue({
+      teacherId: teacher.userId,
+      groupId: OWN_GROUP,
+      status: LessonStatus.CANCELLED,
+    } as never);
+
+    await expect(lessonService.completeLesson(LESSON_ID, records, teacher)).rejects.toThrow(
+      'Скасоване заняття не можна провести'
+    );
+    expect(completeWithAttendance).not.toHaveBeenCalled();
   });
 
   it('студент не закриває заняття', async () => {

@@ -5,11 +5,12 @@ import { academyRepository } from '../repositories/academy.repository.js';
 import { groupRepository } from '../repositories/group.repository.js';
 import { lessonRepository } from '../repositories/lesson.repository.js';
 import { userRepository } from '../repositories/user.repository.js';
-import { ForbiddenError, NotFoundError } from '../utils/errors.js';
+import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.js';
 import { TokenPayload } from '../utils/jwt.js';
 import { accessPolicy } from './access.policy.js';
-import { attendanceService } from './attendance.service.js';
+import { assertGroupStudents } from './attendance.service.js';
 import type { IAttendanceRecordDto } from '@redmonkey/shared';
+
 export const lessonService = {
   async getLessons(filters: ILessonFilters, actor: TokenPayload) {
     const { groupId, teacherId, from, to } = filters;
@@ -118,10 +119,14 @@ export const lessonService = {
       throw new ForbiddenError('Позначити заняття проведеним може лише адмін або викладач-власник');
     }
 
-    if (records.length > 0) {
-      await attendanceService.saveBulk({ lessonId: id, records }, actor);
+    // Скасоване заняття лишається в історії скасованим — у UI кнопки «Провести» для нього теж немає
+    if (subject.status === LessonStatus.CANCELLED) {
+      throw new BadRequestError('Скасоване заняття не можна провести');
     }
 
-    return lessonRepository.update(id, { status: LessonStatus.COMPLETED });
+    await assertGroupStudents(subject.groupId, records);
+
+    const academyId = await academyRepository.getDefaultId();
+    return lessonRepository.completeWithAttendance(id, academyId, records);
   },
 };
