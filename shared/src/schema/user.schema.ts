@@ -28,7 +28,9 @@ export const createUserSchema = z.object({
   lastName: nameField('Прізвище'),
   email: emailField,
   role,
-  password: passwordField.optional(),
+  // Раніше без пароля акаунт отримував спільний захардкоджений пароль — тепер його
+  // завжди задає адмін (у формі є кнопка «Згенерувати надійний пароль»)
+  password: z.string({ error: 'Потрібно вказати пароль' }).pipe(passwordField),
   phone: phoneField.optional(),
   group: group.optional(),
 });

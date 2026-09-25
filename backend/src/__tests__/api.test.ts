@@ -368,6 +368,30 @@ describe('POST /api/v1/users', () => {
     expect(userCreate).not.toHaveBeenCalled();
   });
 
+  // Раніше без пароля користувач отримував спільний пароль, записаний у коді
+  it('без пароля не створює користувача', async () => {
+    const { password: _password, ...withoutPassword } = newStudent;
+
+    const response = await request(app)
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(withoutPassword);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Потрібно вказати пароль');
+    expect(userCreate).not.toHaveBeenCalled();
+  });
+
+  it('хешує пароль, який задав адмін', async () => {
+    await request(app)
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(newStudent);
+
+    const [data] = userCreate.mock.calls[0] as [{ passwordHash: string }];
+    await expect(bcrypt.compare('secret123', data.passwordHash)).resolves.toBe(true);
+  });
+
   it('неіснуючу групу відхиляє з 400', async () => {
     userCreate.mockRejectedValue(prismaError('P2003'));
 

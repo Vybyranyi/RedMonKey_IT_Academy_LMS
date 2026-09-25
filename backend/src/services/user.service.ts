@@ -108,7 +108,7 @@ export const userService = {
     }
 
     const academyId = await academyRepository.getDefaultId();
-    const passwordHash = await bcrypt.hash(password || 'TemporaryPassword123!', SALT_ROUNDS);
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
     // Членство в групі — це FK users.group_id. Жодних масивів для синхронізації.
     return userRepository

@@ -272,6 +272,7 @@ export default function StudentsPage() {
                   group: groupIdOf(editingStudent),
                 }}
                 onSubmit={handleUpdateStudent}
+                isEdit
                 isSubmitting={isSubmitLoading}
                 hideRoleSelect
               />

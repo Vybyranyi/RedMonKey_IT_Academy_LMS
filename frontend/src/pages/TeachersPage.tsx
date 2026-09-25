@@ -166,6 +166,7 @@ export default function TeachersPage() {
                       : editingTeacher.group || '',
                 }}
                 onSubmit={handleUpdateTeacher}
+                isEdit
                 isSubmitting={isSubmitLoading}
                 hideRoleSelect
               />

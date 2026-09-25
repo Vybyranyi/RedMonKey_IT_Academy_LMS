@@ -20,18 +20,22 @@ import { RefreshCw, Wand2 } from 'lucide-react';
 import { transliterate, generateRandomPassword } from '@/utils/stringUtils';
 import { toastApiError } from '@/utils/apiError';
 
+const passwordRules = z.string().min(6, 'Пароль має містити не менше 6 символів');
+
 const userSchema = z.object({
   firstName: z.string().min(2, "Ім'я має містити не менше 2 символів"),
   lastName: z.string().min(2, 'Прізвище має містити не менше 2 символів'),
   email: z.string().email('Неправильний формат email'),
-  password: z
-    .string()
-    .min(6, 'Пароль має містити не менше 6 символів')
-    .optional()
-    .or(z.literal('')),
+  // Новому користувачу пароль обовʼязковий: бекенд більше не підставляє спільний
+  password: z.string().min(1, 'Вкажіть пароль або згенеруйте його').pipe(passwordRules),
   role: z.nativeEnum(UserRole),
   phone: z.string().optional(),
   group: z.string().optional(),
+});
+
+// При редагуванні порожній пароль означає «не змінювати»
+const editUserSchema = userSchema.extend({
+  password: passwordRules.optional().or(z.literal('')),
 });
 
 interface UserFormProps {
@@ -39,6 +43,8 @@ interface UserFormProps {
   onSubmit: (values: IUserDto) => void;
   isSubmitting: boolean;
   hideRoleSelect?: boolean;
+  /** Редагування наявного користувача: пароль можна лишити порожнім. */
+  isEdit?: boolean;
 }
 
 const defaultValues: IUserDto = {
@@ -56,6 +62,7 @@ export default function UserForm({
   onSubmit,
   isSubmitting,
   hideRoleSelect = false,
+  isEdit = false,
 }: UserFormProps) {
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
 
@@ -77,7 +84,7 @@ export default function UserForm({
     <Formik
       initialValues={mergedValues}
       validateOnBlur={false}
-      validate={validateWithZod(userSchema)}
+      validate={validateWithZod(isEdit ? editUserSchema : userSchema)}
       onSubmit={(values) => {
         const submitValues = { ...values };
         if (!submitValues.password) {
@@ -171,7 +178,7 @@ export default function UserForm({
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">
-                Пароль
+                {isEdit ? 'Новий пароль' : 'Пароль *'}
               </Label>
               <div className="flex gap-2">
                 <Field name="password">
@@ -180,7 +187,7 @@ export default function UserForm({
                       {...field}
                       id="password"
                       type="text"
-                      placeholder="Мінімум 6 символів"
+                      placeholder={isEdit ? 'Не змінювати' : 'Мінімум 6 символів'}
                       className={`h-11 ${errors.password && touched.password ? 'border-destructive' : ''}`}
                     />
                   )}

@@ -8,13 +8,13 @@ const validUser = {
   lastName: 'Петренко',
   email: 'ivan@academy.com',
   role: UserRole.STUDENT,
+  password: 'secret123',
 };
 
 describe('createUserSchema', () => {
   it('приймає тіло, яке шле форма створення студента', () => {
     const result = createUserSchema.safeParse({
       ...validUser,
-      password: 'secret123',
       phone: '',
       group: UUID.group,
     });
@@ -35,7 +35,13 @@ describe('createUserSchema', () => {
       isActive: false,
     });
 
-    expect(Object.keys(data).sort()).toEqual(['email', 'firstName', 'lastName', 'role']);
+    expect(Object.keys(data).sort()).toEqual([
+      'email',
+      'firstName',
+      'lastName',
+      'password',
+      'role',
+    ]);
   });
 
   it('обрізає пробіли навколо email', () => {
@@ -50,6 +56,8 @@ describe('createUserSchema', () => {
     [{ firstName: 'І' }, 'Імʼя має містити не менше 2 символів'],
     [{ lastName: 42 }, 'Прізвище: очікується рядок'],
     [{ role: 'root' }, 'Некоректна роль'],
+    // Без пароля акаунт раніше отримував спільний пароль із коду
+    [{ password: undefined }, 'Потрібно вказати пароль'],
     [{ password: '12345' }, 'Пароль має містити не менше 6 символів'],
     [{ password: 'x'.repeat(73) }, 'Пароль не може бути довшим за 72 символів'],
     [{ phone: 'abc' }, 'Некоректний номер телефону'],
