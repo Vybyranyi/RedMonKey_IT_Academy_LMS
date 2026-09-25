@@ -27,7 +27,10 @@ import StudentTable from '@/components/features/users/StudentTable';
 import UserForm from '@/components/features/users/UserForm';
 import StudentDetailsModal from '@/components/features/users/StudentDetailsModal';
 import { useAuthStore } from '@/store/authStore';
+import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { Plus, SearchX, Users } from 'lucide-react';
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 const groupIdOf = (user: IUser) =>
   user.group && typeof user.group === 'object' ? user.group.id : user.group || '';
@@ -37,6 +40,8 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<IUserWithListStats[]>([]);
   const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
   const [search, setSearch] = useState('');
+  // Бекенд однаково обрізає пробіли — зайвий пробіл у кінці не дає нового запиту
+  const query = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
   const [selectedGroup, setSelectedGroup] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   // Скелетон — лише для першого завантаження. Далі при зміні фільтрів лишаємо
@@ -50,8 +55,9 @@ export default function StudentsPage() {
   const [editingStudent, setEditingStudent] = useState<IUser | null>(null);
 
   useEffect(() => {
-    // Кожна літера в пошуку — новий запит. Попередній скасовуємо: інакше
-    // повільна відповідь на «ан» могла б прийти після «анна» і перезаписати список
+    // Запит іде за паузою в наборі, а не на кожну літеру. Попередній, що ще не
+    // повернувся, скасовуємо: інакше повільна відповідь на «ан» могла б прийти
+    // після «анна» і перезаписати список
     const controller = new AbortController();
     const { signal } = controller;
 
@@ -60,7 +66,7 @@ export default function StudentsPage() {
       setLoadError(null);
       try {
         const data = await apiGetStudentsWithStats(
-          { groupId: selectedGroup, q: search },
+          { groupId: selectedGroup, q: query },
           { signal }
         );
         if (signal.aborted) return;
@@ -78,7 +84,7 @@ export default function StudentsPage() {
     loadStudents();
 
     return () => controller.abort();
-  }, [search, selectedGroup, loadAttempt]);
+  }, [query, selectedGroup, loadAttempt]);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +109,7 @@ export default function StudentsPage() {
   // студент лишається в списку, лише якщо підходить під поточні фільтри
   const matchesFilters = (student: IUser) => {
     if (selectedGroup && groupIdOf(student) !== selectedGroup) return false;
-    const term = search.toLowerCase();
+    const term = query.toLowerCase();
     return (
       !term ||
       [student.firstName, student.lastName, student.email].some((value) =>

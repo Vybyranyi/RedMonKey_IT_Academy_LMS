@@ -1,7 +1,7 @@
 import { UserRole } from '@redmonkey/shared';
 import type { IUser } from '@redmonkey/shared';
 import type { InternalAxiosRequestConfig } from 'axios';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '../../store/authStore';
@@ -30,8 +30,27 @@ beforeEach(() => {
 });
 
 describe('StudentsPage — пошук', () => {
-  // Відповідь на «А» могла прийти після відповіді на «Ан» і перезаписати список
-  it('кожна нова літера скасовує попередній запит', async () => {
+  // Раніше кожна літера давала окремий запит: «Анна» — чотири запити за секунду
+  it('швидкий набір дає один запит із повним рядком', async () => {
+    const requests: InternalAxiosRequestConfig[] = [];
+    installApi({
+      '/groups': () => [],
+      '/users': (config) => {
+        requests.push(config);
+        return [anna];
+      },
+    });
+    render(<StudentsPage />);
+    await screen.findByText('Анна Коваленко');
+
+    await userEvent.type(screen.getByPlaceholderText('Пошук за іменем або email...'), 'Анна ');
+
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests[1].params.q).toBe('Анна');
+  });
+
+  // Відповідь на «Ан» могла прийти після відповіді на «Анна» і перезаписати список
+  it('новий пошук скасовує попередній запит, що ще не повернувся', async () => {
     const requests: InternalAxiosRequestConfig[] = [];
     installApi({
       '/groups': () => [],
@@ -43,13 +62,16 @@ describe('StudentsPage — пошук', () => {
     });
     render(<StudentsPage />);
     await screen.findByText('Анна Коваленко');
+    const input = screen.getByPlaceholderText('Пошук за іменем або email...');
 
-    await userEvent.type(screen.getByPlaceholderText('Пошук за іменем або email...'), 'Ан');
+    await userEvent.type(input, 'Ан');
+    await waitFor(() => expect(requests).toHaveLength(2));
+    await userEvent.type(input, 'на');
+    await waitFor(() => expect(requests).toHaveLength(3));
 
-    const searches = requests.slice(1);
-    expect(searches.map((config) => config.params.q)).toEqual(['А', 'Ан']);
-    expect(searches[0].signal?.aborted).toBe(true);
-    expect(searches[1].signal?.aborted).toBe(false);
+    expect(requests.slice(1).map((config) => config.params.q)).toEqual(['Ан', 'Анна']);
+    expect(requests[1].signal?.aborted).toBe(true);
+    expect(requests[2].signal?.aborted).toBe(false);
     // Поки новий результат не прийшов, старий список лишається видимим — без скелетона
     expect(screen.getByText('Анна Коваленко')).toBeInTheDocument();
   });
