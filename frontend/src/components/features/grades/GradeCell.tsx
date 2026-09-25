@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { Trash2 } from 'lucide-react';
@@ -17,7 +17,20 @@ interface GradeCellProps {
   isSaving?: boolean;
   onSave: (value: number, comment: string) => void;
   onDelete?: () => void;
+  /** Хто й за яке заняття — для скрінрідера: сама кнопка показує лише «+» чи оцінку */
+  cellLabel?: string;
 }
+
+/**
+ * Клітинка того ж заняття в наступному рядку журналу. Шукаємо в DOM, а не через
+ * пропси: інакше кожен рядок мав би знати про сусідів і React.memo рядків ламався б.
+ */
+const nextCellTrigger = (trigger: HTMLElement | null) => {
+  const cell = trigger?.closest('td');
+  const nextRow = cell?.parentElement?.nextElementSibling;
+  const nextCell = cell && nextRow?.children[cell.cellIndex];
+  return nextCell?.querySelector<HTMLButtonElement>('button[data-grade-cell]:not(:disabled)');
+};
 
 export default function GradeCell({
   grade,
@@ -25,8 +38,12 @@ export default function GradeCell({
   isSaving = false,
   onSave,
   onDelete,
+  cellLabel,
 }: GradeCellProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  // Після збереження з клавіатури фокус іде не назад на клітинку, а до наступного студента
+  const moveToNextRef = useRef(false);
   const [value, setValue] = useState('');
   const [comment, setComment] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +59,7 @@ export default function GradeCell({
     setIsOpen(open);
   };
 
-  const handleSave = () => {
+  const handleSave = (moveToNext = false) => {
     const parsed = Number(value);
 
     if (!Number.isInteger(parsed) || parsed < GRADE_MIN || parsed > GRADE_MAX) {
@@ -51,7 +68,19 @@ export default function GradeCell({
     }
 
     onSave(parsed, comment.trim());
+    moveToNextRef.current = moveToNext;
     setIsOpen(false);
+  };
+
+  // ТЗ 6.4: Enter або Tab — зберегти й перейти до наступного, Escape — скасувати.
+  // Tab по незміненій оцінці веде на коментар — інакше до нього не дістатись з клавіатури
+  const handleValueKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    const isTabForward = event.key === 'Tab' && !event.shiftKey;
+    const changed = value !== (grade ? String(grade.value) : '');
+    if (event.key === 'Enter' || (isTabForward && changed)) {
+      event.preventDefault();
+      handleSave(true);
+    }
   };
 
   if (!editable) {
@@ -75,7 +104,12 @@ export default function GradeCell({
     <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <button
+          ref={triggerRef}
           type="button"
+          data-grade-cell
+          aria-label={
+            cellLabel && `${cellLabel}: ${grade ? `оцінка ${grade.value}` : 'виставити оцінку'}`
+          }
           disabled={isSaving}
           title={
             isSaving
@@ -94,7 +128,19 @@ export default function GradeCell({
         </button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-64 space-y-3" align="center">
+      <PopoverContent
+        className="w-64 space-y-3"
+        align="center"
+        onCloseAutoFocus={(event) => {
+          if (!moveToNextRef.current) return;
+          moveToNextRef.current = false;
+          const next = nextCellTrigger(triggerRef.current);
+          if (!next) return;
+          event.preventDefault();
+          next.focus();
+          next.click();
+        }}
+      >
         <div className="space-y-2">
           <Label htmlFor="grade-value">
             Оцінка ({GRADE_MIN}–{GRADE_MAX})
@@ -107,17 +153,21 @@ export default function GradeCell({
             autoFocus
             value={value}
             onChange={(event) => setValue(event.target.value)}
-            // Enter зберігає, Escape закриває — інакше журнал незручно заповнювати з клавіатури
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                handleSave();
-              }
-              if (event.key === 'Escape') setIsOpen(false);
-            }}
+            onKeyDown={handleValueKeyDown}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? 'grade-error' : 'grade-hint'}
             className={error ? 'border-destructive' : undefined}
           />
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {!error && (
+            <p id="grade-hint" className="text-[11px] text-slate-400">
+              Enter або Tab — зберегти й до наступного студента, Esc — скасувати
+            </p>
+          )}
+          {error && (
+            <p id="grade-error" role="alert" className="text-xs text-destructive">
+              {error}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -128,13 +178,19 @@ export default function GradeCell({
             maxLength={200}
             placeholder="Необов'язково"
             onChange={(event) => setComment(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                handleSave(true);
+              }
+            }}
           />
         </div>
 
         <div className="flex items-center gap-2">
           <Button
             className="flex-1 bg-[#C10000] hover:bg-[#A00000] text-white"
-            onClick={handleSave}
+            onClick={() => handleSave()}
             disabled={isSaving}
           >
             {isSaving ? 'Збереження...' : 'Зберегти'}

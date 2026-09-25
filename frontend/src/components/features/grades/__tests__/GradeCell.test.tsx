@@ -93,3 +93,84 @@ describe('режим редагування', () => {
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('клавіатура (ТЗ 6.4)', () => {
+  it('Enter зберігає оцінку', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(<GradeCell grade={null} editable onSave={onSave} />);
+
+    await user.click(screen.getByRole('button', { name: '+' }));
+    await user.type(await screen.findByLabelText(/Оцінка/), '9{Enter}');
+
+    expect(onSave).toHaveBeenCalledWith(9, '');
+    expect(screen.queryByLabelText(/Оцінка/)).not.toBeInTheDocument();
+  });
+
+  it('Tab після введення оцінки теж зберігає', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(<GradeCell grade={null} editable onSave={onSave} />);
+
+    await user.click(screen.getByRole('button', { name: '+' }));
+    await user.type(await screen.findByLabelText(/Оцінка/), '7');
+    await user.tab();
+
+    expect(onSave).toHaveBeenCalledWith(7, '');
+  });
+
+  // Інакше коментар до вже виставленої оцінки з клавіатури не додати
+  it('Tab по незміненій оцінці веде на коментар, нічого не зберігаючи', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(<GradeCell grade={grade} editable onSave={onSave} />);
+
+    await user.click(screen.getByRole('button', { name: '11' }));
+    await screen.findByLabelText(/Оцінка/);
+    await user.tab();
+
+    expect(screen.getByLabelText('Коментар')).toHaveFocus();
+    expect(onSave).not.toHaveBeenCalled();
+
+    await user.clear(screen.getByLabelText('Коментар'));
+    await user.type(screen.getByLabelText('Коментар'), 'Молодець{Enter}');
+    expect(onSave).toHaveBeenCalledWith(11, 'Молодець');
+  });
+
+  it('Escape закриває без збереження й повертає фокус на клітинку', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(<GradeCell grade={null} editable onSave={onSave} />);
+
+    await user.click(screen.getByRole('button', { name: '+' }));
+    await user.type(await screen.findByLabelText(/Оцінка/), '5{Escape}');
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText(/Оцінка/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+' })).toHaveFocus();
+  });
+
+  it('невалідна оцінка по Tab не зберігається і лишає фокус у полі', async () => {
+    const onSave = vi.fn();
+    const user = userEvent.setup();
+    render(<GradeCell grade={null} editable onSave={onSave} />);
+
+    await user.click(screen.getByRole('button', { name: '+' }));
+    await user.type(await screen.findByLabelText(/Оцінка/), '15');
+    await user.tab();
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('від 1 до 12');
+    expect(screen.getByLabelText(/Оцінка/)).toHaveFocus();
+  });
+
+  it('має назву для скрінрідера: хто, яке заняття і яка оцінка', () => {
+    render(
+      <GradeCell grade={grade} editable onSave={vi.fn()} cellLabel="Анна Коваленко, 1 вер." />
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Анна Коваленко, 1 вер.: оцінка 11' })
+    ).toBeInTheDocument();
+  });
+});
