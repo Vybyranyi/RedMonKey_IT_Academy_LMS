@@ -103,7 +103,7 @@ export default function GroupsPage() {
         {isAdmin && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2 bg-primary hover:bg-primary/95 text-white">
+              <Button className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white">
                 <Plus className="h-4 w-4" /> Нова група
               </Button>
             </DialogTrigger>

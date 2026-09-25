@@ -120,7 +120,7 @@ export default function GroupForm({
                         : (values.teachers || []).filter((id) => id !== t.id);
                       setFieldValue('teachers', nextTeachers);
                     }}
-                    className="rounded border-gray-300 text-primary focus:ring-primary"
+                    className="accent-primary"
                   />
                   {t.firstName} {t.lastName}
                 </label>
@@ -128,7 +128,11 @@ export default function GroupForm({
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            className="w-full bg-[#C10000] hover:bg-[#A00000] text-white"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? 'Збереження...' : 'Зберегти'}
           </Button>
         </Form>

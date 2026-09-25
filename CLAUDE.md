@@ -149,7 +149,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 **Card:** `border-t-2 border-t-slate-200`, іконка-плашка в хедері `p-3 bg-red-50 text-primary rounded-xl`, `hover:shadow-md transition-shadow`, footer `bg-slate-50/50`.
 
-**`bg-primary` / `text-primary` — не бренд.** Токен `--primary` в `index.css` лишився дефолтним ShadCN (майже чорний). Брендова кнопка — явно `bg-[#C10000] hover:bg-[#A00000] text-white`; «Нова група» з `bg-primary` і `<Button>` без класу кольору (як «Перейти до розкладу» на дашборді студента) виходять темними.
+**Токени = бренд.** У `:root` в `index.css` `--primary` = `#C10000`, `--primary-foreground` = білий, `--ring` = `#BA0000`, тож `bg-primary`/`text-primary`, дефолтні `<Button>`/`<Badge>` і фокус-кільця примітивів червоні. Брендова CTA-кнопка все одно пишеться явно — `bg-[#C10000] hover:bg-[#A00000] text-white`: дефолтний варіант на hover світлішає (`bg-primary/80`), а має темнішати. Змінюєш бренд — міняй і токени, і ці класи. Блок `.dark` — дефолт ShadCN, темної теми немає.
 
 **Input:** `h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000]`.
 

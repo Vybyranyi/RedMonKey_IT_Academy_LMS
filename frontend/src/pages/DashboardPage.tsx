@@ -399,7 +399,11 @@ function StudentDashboard({
                       {format(new Date(nextLesson.date), 'EEEE, d MMMM, HH:mm', { locale: uk })}
                     </span>
                   </div>
-                  <Button size="sm" onClick={onSelectLesson}>
+                  <Button
+                    size="sm"
+                    className="bg-[#C10000] hover:bg-[#A00000] text-white"
+                    onClick={onSelectLesson}
+                  >
                     Перейти до розкладу
                   </Button>
                 </div>
