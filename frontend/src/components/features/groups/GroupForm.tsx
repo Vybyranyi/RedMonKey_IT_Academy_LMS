@@ -8,17 +8,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { IGroupDto } from '@redmonkey/shared';
 import { apiGetUsers } from '@/api/users';
-import { UserRole } from '@redmonkey/shared';
+import { GROUP_END_BEFORE_START_MESSAGE, UserRole } from '@redmonkey/shared';
 import type { IUser } from '@redmonkey/shared';
 import { toastApiError } from '@/utils/apiError';
 
-const groupSchema = z.object({
-  name: z.string().min(3, 'Назва групи має містити не менше 3 символів'),
-  description: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  teachers: z.array(z.string()).optional(),
-});
+const groupSchema = z
+  .object({
+    name: z.string().min(3, 'Назва групи має містити не менше 3 символів'),
+    description: z.string().optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    teachers: z.array(z.string()).optional(),
+  })
+  // Дати з <input type="date"> — рядки YYYY-MM-DD, тож їх можна порівнювати як рядки
+  .refine(({ startDate, endDate }) => !startDate || !endDate || endDate > startDate, {
+    message: GROUP_END_BEFORE_START_MESSAGE,
+    path: ['endDate'],
+  });
 
 interface GroupFormProps {
   initialValues?: IGroupDto;
@@ -99,8 +105,19 @@ export default function GroupForm({
             <div className="space-y-1">
               <Label htmlFor="endDate">Дата завершення</Label>
               <Field name="endDate">
-                {({ field }: FieldProps) => <Input {...field} id="endDate" type="date" />}
+                {({ field }: FieldProps) => (
+                  <Input
+                    {...field}
+                    id="endDate"
+                    type="date"
+                    aria-invalid={Boolean(errors.endDate && touched.endDate)}
+                    className={errors.endDate && touched.endDate ? 'border-destructive' : ''}
+                  />
+                )}
               </Field>
+              {errors.endDate && touched.endDate && (
+                <p className="text-xs text-destructive">{errors.endDate}</p>
+              )}
             </div>
           </div>
 

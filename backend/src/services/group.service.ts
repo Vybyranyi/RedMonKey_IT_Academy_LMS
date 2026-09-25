@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { UserRole } from '@redmonkey/shared';
+import { endsAfterStart, GROUP_END_BEFORE_START_MESSAGE, UserRole } from '@redmonkey/shared';
 import type { ICreateGroupDto, IUpdateGroupDto } from '@redmonkey/shared';
 import { groupRepository } from '../repositories/group.repository.js';
 import { academyRepository } from '../repositories/academy.repository.js';
@@ -73,6 +73,18 @@ export const groupService = {
     const { teachers, ...rest } = groupData;
 
     if (teachers) await assertActiveTeachers(teachers);
+
+    // Обидві дати в одному запиті перевірила схема. Якщо прийшла лише одна —
+    // звіряємо з другою, що вже лежить у БД
+    if ((rest.startDate === undefined) !== (rest.endDate === undefined)) {
+      const current = await groupRepository.findDatesById(id);
+      if (!current) throw new NotFoundError('Групу не знайдено');
+      const dates = {
+        startDate: rest.startDate !== undefined ? rest.startDate : current.startDate,
+        endDate: rest.endDate !== undefined ? rest.endDate : current.endDate,
+      };
+      if (!endsAfterStart(dates)) throw new BadRequestError(GROUP_END_BEFORE_START_MESSAGE);
+    }
 
     let updated;
     try {
