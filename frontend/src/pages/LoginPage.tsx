@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, type Location } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import axiosInstance from '@/api/axios';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -8,9 +8,18 @@ import { getApiErrorMessage } from '@/utils/apiError';
 import logo from '@/assets/logo.png';
 
 export default function LoginPage() {
-  const { setAuth } = useAuthStore();
-  const navigate = useNavigate();
+  const { setAuth, isAuthenticated } = useAuthStore();
+  const location = useLocation();
   const [serverError, setServerError] = useState<string | null>(null);
+
+  // Сюди ProtectedRoute кладе сторінку, з якої користувача викинуло на вхід
+  const from = (location.state as { from?: Location } | null)?.from;
+  const redirectTo = from ? `${from.pathname}${from.search ?? ''}` : '/';
+
+  // Після успішного входу (і для вже залогіненого) — назад, звідки прийшли
+  if (isAuthenticated) {
+    return <Navigate to={redirectTo} replace />;
+  }
 
   const handleLogin = async (
     values: LoginFormValues,
@@ -21,7 +30,6 @@ export default function LoginPage() {
       const response = await axiosInstance.post('/auth/login', values);
       const { accessToken, user } = response.data;
       setAuth(user, accessToken);
-      navigate('/');
     } catch (error) {
       setServerError(getApiErrorMessage(error, 'Халепа! Щось пішло не так.'));
     } finally {

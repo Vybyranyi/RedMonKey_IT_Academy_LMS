@@ -1,4 +1,4 @@
-import axiosInstance from "@/api/axios";
+import { logout } from "@/api/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/store/authStore";
 import { LogOut } from "lucide-react";
@@ -11,19 +11,14 @@ interface UserProfileWidgetProps {
 export default function UserProfileWidget({
   isCollapsed,
 }: UserProfileWidgetProps) {
-  const { user, clearAuth } = useAuthStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
 
   if (!user) return null;
 
-  const handleLogout = async (e: React.MouseEvent) => {
+  const handleLogout = (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      await axiosInstance.post("/auth/logout");
-      clearAuth();
-    } catch (error) {
-      console.error("Помилка при виході", error);
-    }
+    void logout();
   };
 
   const handleProfileClick = () => {
