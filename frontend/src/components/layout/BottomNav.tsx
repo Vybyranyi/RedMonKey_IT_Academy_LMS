@@ -54,7 +54,7 @@ export default function BottomNav() {
     <>
       <nav
         aria-label="Основна навігація"
-        className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-[#29425D] border-t border-white/10 shadow-[0_-4px_12px_rgba(0,0,0,0.12)] pb-[env(safe-area-inset-bottom)]"
+        className="focus-on-dark md:hidden fixed inset-x-0 bottom-0 z-40 bg-[#29425D] border-t border-white/10 shadow-[0_-4px_12px_rgba(0,0,0,0.12)] pb-[env(safe-area-inset-bottom)]"
       >
         <div className="grid grid-cols-5">
           {tabs.map((item) => {
@@ -96,7 +96,7 @@ export default function BottomNav() {
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <SheetContent
           side="bottom"
-          className="md:hidden rounded-t-[20px] bg-[#29425D] text-slate-100 border-0 p-0 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+          className="focus-on-dark md:hidden rounded-t-[20px] bg-[#29425D] text-slate-100 border-0 p-0 pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
           <SheetHeader className="px-5 pt-5 pb-2">
             <SheetTitle className="text-white text-lg font-bold">Меню</SheetTitle>

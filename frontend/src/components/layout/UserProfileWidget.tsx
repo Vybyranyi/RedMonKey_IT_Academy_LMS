@@ -54,9 +54,11 @@ export default function UserProfileWidget({ isCollapsed }: UserProfileWidgetProp
             </p>
           </div>
           <button
-            className="absolute right-3 opacity-0 group-hover:opacity-100 transition-opacity hover:text-white p-1 rounded-md"
+            type="button"
+            className="absolute right-3 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:text-white p-1 rounded-md"
             onClick={handleLogout}
             title="Вийти"
+            aria-label="Вийти"
           >
             <LogOut className="h-3.5 w-3.5 text-slate-400 hover:text-white transition-colors" />
           </button>
@@ -65,9 +67,11 @@ export default function UserProfileWidget({ isCollapsed }: UserProfileWidgetProp
 
       {isCollapsed && (
         <button
-          className="absolute -top-2 -right-2 bg-[#C10000] p-1.5 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+          type="button"
+          className="absolute -top-2 -right-2 bg-[#C10000] p-1.5 rounded-full text-white opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity shadow-md"
           onClick={handleLogout}
           title="Вийти"
+          aria-label="Вийти"
         >
           <LogOut className="h-3 w-3" />
         </button>

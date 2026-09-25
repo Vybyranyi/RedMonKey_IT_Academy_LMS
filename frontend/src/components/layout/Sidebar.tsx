@@ -21,7 +21,7 @@ export default function Sidebar() {
   return (
     <aside
       // На мобайлі замість sidebar — BottomNav
-      className={`${isCollapsed ? 'w-20' : 'w-65'} bg-[#29425D] text-slate-100 h-dvh hidden md:flex flex-col shadow-xl z-20 shrink-0 transition-all duration-300 ease-in-out`}
+      className={`focus-on-dark ${isCollapsed ? 'w-20' : 'w-65'} bg-[#29425D] text-slate-100 h-dvh hidden md:flex flex-col shadow-xl z-20 shrink-0 transition-all duration-300 ease-in-out`}
     >
       {/* Logo Section */}
       <div
@@ -73,7 +73,10 @@ export default function Sidebar() {
       {/* Bottom Section */}
       <div className={`p-4 mt-auto ${isCollapsed ? 'px-2' : ''}`}>
         <button
+          type="button"
           onClick={() => setIsCollapsed(!isCollapsed)}
+          aria-label={isCollapsed ? 'Розгорнути меню' : 'Згорнути меню'}
+          aria-expanded={!isCollapsed}
           className={`flex items-center gap-2 text-[12px] font-semibold text-[#8B9DB4] hover:text-white transition-colors w-full mb-4 ${isCollapsed ? 'justify-center' : 'justify-end px-2'}`}
           title={isCollapsed ? 'Розгорнути' : 'Згорнути'}
         >

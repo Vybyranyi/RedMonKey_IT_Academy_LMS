@@ -19,6 +19,7 @@ import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiErr
 import { createTempId, removeById, replaceById, upsertById } from '@/lib/optimistic';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -287,8 +288,16 @@ export default function GradesPage() {
 
       <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
         {!isStudent && (
+          <Label htmlFor="grades-group" className="sr-only">
+            Група
+          </Label>
+        )}
+        {!isStudent && (
           <Select value={groupId} onValueChange={setGroupId}>
-            <SelectTrigger className="w-full sm:w-64 h-11 bg-white border-slate-200">
+            <SelectTrigger
+              id="grades-group"
+              className="w-full sm:w-64 h-11 bg-white border-slate-200"
+            >
               <SelectValue placeholder="Оберіть групу" />
             </SelectTrigger>
             <SelectContent>
@@ -301,8 +310,11 @@ export default function GradesPage() {
           </Select>
         )}
 
+        <Label htmlFor="grades-type" className="sr-only">
+          Тип оцінок
+        </Label>
         <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-full sm:w-56 h-11 bg-white border-slate-200">
+          <SelectTrigger id="grades-type" className="w-full sm:w-56 h-11 bg-white border-slate-200">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

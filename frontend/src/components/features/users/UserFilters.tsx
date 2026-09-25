@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react';
 import type { IGroup } from '@redmonkey/shared';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -27,19 +28,29 @@ export default function UserFilters({
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
       <div className="relative w-full sm:w-[480px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Search
+          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+          aria-hidden="true"
+        />
         <Input
+          aria-label="Пошук студентів"
           placeholder="Пошук за іменем або email..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] text-sm"
         />
       </div>
+      <Label htmlFor="students-group-filter" className="sr-only">
+        Група
+      </Label>
       <Select
         value={selectedGroup || 'all'}
         onValueChange={(val) => onGroupChange(val === 'all' ? '' : val)}
       >
-        <SelectTrigger className="w-full sm:w-48 h-11 bg-white border-slate-200">
+        <SelectTrigger
+          id="students-group-filter"
+          className="w-full sm:w-48 h-11 bg-white border-slate-200"
+        >
           <SelectValue placeholder="Всі групи" />
         </SelectTrigger>
         <SelectContent>
