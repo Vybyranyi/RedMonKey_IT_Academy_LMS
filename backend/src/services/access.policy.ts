@@ -72,7 +72,7 @@ export const accessPolicy = {
     return actor.role === UserRole.TEACHER && target.teacherId === actor.userId;
   },
 
-    /** Редагувати/видаляти оцінку може адмін або той викладач, який її виставив (ТЗ 4.5). */
+  /** Редагувати/видаляти оцінку може адмін або той викладач, який її виставив (ТЗ 4.5). */
   canManageGrade(actor: TokenPayload, target: GradeSubject): boolean {
     if (actor.role === UserRole.ADMIN) return true;
     return actor.role === UserRole.TEACHER && target.teacherId === actor.userId;

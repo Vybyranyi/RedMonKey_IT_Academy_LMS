@@ -8,5 +8,7 @@ export const UUID = {
 } as const;
 
 /** Перше повідомлення про помилку — саме його BadRequestError віддає клієнту. */
-export const firstIssue = (result: { success: boolean; error?: { issues: { message: string }[] } }) =>
-  result.success ? null : (result.error?.issues[0]?.message ?? null);
+export const firstIssue = (result: {
+  success: boolean;
+  error?: { issues: { message: string }[] };
+}) => (result.success ? null : (result.error?.issues[0]?.message ?? null));

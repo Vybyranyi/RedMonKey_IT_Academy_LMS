@@ -25,12 +25,13 @@ const studentDetailSelect = {
   redCoins: true,
 } satisfies Prisma.UserSelect;
 
-type RawGroup = { teachers: { teacher: unknown }[]; students: unknown[] } & Record<string, unknown>;
-
 /** Розгортає M:N teachers → плоский масив User[], зберігаючи API-контракт із Mongo-часів. */
-const flatten = ({ teachers, ...group }: RawGroup) => ({
+const flatten = <TGroup extends { teachers: { teacher: unknown }[] }>({
+  teachers,
+  ...group
+}: TGroup) => ({
   ...group,
-  teachers: teachers.map((row) => row.teacher),
+  teachers: teachers.map((row) => row.teacher) as TGroup['teachers'][number]['teacher'][],
 });
 
 export const groupRepository = {
@@ -70,10 +71,7 @@ export const groupRepository = {
     return rows.map((row) => row.groupId);
   },
 
-  async create(
-    data: Omit<Prisma.GroupUncheckedCreateInput, 'teachers'>,
-    teacherIds: string[]
-  ) {
+  async create(data: Omit<Prisma.GroupUncheckedCreateInput, 'teachers'>, teacherIds: string[]) {
     const group = await prisma.group.create({
       data: {
         ...data,
@@ -90,11 +88,7 @@ export const groupRepository = {
   },
 
   /** Оновлює скалярні поля; за наявності teacherIds повністю пересинхронізовує M:N. */
-  async update(
-    id: string,
-    data: Prisma.GroupUncheckedUpdateInput,
-    teacherIds?: string[]
-  ) {
+  async update(id: string, data: Prisma.GroupUncheckedUpdateInput, teacherIds?: string[]) {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.group.findUnique({ where: { id }, select: { academyId: true } });
       if (!existing) return null;

@@ -31,25 +31,42 @@ export default function ChangePasswordForm({ onSubmit, isSubmitting }: ChangePas
     <Formik
       initialValues={{ currentPassword: '', newPassword: '', confirmPassword: '' }}
       validate={validateWithZod(passwordFormSchema)}
-      onSubmit={(values) => onSubmit({ currentPassword: values.currentPassword, newPassword: values.newPassword })}
+      onSubmit={(values) =>
+        onSubmit({ currentPassword: values.currentPassword, newPassword: values.newPassword })
+      }
     >
       {({ errors, touched }) => (
         <Form className="space-y-4">
           {(['currentPassword', 'newPassword', 'confirmPassword'] as const).map((name) => (
             <div className="space-y-2" key={name}>
               <Label htmlFor={name}>
-                {name === 'currentPassword' ? 'Поточний пароль' : name === 'newPassword' ? 'Новий пароль' : 'Підтвердження пароля'}
+                {name === 'currentPassword'
+                  ? 'Поточний пароль'
+                  : name === 'newPassword'
+                    ? 'Новий пароль'
+                    : 'Підтвердження пароля'}
               </Label>
               <Field name={name}>
                 {({ field }: FieldProps) => (
-                  <Input {...field} id={name} type="password" className={errors[name] && touched[name] ? 'border-destructive' : undefined} />
+                  <Input
+                    {...field}
+                    id={name}
+                    type="password"
+                    className={errors[name] && touched[name] ? 'border-destructive' : undefined}
+                  />
                 )}
               </Field>
-              {errors[name] && touched[name] && <p className="text-xs text-destructive">{errors[name]}</p>}
+              {errors[name] && touched[name] && (
+                <p className="text-xs text-destructive">{errors[name]}</p>
+              )}
             </div>
           ))}
 
-          <Button type="submit" className="w-full h-11 bg-[#C10000] hover:bg-[#A00000] text-white" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            className="w-full h-11 bg-[#C10000] hover:bg-[#A00000] text-white"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? 'Збереження...' : 'Змінити пароль'}
           </Button>
         </Form>

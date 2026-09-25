@@ -9,7 +9,7 @@ export const loginSchema = z.object({
 export const validateWithZod = (schema: z.ZodSchema) => (values: unknown) => {
   const result = schema.safeParse(values);
   if (result.success) return {};
-  
+
   const errors: Record<string, string> = {};
   result.error.issues.forEach((err) => {
     const field = err.path[0] as string | undefined;

@@ -35,9 +35,22 @@ export const updateAttendanceSchema = z
 
 /** POST /lessons/:id/complete — lessonId береться з URL, у тілі лише records. */
 export const completeLessonSchema = z.object({
-  records: z.array(attendanceRecordSchema, { error: 'records має бути масивом' }).max(200).default([]),
+  records: z
+    .array(attendanceRecordSchema, { error: 'records має бути масивом' })
+    .max(200)
+    .default([]),
+});
+
+/**
+ * GET /attendance. Що хоча б один фільтр є, перевіряє сервіс: студенту
+ * studentId підставляється сам, і для нього порожній query теж коректний.
+ */
+export const attendanceFiltersSchema = z.object({
+  lessonId: z.uuid('lessonId має бути UUID').optional(),
+  studentId: z.uuid('studentId має бути UUID').optional(),
 });
 
 export type IAttendanceRecordDto = z.infer<typeof attendanceRecordSchema>;
+export type IAttendanceFilters = z.infer<typeof attendanceFiltersSchema>;
 export type IBulkAttendanceDto = z.infer<typeof bulkAttendanceSchema>;
 export type IUpdateAttendanceDto = z.infer<typeof updateAttendanceSchema>;

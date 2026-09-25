@@ -63,15 +63,24 @@ export const coinService = {
 
     const academyId = await academyRepository.getDefaultId();
 
-    const transaction = await coinRepository.createWithBalance({
-      academyId,
-      studentId: data.studentId,
-      issuedBy: actor.userId,
-      amount: data.amount,
-      reason: data.reason,
-      category: data.category,
-      relatedLessonId: data.relatedLessonId ?? null,
-    });
+    const transaction = await coinRepository
+      .createWithBalance({
+        academyId,
+        studentId: data.studentId,
+        issuedBy: actor.userId,
+        amount: data.amount,
+        reason: data.reason,
+        category: data.category,
+        relatedLessonId: data.relatedLessonId ?? null,
+      })
+      .catch((error: unknown) => {
+        // Студента й автора вже перевірено вище — не зійтися може лише FK на заняття.
+        // Транзакцію Prisma вже відкотила, баланс не змінився
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+          throw new BadRequestError('Заняття relatedLessonId не існує');
+        }
+        throw error;
+      });
 
     // null означає, що списання завело б баланс у мінус: ledger append-only,
     // тож обрізати суму не можна — сума транзакцій має дорівнювати балансу
@@ -84,7 +93,10 @@ export const coinService = {
     return transaction;
   },
 
-  async getLeaderboard(filters: ILeaderboardFilters, actor: TokenPayload): Promise<ILeaderboardRow[]> {
+  async getLeaderboard(
+    filters: ILeaderboardFilters,
+    actor: TokenPayload
+  ): Promise<ILeaderboardRow[]> {
     const where: Prisma.UserWhereInput = { role: UserRole.STUDENT, isActive: true };
     if (filters.groupId) where.groupId = filters.groupId;
 

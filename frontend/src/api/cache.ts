@@ -14,7 +14,11 @@ const entries = new Map<string, CacheEntry>();
  * змінювати його на місці не можна, лише через копію (setState з map/filter).
  * Помилка в кеші не лишається: наступний виклик знову піде в мережу.
  */
-export const cachedRequest = <T>(key: string, ttlMs: number, fetcher: () => Promise<T>): Promise<T> => {
+export const cachedRequest = <T>(
+  key: string,
+  ttlMs: number,
+  fetcher: () => Promise<T>
+): Promise<T> => {
   const hit = entries.get(key);
   if (hit && hit.expiresAt > Date.now()) return hit.promise as Promise<T>;
 

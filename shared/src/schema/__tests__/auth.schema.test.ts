@@ -81,7 +81,10 @@ describe('changePasswordSchema', () => {
   });
 
   it('відхиляє закороткий новий пароль', () => {
-    const result = changePasswordSchema.safeParse({ ...valid, newPassword: 'a'.repeat(PASSWORD_MIN_LENGTH - 1) });
+    const result = changePasswordSchema.safeParse({
+      ...valid,
+      newPassword: 'a'.repeat(PASSWORD_MIN_LENGTH - 1),
+    });
     expect(firstIssue(result)).toBe(
       `Новий пароль має містити не менше ${PASSWORD_MIN_LENGTH} символів`
     );

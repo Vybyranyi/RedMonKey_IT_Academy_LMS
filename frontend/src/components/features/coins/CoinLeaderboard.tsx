@@ -31,7 +31,8 @@ export default function CoinLeaderboard({
       </CardHeader>
 
       <CardContent className="space-y-2">
-        {isLoading && [1, 2, 3, 4, 5].map((n) => <Skeleton key={n} className="h-14 w-full rounded-xl" />)}
+        {isLoading &&
+          [1, 2, 3, 4, 5].map((n) => <Skeleton key={n} className="h-14 w-full rounded-xl" />)}
 
         {!isLoading && rows.length === 0 && (
           <p className="text-slate-400 text-sm font-medium text-center py-6 border border-dashed border-slate-200 rounded-xl">
@@ -56,7 +57,10 @@ export default function CoinLeaderboard({
               </span>
 
               <Avatar className="h-9 w-9 shrink-0">
-                <AvatarImage src={row.avatar ?? undefined} alt={`${row.firstName} ${row.lastName}`} />
+                <AvatarImage
+                  src={row.avatar ?? undefined}
+                  alt={`${row.firstName} ${row.lastName}`}
+                />
                 <AvatarFallback className="bg-[#0070F3] text-white text-xs font-semibold">
                   {row.firstName.charAt(0)}
                   {row.lastName.charAt(0)}

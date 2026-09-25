@@ -6,7 +6,7 @@ import {
 } from '@redmonkey/shared';
 import { coinService } from '../services/coin.service.js';
 import { UnauthorizedError, handleError } from '../utils/errors.js';
-import { parseBody, parseQuery } from '../utils/validation.js';
+import { parseBody, parseIdParam, parseQuery } from '../utils/validation.js';
 
 export const getTransactions = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -44,7 +44,10 @@ export const getLeaderboard = async (req: Request, res: Response): Promise<void>
 export const getStudentBalance = async (req: Request, res: Response): Promise<void> => {
   try {
     if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
-    const balance = await coinService.getBalance(req.params.id as string, req.user);
+    const balance = await coinService.getBalance(
+      parseIdParam(req.params.id, 'Студента не знайдено'),
+      req.user
+    );
     res.status(200).json(balance);
   } catch (error) {
     handleError(res, error, 'Помилка при отриманні балансу');

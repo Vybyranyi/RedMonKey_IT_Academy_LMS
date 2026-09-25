@@ -61,7 +61,8 @@ export default function BulkGradeForm({
     }
 
     const invalid = grades.find(
-      (grade) => !Number.isInteger(grade.value) || grade.value < GRADE_MIN || grade.value > GRADE_MAX
+      (grade) =>
+        !Number.isInteger(grade.value) || grade.value < GRADE_MIN || grade.value > GRADE_MAX
     );
     if (invalid) {
       setError(`Оцінка має бути цілим числом від ${GRADE_MIN} до ${GRADE_MAX}`);

@@ -9,7 +9,12 @@ import LessonDetailsModal from '../LessonDetailsModal';
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
 
-const admin = { id: 'admin-1', role: UserRole.ADMIN, firstName: 'Ірина', lastName: 'Адміненко' } as IUser;
+const admin = {
+  id: 'admin-1',
+  role: UserRole.ADMIN,
+  firstName: 'Ірина',
+  lastName: 'Адміненко',
+} as IUser;
 
 const lesson = {
   id: 'lesson-1',
@@ -36,19 +41,20 @@ beforeEach(() => {
 describe('LessonDetailsModal — відвідуваність', () => {
   it('перемикання статусу змінює лише рядок студента і не ходить у мережу', async () => {
     const adapter = installApi({ '/users': () => students, '/attendance': () => [] });
-    render(<LessonDetailsModal lesson={lesson} isOpen onClose={vi.fn()} onLessonUpdated={vi.fn()} />);
+    render(
+      <LessonDetailsModal lesson={lesson} isOpen onClose={vi.fn()} onLessonUpdated={vi.fn()} />
+    );
     const annaStatus = await screen.findByRole('group', { name: 'Статус: Анна Коваленко' });
     const requestsBefore = adapter.mock.calls.length;
 
-    await userEvent.click(
-      screen.getAllByRole('button', { name: 'Відсутній' })[0]
-    );
+    await userEvent.click(screen.getAllByRole('button', { name: 'Відсутній' })[0]);
 
     expect(adapter.mock.calls.length).toBe(requestsBefore);
     expect(annaStatus.querySelector('[aria-pressed=true]')?.textContent).toBe('Відсутній');
     expect(
-      screen.getByRole('group', { name: 'Статус: Богдан Мельник' }).querySelector('[aria-pressed=true]')
-        ?.textContent
+      screen
+        .getByRole('group', { name: 'Статус: Богдан Мельник' })
+        .querySelector('[aria-pressed=true]')?.textContent
     ).toBe('Присутній');
   });
 
@@ -62,7 +68,14 @@ describe('LessonDetailsModal — відвідуваність', () => {
     });
     const onLessonUpdated = vi.fn();
     const onClose = vi.fn();
-    render(<LessonDetailsModal lesson={lesson} isOpen onClose={onClose} onLessonUpdated={onLessonUpdated} />);
+    render(
+      <LessonDetailsModal
+        lesson={lesson}
+        isOpen
+        onClose={onClose}
+        onLessonUpdated={onLessonUpdated}
+      />
+    );
     await screen.findByRole('group', { name: 'Статус: Анна Коваленко' });
 
     await userEvent.click(screen.getAllByRole('button', { name: 'Відсутній' })[0]);
@@ -87,7 +100,14 @@ describe('LessonDetailsModal — відвідуваність', () => {
     });
     const onLessonUpdated = vi.fn();
     const onClose = vi.fn();
-    render(<LessonDetailsModal lesson={lesson} isOpen onClose={onClose} onLessonUpdated={onLessonUpdated} />);
+    render(
+      <LessonDetailsModal
+        lesson={lesson}
+        isOpen
+        onClose={onClose}
+        onLessonUpdated={onLessonUpdated}
+      />
+    );
     await screen.findByRole('group', { name: 'Статус: Анна Коваленко' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Зберегти явку' }));

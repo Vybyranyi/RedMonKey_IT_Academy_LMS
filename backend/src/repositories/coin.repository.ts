@@ -69,19 +69,18 @@ export const coinRepository = {
    */
   async createWithBalance(data: Prisma.CoinTransactionUncheckedCreateInput) {
     return prisma.$transaction(async (tx) => {
-      const student = await tx.user.findUnique({
-        where: { id: data.studentId },
-        select: { redCoins: true },
-      });
-
-      if (!student) return null;
-      if (student.redCoins + data.amount < 0) return null;
-
-      await tx.user.update({
-        where: { id: data.studentId },
+      // Умова балансу — у самому UPDATE, а не в SELECT перед ним. Postgres блокує
+      // рядок і перевіряє умову вже на свіжому балансі, тож із двох одночасних
+      // списань друге просто не знайде рядка. З окремим SELECT обидва бачили
+      // однаковий баланс і обидва проходили — баланс ішов у мінус.
+      const { count } = await tx.user.updateMany({
+        where: {
+          id: data.studentId,
+          ...(data.amount < 0 && { redCoins: { gte: -data.amount } }),
+        },
         data: { redCoins: { increment: data.amount } },
-        select: { id: true },
       });
+      if (count === 0) return null;
 
       return tx.coinTransaction.create({ data, include: transactionInclude });
     });

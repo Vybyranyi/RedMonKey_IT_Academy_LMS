@@ -2,8 +2,8 @@ import { AttendanceStatus } from '@redmonkey/shared';
 
 export interface AttendanceStatusMeta {
   label: string;
-  active: string;   // класи вибраної кнопки
-  badge: string;    // класи бейджа у режимі читання
+  active: string; // класи вибраної кнопки
+  badge: string; // класи бейджа у режимі читання
 }
 
 export const ATTENDANCE_STATUS_META: Record<AttendanceStatus, AttendanceStatusMeta> = {

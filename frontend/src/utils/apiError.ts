@@ -1,7 +1,8 @@
 import { isAxiosError, isCancel } from 'axios';
 import { toast } from 'sonner';
 
-export const NETWORK_ERROR_MESSAGE = "Немає зв'язку з сервером. Перевірте інтернет і спробуйте ще раз";
+export const NETWORK_ERROR_MESSAGE =
+  "Немає зв'язку з сервером. Перевірте інтернет і спробуйте ще раз";
 
 /**
  * Refresh-токен теж недійсний: сесію завершено, повторювати запит марно.

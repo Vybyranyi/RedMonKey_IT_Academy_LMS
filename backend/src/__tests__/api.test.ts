@@ -25,7 +25,12 @@ vi.mock('../repositories/coin.repository.js', () => ({
   },
 }));
 vi.mock('../repositories/group.repository.js', () => ({
-  groupRepository: { findIdsByTeacher: vi.fn(), findByName: vi.fn(), create: vi.fn(), update: vi.fn() },
+  groupRepository: {
+    findIdsByTeacher: vi.fn(),
+    findByName: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+  },
 }));
 vi.mock('../repositories/user.repository.js', () => ({
   userRepository: {
@@ -221,6 +226,70 @@ describe('GET /api/v1/users', () => {
 
     expect(userFindAll).toHaveBeenCalledWith({ isActive: true });
   });
+
+  // Раніше query йшов у Prisma як є: колонка uuid на «js-1» відповідала 500
+  it('на groupId, що не є UUID, відповідає 400 і не йде в БД', async () => {
+    const response = await request(app)
+      .get('/api/v1/users?groupId=js-1')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('groupId має бути UUID');
+    expect(userFindAll).not.toHaveBeenCalled();
+  });
+
+  // Так StudentsPage питає список, коли фільтри порожні
+  it('порожні groupId і q не звужують вибірку', async () => {
+    const response = await request(app)
+      .get('/api/v1/users?role=student&groupId=&q=')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(200);
+    expect(userFindAll).toHaveBeenCalledWith({ isActive: true, role: UserRole.STUDENT });
+  });
+
+  it('передає в БД обрізаний пошуковий запит і групу', async () => {
+    await request(app)
+      .get(`/api/v1/users?groupId=${GROUP_ID}&q=%20Коваль%20`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(userFindAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        groupId: GROUP_ID,
+        OR: expect.arrayContaining([{ lastName: { contains: 'Коваль', mode: 'insensitive' } }]),
+      })
+    );
+  });
+});
+
+describe('ідентифікатор у шляху', () => {
+  // Prisma на колонці uuid відповідала на «abc» помилкою P2023 → 500
+  it('на id, що не є UUID, відповідає 404 і не йде в БД', async () => {
+    const response = await request(app)
+      .get('/api/v1/users/abc')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('Користувача не знайдено');
+    expect(userRepository.findByIdActive).not.toHaveBeenCalled();
+  });
+
+  it('автентифікацію перевіряє раніше за id', async () => {
+    const response = await request(app).get('/api/v1/users/abc');
+
+    expect(response.status).toBe(401);
+  });
+});
+
+describe('GET /api/v1/attendance', () => {
+  it('на lessonId, що не є UUID, відповідає 400, а не 500', async () => {
+    const response = await request(app)
+      .get('/api/v1/attendance?lessonId=lesson-1')
+      .set('Authorization', `Bearer ${teacherToken}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('lessonId має бути UUID');
+  });
 });
 
 // Mass assignment: раніше тіло PATCH /users/:id ішло в Prisma як є, і адмін
@@ -268,6 +337,21 @@ describe('PATCH /api/v1/users/:id — білий список полів', () =>
     expect(await bcrypt.compare('newSecret1', data.passwordHash as string)).toBe(true);
   });
 
+  // Раніше після скидання пароля адміном старі сесії (refresh-токени) жили далі
+  it('новий пароль відкликає всі сесії користувача', async () => {
+    await patchUser({ password: 'newSecret1' });
+
+    const [, data] = userUpdate.mock.calls[0] as [string, Record<string, unknown>];
+    expect(data.tokenVersion).toEqual({ increment: 1 });
+  });
+
+  it('без зміни пароля сесії не чіпає', async () => {
+    await patchUser({ firstName: 'Анна' });
+
+    const [, data] = userUpdate.mock.calls[0] as [string, Record<string, unknown>];
+    expect(data).not.toHaveProperty('tokenVersion');
+  });
+
   it('зайнятий email віддає 400 замість 500', async () => {
     userUpdate.mockRejectedValue(prismaError('P2002'));
 
@@ -292,7 +376,13 @@ describe('POST /api/v1/users', () => {
     const response = await request(app)
       .post('/api/v1/users')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ ...newStudent, redCoins: 1000, tokenVersion: 7, passwordHash: 'plain', academyId: 'x' });
+      .send({
+        ...newStudent,
+        redCoins: 1000,
+        tokenVersion: 7,
+        passwordHash: 'plain',
+        academyId: 'x',
+      });
 
     expect(response.status).toBe(201);
     const [data] = userCreate.mock.calls[0] as [Record<string, unknown>];
@@ -310,6 +400,30 @@ describe('POST /api/v1/users', () => {
     expect(response.status).toBe(400);
     expect(response.body.message).toBe('Некоректний email');
     expect(userCreate).not.toHaveBeenCalled();
+  });
+
+  // Раніше без пароля користувач отримував спільний пароль, записаний у коді
+  it('без пароля не створює користувача', async () => {
+    const { password: _password, ...withoutPassword } = newStudent;
+
+    const response = await request(app)
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(withoutPassword);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Потрібно вказати пароль');
+    expect(userCreate).not.toHaveBeenCalled();
+  });
+
+  it('хешує пароль, який задав адмін', async () => {
+    await request(app)
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(newStudent);
+
+    const [data] = userCreate.mock.calls[0] as [{ passwordHash: string }];
+    await expect(bcrypt.compare('secret123', data.passwordHash)).resolves.toBe(true);
   });
 
   it('неіснуючу групу відхиляє з 400', async () => {
@@ -343,7 +457,13 @@ describe('POST /api/v1/groups', () => {
 
     expect(response.status).toBe(201);
     expect(groupCreate).toHaveBeenCalledWith(
-      { name: 'JS-2026-A', description: '', startDate: null, endDate: null, academyId: 'academy-1' },
+      {
+        name: 'JS-2026-A',
+        description: '',
+        startDate: null,
+        endDate: null,
+        academyId: 'academy-1',
+      },
       []
     );
   });
@@ -383,7 +503,11 @@ describe('PATCH /api/v1/groups/:id', () => {
       .send(body);
 
   it('не передає в БД поля поза білим списком', async () => {
-    const response = await patchGroup({ description: 'Новий опис', isActive: false, academyId: 'x' });
+    const response = await patchGroup({
+      description: 'Новий опис',
+      isActive: false,
+      academyId: 'x',
+    });
 
     expect(response.status).toBe(200);
     expect(groupUpdate).toHaveBeenCalledWith(GROUP_ID, { description: 'Новий опис' }, undefined);
@@ -535,9 +659,7 @@ describe('POST /api/v1/auth/login', () => {
 
   // Без email Prisma отримала б where: { email: undefined } — тобто першого-ліпшого користувача
   it('запит без email відхиляє з 400, не звертаючись до БД', async () => {
-    const response = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ password: 'secret123' });
+    const response = await request(app).post('/api/v1/auth/login').send({ password: 'secret123' });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe('Потрібно вказати email');

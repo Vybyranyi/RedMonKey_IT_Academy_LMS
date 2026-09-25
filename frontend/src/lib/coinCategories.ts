@@ -32,8 +32,7 @@ export const COIN_CATEGORY_META: Record<CoinCategory, CoinCategoryMeta> = {
 export const getAmountColor = (amount: number): string =>
   amount >= 0 ? 'text-emerald-600' : 'text-[#C10000]';
 
-export const formatAmount = (amount: number): string =>
-  `${amount > 0 ? '+' : ''}${amount}`;
+export const formatAmount = (amount: number): string => `${amount > 0 ? '+' : ''}${amount}`;
 
 /** Медаль для перших трьох місць рейтингу; далі — нейтральний сірий. */
 export const getPositionColor = (position: number): string => {

@@ -19,7 +19,13 @@ const lessons = [
 ] as IPopulatedLesson[];
 
 const grade = (studentId: string, lessonId: string, value: number) =>
-  ({ id: `${studentId}:${lessonId}`, studentId, lessonId, value, type: GradeType.CLASSWORK }) as IPopulatedGrade;
+  ({
+    id: `${studentId}:${lessonId}`,
+    studentId,
+    lessonId,
+    value,
+    type: GradeType.CLASSWORK,
+  }) as IPopulatedGrade;
 
 const initialGrades = [
   grade('student-1', 'lesson-1', 8),
@@ -27,7 +33,10 @@ const initialGrades = [
   grade('student-2', 'lesson-1', 6),
 ];
 
-const renderJournal = (grades: IPopulatedGrade[], handlers = { onSaveGrade: vi.fn(), onDeleteGrade: vi.fn() }) => (
+const renderJournal = (
+  grades: IPopulatedGrade[],
+  handlers = { onSaveGrade: vi.fn(), onDeleteGrade: vi.fn() }
+) => (
   <GradeJournal
     students={students}
     lessons={lessons}
@@ -68,9 +77,7 @@ describe('GradeJournal — мемоізація рядків', () => {
     expect(screen.getByText('9.0')).toBeInTheDocument();
     expect(screen.getByText('6.0')).toBeInTheDocument();
 
-    rerender(
-      renderJournal([...initialGrades, grade('student-2', 'lesson-2', 12)], handlers)
-    );
+    rerender(renderJournal([...initialGrades, grade('student-2', 'lesson-2', 12)], handlers));
 
     // student-2: (6 + 12) / 2 — тепер обидва рядки мають 9.0
     expect(screen.getAllByText('9.0')).toHaveLength(2);

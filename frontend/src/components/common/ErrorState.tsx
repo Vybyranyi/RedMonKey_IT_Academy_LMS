@@ -37,9 +37,7 @@ export default function ErrorState({
       <div className="p-3 bg-red-50 text-primary rounded-xl">
         <Icon className="h-6 w-6" />
       </div>
-      {code && (
-        <p className="mt-4 text-sm font-bold tracking-[0.2em] text-[#C10000]">{code}</p>
-      )}
+      {code && <p className="mt-4 text-sm font-bold tracking-[0.2em] text-[#C10000]">{code}</p>}
       <h3 className={cn('text-xl font-bold text-[#1A2645]', code ? 'mt-1' : 'mt-4')}>{title}</h3>
       {description && (
         <p className="mt-2 max-w-md text-sm font-medium text-slate-500">{description}</p>

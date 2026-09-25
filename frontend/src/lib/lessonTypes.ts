@@ -2,8 +2,8 @@ import { LessonType } from '@redmonkey/shared';
 
 export interface LessonTypeMeta {
   label: string;
-  dot: string;    // крапка в легенді
-  event: string;  // плашка заняття в календарі
+  dot: string; // крапка в легенді
+  event: string; // плашка заняття в календарі
 }
 
 export const LESSON_TYPE_META: Record<LessonType, LessonTypeMeta> = {

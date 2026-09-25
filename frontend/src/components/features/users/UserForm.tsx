@@ -6,7 +6,13 @@ import { validateWithZod } from '@/utils/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { UserRole } from '@redmonkey/shared';
 import type { IUserDto } from '@redmonkey/shared';
 import { apiGetGroups } from '@/api/groups';
@@ -14,14 +20,22 @@ import { RefreshCw, Wand2 } from 'lucide-react';
 import { transliterate, generateRandomPassword } from '@/utils/stringUtils';
 import { toastApiError } from '@/utils/apiError';
 
+const passwordRules = z.string().min(6, 'Пароль має містити не менше 6 символів');
+
 const userSchema = z.object({
   firstName: z.string().min(2, "Ім'я має містити не менше 2 символів"),
   lastName: z.string().min(2, 'Прізвище має містити не менше 2 символів'),
   email: z.string().email('Неправильний формат email'),
-  password: z.string().min(6, 'Пароль має містити не менше 6 символів').optional().or(z.literal('')),
+  // Новому користувачу пароль обовʼязковий: бекенд більше не підставляє спільний
+  password: z.string().min(1, 'Вкажіть пароль або згенеруйте його').pipe(passwordRules),
   role: z.nativeEnum(UserRole),
   phone: z.string().optional(),
   group: z.string().optional(),
+});
+
+// При редагуванні порожній пароль означає «не змінювати»
+const editUserSchema = userSchema.extend({
+  password: passwordRules.optional().or(z.literal('')),
 });
 
 interface UserFormProps {
@@ -29,6 +43,8 @@ interface UserFormProps {
   onSubmit: (values: IUserDto) => void;
   isSubmitting: boolean;
   hideRoleSelect?: boolean;
+  /** Редагування наявного користувача: пароль можна лишити порожнім. */
+  isEdit?: boolean;
 }
 
 const defaultValues: IUserDto = {
@@ -41,8 +57,14 @@ const defaultValues: IUserDto = {
   group: '',
 };
 
-export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRoleSelect = false }: UserFormProps) {
-  const [groups, setGroups] = useState<{id: string, name: string}[]>([]);
+export default function UserForm({
+  initialValues,
+  onSubmit,
+  isSubmitting,
+  hideRoleSelect = false,
+  isEdit = false,
+}: UserFormProps) {
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -62,7 +84,7 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
     <Formik
       initialValues={mergedValues}
       validateOnBlur={false}
-      validate={validateWithZod(userSchema)}
+      validate={validateWithZod(isEdit ? editUserSchema : userSchema)}
       onSubmit={(values) => {
         const submitValues = { ...values };
         if (!submitValues.password) {
@@ -78,7 +100,9 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
         <Form className="space-y-6 pt-2">
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-sm font-medium">Ім'я *</Label>
+              <Label htmlFor="firstName" className="text-sm font-medium">
+                Ім'я *
+              </Label>
               <Field name="firstName">
                 {({ field }: FieldProps) => (
                   <Input
@@ -89,11 +113,15 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
                   />
                 )}
               </Field>
-              {errors.firstName && touched.firstName && <p className="text-xs text-destructive mt-1">{errors.firstName as string}</p>}
+              {errors.firstName && touched.firstName && (
+                <p className="text-xs text-destructive mt-1">{errors.firstName as string}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-sm font-medium">Прізвище *</Label>
+              <Label htmlFor="lastName" className="text-sm font-medium">
+                Прізвище *
+              </Label>
               <Field name="lastName">
                 {({ field }: FieldProps) => (
                   <Input
@@ -104,12 +132,16 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
                   />
                 )}
               </Field>
-              {errors.lastName && touched.lastName && <p className="text-xs text-destructive mt-1">{errors.lastName as string}</p>}
+              {errors.lastName && touched.lastName && (
+                <p className="text-xs text-destructive mt-1">{errors.lastName as string}</p>
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">Email *</Label>
+            <Label htmlFor="email" className="text-sm font-medium">
+              Email *
+            </Label>
             <div className="flex gap-2">
               <Field name="email">
                 {({ field }: FieldProps) => (
@@ -138,12 +170,16 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
                 <span className="sr-only">Генерувати Email</span>
               </Button>
             </div>
-            {errors.email && touched.email && <p className="text-xs text-destructive mt-1">{errors.email as string}</p>}
+            {errors.email && touched.email && (
+              <p className="text-xs text-destructive mt-1">{errors.email as string}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">Пароль</Label>
+              <Label htmlFor="password" className="text-sm font-medium">
+                {isEdit ? 'Новий пароль' : 'Пароль *'}
+              </Label>
               <div className="flex gap-2">
                 <Field name="password">
                   {({ field }: FieldProps) => (
@@ -151,7 +187,7 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
                       {...field}
                       id="password"
                       type="text"
-                      placeholder="Мінімум 6 символів"
+                      placeholder={isEdit ? 'Не змінювати' : 'Мінімум 6 символів'}
                       className={`h-11 ${errors.password && touched.password ? 'border-destructive' : ''}`}
                     />
                   )}
@@ -169,19 +205,18 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
                   <span className="sr-only">Генерувати Пароль</span>
                 </Button>
               </div>
-              {errors.password && touched.password && <p className="text-xs text-destructive mt-1">{errors.password as string}</p>}
+              {errors.password && touched.password && (
+                <p className="text-xs text-destructive mt-1">{errors.password as string}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm font-medium">Телефон</Label>
+              <Label htmlFor="phone" className="text-sm font-medium">
+                Телефон
+              </Label>
               <Field name="phone">
                 {({ field }: FieldProps) => (
-                  <Input
-                    {...field}
-                    id="phone"
-                    placeholder="+380..."
-                    className="h-11"
-                  />
+                  <Input {...field} id="phone" placeholder="+380..." className="h-11" />
                 )}
               </Field>
             </div>
@@ -189,7 +224,9 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
 
           {!hideRoleSelect && (
             <div className="space-y-2">
-              <Label htmlFor="role" className="text-sm font-medium">Роль *</Label>
+              <Label htmlFor="role" className="text-sm font-medium">
+                Роль *
+              </Label>
               <Select value={values.role} onValueChange={(val) => setFieldValue('role', val)}>
                 <SelectTrigger id="role" className="bg-white h-11">
                   <SelectValue placeholder="Оберіть роль" />
@@ -203,17 +240,24 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
             </div>
           )}
 
-          {(values.role === UserRole.STUDENT) && (
+          {values.role === UserRole.STUDENT && (
             <div className="space-y-2">
-              <Label htmlFor="group" className="text-sm font-medium">Група (необов'язково)</Label>
-              <Select value={values.group || "none"} onValueChange={(val) => setFieldValue('group', val === 'none' ? '' : val)}>
+              <Label htmlFor="group" className="text-sm font-medium">
+                Група (необов'язково)
+              </Label>
+              <Select
+                value={values.group || 'none'}
+                onValueChange={(val) => setFieldValue('group', val === 'none' ? '' : val)}
+              >
                 <SelectTrigger id="group" className="bg-white h-11">
                   <SelectValue placeholder="Оберіть групу" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Без групи</SelectItem>
-                  {groups.map(g => (
-                    <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                  {groups.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -221,7 +265,11 @@ export default function UserForm({ initialValues, onSubmit, isSubmitting, hideRo
           )}
 
           <div className="pt-4">
-            <Button type="submit" className="w-full h-12 text-base font-medium bg-[#C10000] hover:bg-[#A00000] text-white transition-colors" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-medium bg-[#C10000] hover:bg-[#A00000] text-white transition-colors"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? 'Збереження...' : 'Зберегти'}
             </Button>
           </div>

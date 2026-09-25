@@ -28,7 +28,9 @@ export const createUserSchema = z.object({
   lastName: nameField('Прізвище'),
   email: emailField,
   role,
-  password: passwordField.optional(),
+  // Раніше без пароля акаунт отримував спільний захардкоджений пароль — тепер його
+  // завжди задає адмін (у формі є кнопка «Згенерувати надійний пароль»)
+  password: z.string({ error: 'Потрібно вказати пароль' }).pipe(passwordField),
   phone: phoneField.optional(),
   group: group.optional(),
 });
@@ -48,5 +50,21 @@ export const updateUserSchema = z
   })
   .refine(hasAnyField, { message: 'Не передано жодного поля для оновлення' });
 
+/** GET /users. q шукає за імʼям, прізвищем або email. */
+export const userFiltersSchema = z.object({
+  role: role.optional(),
+  // «Усі групи» у фільтрі StudentsPage приходить як groupId= — це «без фільтра», а не помилка
+  groupId: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.uuid('groupId має бути UUID').optional()
+  ),
+  q: z
+    .string({ error: 'q має бути рядком' })
+    .trim()
+    .max(100, 'Задовгий пошуковий запит')
+    .optional(),
+});
+
 export type ICreateUserDto = z.infer<typeof createUserSchema>;
 export type IUpdateUserDto = z.infer<typeof updateUserSchema>;
+export type IUserFilters = z.infer<typeof userFiltersSchema>;

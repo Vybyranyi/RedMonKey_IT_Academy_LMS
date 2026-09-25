@@ -9,7 +9,9 @@ export const apiGetAttendance = async (
   return response.data;
 };
 
-export const apiSaveBulkAttendance = async (data: IBulkAttendanceDto): Promise<IPopulatedAttendance[]> => {
+export const apiSaveBulkAttendance = async (
+  data: IBulkAttendanceDto
+): Promise<IPopulatedAttendance[]> => {
   const response = await axiosInstance.post('/attendance/bulk', data);
   return response.data;
 };

@@ -5,7 +5,13 @@ import { UserRole } from '@redmonkey/shared';
 import { logout } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { navigationItems } from './navigation';
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -54,7 +60,12 @@ export default function BottomNav() {
           {tabs.map((item) => {
             const Icon = item.icon;
             return (
-              <NavLink key={item.path} to={item.path} end={item.path === '/'} className={({ isActive }) => tabClass(isActive)}>
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.path === '/'}
+                className={({ isActive }) => tabClass(isActive)}
+              >
                 {({ isActive }) => (
                   <>
                     <span className={iconClass(isActive)}>
@@ -126,7 +137,9 @@ export default function BottomNav() {
                   onClick={closeMenu}
                   className={({ isActive }) =>
                     `flex items-center gap-3.5 rounded-[12px] px-4 py-3 text-[14px] font-semibold transition-colors ${
-                      isActive ? 'bg-[#C10000] text-white' : 'text-slate-300 hover:bg-[#1A3150] hover:text-white'
+                      isActive
+                        ? 'bg-[#C10000] text-white'
+                        : 'text-slate-300 hover:bg-[#1A3150] hover:text-white'
                     }`
                   }
                 >

@@ -34,7 +34,7 @@ describe('getApiErrorMessage', () => {
   });
 
   // Сервер лежить або зник інтернет — «Не вдалося завантажити групи» тут нічого не пояснює
-  it('повідомляє про відсутність зв\'язку, якщо відповіді немає', () => {
+  it("повідомляє про відсутність зв'язку, якщо відповіді немає", () => {
     expect(getApiErrorMessage(new AxiosError('Network Error', 'ERR_NETWORK'), 'Не вдалося')).toBe(
       NETWORK_ERROR_MESSAGE
     );

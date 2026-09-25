@@ -1,19 +1,32 @@
-import { Prisma } from "@prisma/client";
-import type {
-  ILessonDto,
-  ILessonFilters,
-  IUpdateLessonDto,
-} from "@redmonkey/shared";
-import { LessonStatus, UserRole } from "@redmonkey/shared";
-import { academyRepository } from "../repositories/academy.repository.js";
-import { groupRepository } from "../repositories/group.repository.js";
-import { lessonRepository } from "../repositories/lesson.repository.js";
-import { userRepository } from "../repositories/user.repository.js";
-import { ForbiddenError, NotFoundError } from "../utils/errors.js";
-import { TokenPayload } from "../utils/jwt.js";
-import { accessPolicy } from "./access.policy.js";
-import { attendanceService } from "./attendance.service.js";
-import type { IAttendanceRecordDto } from "@redmonkey/shared";
+import { Prisma } from '@prisma/client';
+import type { ILessonDto, ILessonFilters, IUpdateLessonDto } from '@redmonkey/shared';
+import { LessonStatus, UserRole } from '@redmonkey/shared';
+import { academyRepository } from '../repositories/academy.repository.js';
+import { groupRepository } from '../repositories/group.repository.js';
+import { lessonRepository } from '../repositories/lesson.repository.js';
+import { userRepository } from '../repositories/user.repository.js';
+import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.js';
+import { TokenPayload } from '../utils/jwt.js';
+import { accessPolicy } from './access.policy.js';
+import { assertGroupStudents } from './attendance.service.js';
+import type { IAttendanceRecordDto } from '@redmonkey/shared';
+
+/**
+ * Вести заняття може лише активний викладач. Без перевірки неіснуючий id падав би
+ * на FK як 500, а id студента тихо ставав би «викладачем» — як і в групах.
+ */
+const assertActiveTeacher = async (teacherId: string) => {
+  const teacher = await userRepository.findById(teacherId);
+  if (!teacher || !teacher.isActive || teacher.role !== UserRole.TEACHER) {
+    throw new BadRequestError('teacherId має належати активному викладачу');
+  }
+};
+
+const assertActiveGroup = async (groupId: string) => {
+  const group = await groupRepository.findByIdActive(groupId);
+  if (!group) throw new NotFoundError('Групу не знайдено');
+};
+
 export const lessonService = {
   async getLessons(filters: ILessonFilters, actor: TokenPayload) {
     const { groupId, teacherId, from, to } = filters;
@@ -25,17 +38,12 @@ export const lessonService = {
     if (from || to) {
       where.date = {};
       if (from) where.date.gte = new Date(from);
-      if (to)
-        where.date.lte =
-          to.length === 10 ? new Date(`${to}T23:59:59.999Z`) : new Date(to);
+      if (to) where.date.lte = to.length === 10 ? new Date(`${to}T23:59:59.999Z`) : new Date(to);
     }
 
     if (actor.role === UserRole.TEACHER) {
       const ownGroupIds = await groupRepository.findIdsByTeacher(actor.userId);
-      where.OR = [
-        { teacherId: actor.userId },
-        { groupId: { in: ownGroupIds } },
-      ];
+      where.OR = [{ teacherId: actor.userId }, { groupId: { in: ownGroupIds } }];
     } else if (actor.role === UserRole.STUDENT) {
       const student = await userRepository.findById(actor.userId);
       if (!student?.groupId) return [];
@@ -47,27 +55,24 @@ export const lessonService = {
 
   async getLessonById(id: string, actor: TokenPayload) {
     const lesson = await lessonRepository.findById(id);
-    if (!lesson) throw new NotFoundError("Заняття не знайдено");
+    if (!lesson) throw new NotFoundError('Заняття не знайдено');
 
     const allowed = await accessPolicy.canViewLesson(actor, {
       teacherId: lesson.teacherId,
       groupId: lesson.groupId,
     });
-    if (!allowed)
-      throw new ForbiddenError("У вас немає доступу до цього заняття");
+    if (!allowed) throw new ForbiddenError('У вас немає доступу до цього заняття');
 
     return lesson;
   },
 
   async createLesson(lessonData: ILessonDto, actor: TokenPayload) {
-    const { title, description, date, duration, type, groupId, teacherId } =
-      lessonData;
+    const { title, description, date, duration, type, groupId, teacherId } = lessonData;
 
-    const finalTeacherId =
-      actor.role === UserRole.ADMIN ? teacherId || actor.userId : actor.userId;
+    const finalTeacherId = actor.role === UserRole.ADMIN ? teacherId || actor.userId : actor.userId;
 
-    const group = await groupRepository.findByIdActive(groupId);
-    if (!group) throw new NotFoundError("Групу не знайдено");
+    await assertActiveGroup(groupId);
+    if (finalTeacherId !== actor.userId) await assertActiveTeacher(finalTeacherId);
 
     const academyId = await academyRepository.getDefaultId();
 
@@ -83,30 +88,15 @@ export const lessonService = {
     });
   },
 
-  async updateLesson(
-    id: string,
-    lessonData: IUpdateLessonDto,
-    actor: TokenPayload,
-  ) {
+  async updateLesson(id: string, lessonData: IUpdateLessonDto, actor: TokenPayload) {
     const subject = await lessonRepository.findSubjectById(id);
-    if (!subject) throw new NotFoundError("Заняття не знайдено");
+    if (!subject) throw new NotFoundError('Заняття не знайдено');
 
     if (!accessPolicy.canManageLesson(actor, subject)) {
-      throw new ForbiddenError(
-        "Редагувати заняття може лише адмін або викладач-власник",
-      );
+      throw new ForbiddenError('Редагувати заняття може лише адмін або викладач-власник');
     }
 
-    const {
-      title,
-      description,
-      date,
-      duration,
-      type,
-      status,
-      groupId,
-      teacherId,
-    } = lessonData;
+    const { title, description, date, duration, type, status, groupId, teacherId } = lessonData;
     const data: Prisma.LessonUncheckedUpdateInput = {};
 
     if (title !== undefined) data.title = title;
@@ -115,10 +105,15 @@ export const lessonService = {
     if (duration !== undefined) data.duration = duration;
     if (type !== undefined) data.type = type;
     if (status !== undefined) data.status = status;
-    if (groupId !== undefined) data.groupId = groupId;
+    if (groupId !== undefined) {
+      await assertActiveGroup(groupId);
+      data.groupId = groupId;
+    }
     // Перепризначити викладача може тільки адмін
-    if (teacherId !== undefined && actor.role === UserRole.ADMIN)
+    if (teacherId !== undefined && actor.role === UserRole.ADMIN) {
+      await assertActiveTeacher(teacherId);
       data.teacherId = teacherId;
+    }
 
     return lessonRepository.update(id, data);
   },
@@ -130,28 +125,30 @@ export const lessonService = {
    */
   async cancelLesson(id: string, actor: TokenPayload) {
     const subject = await lessonRepository.findSubjectById(id);
-    if (!subject) throw new NotFoundError("Заняття не знайдено");
+    if (!subject) throw new NotFoundError('Заняття не знайдено');
 
     if (!accessPolicy.canManageLesson(actor, subject)) {
-      throw new ForbiddenError(
-        "Скасувати заняття може лише адмін або викладач-власник",
-      );
+      throw new ForbiddenError('Скасувати заняття може лише адмін або викладач-власник');
     }
 
     return lessonRepository.update(id, { status: LessonStatus.CANCELLED });
   },
   async completeLesson(id: string, records: IAttendanceRecordDto[], actor: TokenPayload) {
-  const subject = await lessonRepository.findSubjectById(id);
-  if (!subject) throw new NotFoundError('Заняття не знайдено');
+    const subject = await lessonRepository.findSubjectById(id);
+    if (!subject) throw new NotFoundError('Заняття не знайдено');
 
-  if (!accessPolicy.canManageLesson(actor, subject)) {
-    throw new ForbiddenError('Позначити заняття проведеним може лише адмін або викладач-власник');
-  }
+    if (!accessPolicy.canManageLesson(actor, subject)) {
+      throw new ForbiddenError('Позначити заняття проведеним може лише адмін або викладач-власник');
+    }
 
-  if (records.length > 0) {
-    await attendanceService.saveBulk({ lessonId: id, records }, actor);
-  }
+    // Скасоване заняття лишається в історії скасованим — у UI кнопки «Провести» для нього теж немає
+    if (subject.status === LessonStatus.CANCELLED) {
+      throw new BadRequestError('Скасоване заняття не можна провести');
+    }
 
-  return lessonRepository.update(id, { status: LessonStatus.COMPLETED });
-},
+    await assertGroupStudents(subject.groupId, records);
+
+    const academyId = await academyRepository.getDefaultId();
+    return lessonRepository.completeWithAttendance(id, academyId, records);
+  },
 };

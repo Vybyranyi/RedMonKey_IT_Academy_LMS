@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import  { Formik, Form, Field } from 'formik';
+import { Formik, Form, Field } from 'formik';
 import type { FieldProps } from 'formik';
 import { z } from 'zod';
 import { validateWithZod } from '@/utils/validation';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { IGroupDto } from '@redmonkey/shared';
 import { apiGetUsers } from '@/api/users';
-import  { UserRole } from '@redmonkey/shared';
+import { UserRole } from '@redmonkey/shared';
 import type { IUser } from '@redmonkey/shared';
 import { toastApiError } from '@/utils/apiError';
 
@@ -35,7 +35,11 @@ const defaultValues: IGroupDto = {
   students: [],
 };
 
-export default function GroupForm({ initialValues = defaultValues, onSubmit, isSubmitting }: GroupFormProps) {
+export default function GroupForm({
+  initialValues = defaultValues,
+  onSubmit,
+  isSubmitting,
+}: GroupFormProps) {
   const [allTeachers, setAllTeachers] = useState<IUser[]>([]);
 
   useEffect(() => {
@@ -70,7 +74,9 @@ export default function GroupForm({ initialValues = defaultValues, onSubmit, isS
                 />
               )}
             </Field>
-            {errors.name && touched.name && <p className="text-xs text-destructive">{errors.name}</p>}
+            {errors.name && touched.name && (
+              <p className="text-xs text-destructive">{errors.name}</p>
+            )}
           </div>
 
           <div className="space-y-1">

@@ -105,9 +105,9 @@ describe('canViewGroup', () => {
   });
 
   it('викладач не бачить чужу групу', async () => {
-    expect(await accessPolicy.canViewGroup(teacher, { teacherIds: ['teacher-9'], studentIds: [] })).toBe(
-      false
-    );
+    expect(
+      await accessPolicy.canViewGroup(teacher, { teacherIds: ['teacher-9'], studentIds: [] })
+    ).toBe(false);
   });
 
   it('студент бачить власну групу', async () => {
@@ -198,9 +198,9 @@ describe('canManageLesson', () => {
 
   // Доступ на перегляд заняття своєї групи ще не дає права його редагувати
   it('викладач не керує чужим заняттям', () => {
-    expect(accessPolicy.canManageLesson(teacher, { teacherId: 'teacher-9', groupId: OWN_GROUP })).toBe(
-      false
-    );
+    expect(
+      accessPolicy.canManageLesson(teacher, { teacherId: 'teacher-9', groupId: OWN_GROUP })
+    ).toBe(false);
   });
 
   it('студент не керує заняттями', () => {

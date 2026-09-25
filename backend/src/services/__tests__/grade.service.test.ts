@@ -103,7 +103,7 @@ describe('getGrades', () => {
   });
 
   // Фільтр групи — через id занять: JOIN на lessons змушував Postgres сканувати всю grades
-  it('групу фільтрує через id її занять, а не через зв\'язок lesson', async () => {
+  it("групу фільтрує через id її занять, а не через зв'язок lesson", async () => {
     await gradeService.getGrades({ groupId: OWN_GROUP, type: GradeType.CLASSWORK }, admin);
 
     expect(findLessonIdsByGroup).toHaveBeenCalledWith(OWN_GROUP);

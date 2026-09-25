@@ -26,7 +26,9 @@ export const statsRepository = {
       _count: { _all: true },
     });
 
-    const byStatus = new Map<string, number>(rows.map((row: { status: string; _count: { _all: number } }) => [row.status, row._count._all]));
+    const byStatus = new Map<string, number>(
+      rows.map((row: { status: string; _count: { _all: number } }) => [row.status, row._count._all])
+    );
     const present = byStatus.get('present') ?? 0;
     const late = byStatus.get('late') ?? 0;
     const absent = byStatus.get('absent') ?? 0;

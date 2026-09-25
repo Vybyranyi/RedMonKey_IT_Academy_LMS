@@ -34,20 +34,36 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
               <Label htmlFor="firstName">Ім'я *</Label>
               <Field name="firstName">
                 {({ field }: FieldProps) => (
-                  <Input {...field} id="firstName" className={errors.firstName && touched.firstName ? 'border-destructive' : undefined} />
+                  <Input
+                    {...field}
+                    id="firstName"
+                    className={
+                      errors.firstName && touched.firstName ? 'border-destructive' : undefined
+                    }
+                  />
                 )}
               </Field>
-              {errors.firstName && touched.firstName && <p className="text-xs text-destructive">{errors.firstName}</p>}
+              {errors.firstName && touched.firstName && (
+                <p className="text-xs text-destructive">{errors.firstName}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="lastName">Прізвище *</Label>
               <Field name="lastName">
                 {({ field }: FieldProps) => (
-                  <Input {...field} id="lastName" className={errors.lastName && touched.lastName ? 'border-destructive' : undefined} />
+                  <Input
+                    {...field}
+                    id="lastName"
+                    className={
+                      errors.lastName && touched.lastName ? 'border-destructive' : undefined
+                    }
+                  />
                 )}
               </Field>
-              {errors.lastName && touched.lastName && <p className="text-xs text-destructive">{errors.lastName}</p>}
+              {errors.lastName && touched.lastName && (
+                <p className="text-xs text-destructive">{errors.lastName}</p>
+              )}
             </div>
           </div>
 
@@ -56,18 +72,28 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
             <Field name="phone">
               {({ field }: FieldProps) => <Input {...field} id="phone" placeholder="+380..." />}
             </Field>
-            {errors.phone && touched.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
+            {errors.phone && touched.phone && (
+              <p className="text-xs text-destructive">{errors.phone}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="avatar">Посилання на аватар</Label>
             <Field name="avatar">
-              {({ field }: FieldProps) => <Input {...field} id="avatar" placeholder="https://..." />}
+              {({ field }: FieldProps) => (
+                <Input {...field} id="avatar" placeholder="https://..." />
+              )}
             </Field>
-            {errors.avatar && touched.avatar && <p className="text-xs text-destructive">{errors.avatar}</p>}
+            {errors.avatar && touched.avatar && (
+              <p className="text-xs text-destructive">{errors.avatar}</p>
+            )}
           </div>
 
-          <Button type="submit" className="w-full h-11 bg-[#C10000] hover:bg-[#A00000] text-white" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            className="w-full h-11 bg-[#C10000] hover:bg-[#A00000] text-white"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? 'Збереження...' : 'Зберегти зміни'}
           </Button>
         </Form>

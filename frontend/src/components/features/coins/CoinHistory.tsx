@@ -74,7 +74,9 @@ export default function CoinHistory({
                 <p className="text-xs text-slate-400 mt-0.5">
                   {transaction.isPending
                     ? 'Зберігається…'
-                    : format(new Date(transaction.createdAt), 'd MMMM yyyy, HH:mm', { locale: uk })}{' '}
+                    : format(new Date(transaction.createdAt), 'd MMMM yyyy, HH:mm', {
+                        locale: uk,
+                      })}{' '}
                   · {transaction.issuer.firstName} {transaction.issuer.lastName}
                 </p>
               </div>

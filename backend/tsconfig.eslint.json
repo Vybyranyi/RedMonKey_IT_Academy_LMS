@@ -1,0 +1,10 @@
+{
+  // Для ESLint: типи потрібні і в тестах, і в конфігах Vitest, які білд (tsconfig.json) не бере
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["src/**/*", "*.ts"],
+  "exclude": []
+}

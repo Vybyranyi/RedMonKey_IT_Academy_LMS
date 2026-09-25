@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
-import { LogOut, RotateCw, WifiOff } from "lucide-react";
-import AppRouter from "./router";
-import { useAuthStore } from "./store/authStore";
-import { apiGetMe, logout } from "./api/auth";
-import { getApiErrorMessage, isSilentError } from "./utils/apiError";
-import { Toaster } from "@/components/ui/sonner";
-import { Button } from "@/components/ui/button";
-import AppSkeleton from "@/components/layout/AppSkeleton";
-import ErrorBoundary from "@/components/common/ErrorBoundary";
-import ErrorState from "@/components/common/ErrorState";
+import { useEffect, useState } from 'react';
+import { LogOut, RotateCw, WifiOff } from 'lucide-react';
+import AppRouter from './router';
+import { useAuthStore } from './store/authStore';
+import { apiGetMe, logout } from './api/auth';
+import { getApiErrorMessage, isSilentError } from './utils/apiError';
+import { Toaster } from '@/components/ui/sonner';
+import { Button } from '@/components/ui/button';
+import AppSkeleton from '@/components/layout/AppSkeleton';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
+import ErrorState from '@/components/common/ErrorState';
 
 function App() {
   const { isAuthenticated, user, setUser } = useAuthStore();
@@ -28,7 +28,7 @@ function App() {
         // Протухлу сесію вже закрив interceptor (стор очищено, toast показано).
         // Решта — сервер недоступний: розлогінювати через це не можна
         if (!isSilentError(error)) {
-          setInitError(getApiErrorMessage(error, "Не вдалося завантажити профіль"));
+          setInitError(getApiErrorMessage(error, 'Не вдалося завантажити профіль'));
         }
       });
 

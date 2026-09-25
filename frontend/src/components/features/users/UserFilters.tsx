@@ -1,7 +1,13 @@
 import { Search } from 'lucide-react';
 import type { IGroup } from '@redmonkey/shared';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface UserFiltersProps {
   search: string;
@@ -11,7 +17,13 @@ interface UserFiltersProps {
   groups: Pick<IGroup, 'id' | 'name'>[];
 }
 
-export default function UserFilters({ search, onSearchChange, selectedGroup, onGroupChange, groups }: UserFiltersProps) {
+export default function UserFilters({
+  search,
+  onSearchChange,
+  selectedGroup,
+  onGroupChange,
+  groups,
+}: UserFiltersProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
       <div className="relative w-full sm:w-[480px]">
@@ -23,14 +35,19 @@ export default function UserFilters({ search, onSearchChange, selectedGroup, onG
           className="pl-10 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] text-sm"
         />
       </div>
-      <Select value={selectedGroup || "all"} onValueChange={(val) => onGroupChange(val === "all" ? "" : val)}>
+      <Select
+        value={selectedGroup || 'all'}
+        onValueChange={(val) => onGroupChange(val === 'all' ? '' : val)}
+      >
         <SelectTrigger className="w-full sm:w-48 h-11 bg-white border-slate-200">
           <SelectValue placeholder="Всі групи" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Всі групи</SelectItem>
           {groups.map((g) => (
-            <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+            <SelectItem key={g.id} value={g.id}>
+              {g.name}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

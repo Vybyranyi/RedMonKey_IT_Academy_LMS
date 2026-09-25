@@ -35,7 +35,8 @@ npm run build              # build --workspaces (shared → backend → frontend
 npm test                     # Vitest у всіх workspace-ах (shared → backend → frontend)
 npm run test -w backend       # тести одного workspace
 npm run test:watch -w frontend # watch-режим
-npm run lint -w frontend    # ESLint (у backend лінтера поки немає)
+npm run lint                 # ESLint у shared, backend і frontend (-w <workspace> — в одному)
+npm run format               # Prettier на весь монорепо; format:check — лише перевірка, як у CI
 npm run seed -w backend      # тестові користувачі/групи (backend/src/scripts/seed.ts)
 
 # Prisma (виконувати з backend/ або через -w backend)
@@ -57,19 +58,21 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 ```
 
 - **`routes/*.routes.ts`** — тільки `authenticate`/`authorize(roles)` middleware + прив'язка до контролера. Авторизація на рівні ролі — тут; авторизація на рівні *конкретного запису* — у сервісі.
-- **`controllers/*.controller.ts`** — розбір `req`, виклик сервісу, `try/catch` → `handleError(res, error, fallbackMessage)` (`backend/src/utils/errors.ts`). Не містять бізнес-логіки.
+- **`controllers/*.controller.ts`** — розбір `req`, виклик сервісу, `try/catch` → `handleError(res, error, fallbackMessage)` (`backend/src/utils/errors.ts`). Не містять бізнес-логіки. Усе, що приходить від клієнта, розбирають хелпери з `utils/validation.ts`: тіло — `parseBody(schema)`, query — `parseQuery(schema)` (схеми в `shared`), `:id` — `parseIdParam(id, 'Групу не знайдено')`. Сирий рядок, що дійшов до Prisma, на колонці `uuid` дає P2023, тобто 500, а не 400/404.
 - **`services/*.service.ts`** — бізнес-логіка. `access.policy.ts` — **єдине місце**, де живуть правила видимості записів (`canViewUser`, `canViewGroup`); нові перевірки доступу на рівні запису додавай туди, а не розкидай по контролерах.
 - **`repositories/*.repository.ts`** — єдиний шар, що торкається Prisma Client (`backend/src/lib/prisma.ts`). Контролери/сервіси не імпортують Prisma напряму.
 - Помилки — кидай `BadRequestError` / `UnauthorizedError` / `ForbiddenError` / `NotFoundError` (`utils/errors.ts`), вони мапляться на правильний HTTP-статус автоматично через `handleError`.
 - **Ланцюжок middleware** (`src/app.ts`): `helmet` → `cors` → `apiLimiter` (на `/api/v1`) → `express.json({ limit: '1mb' })` → маршрути → `notFoundHandler` → `errorHandler`. Глобальний `errorHandler` (`middlewares/error.middleware.ts`) — страховка для того, що проскочило повз контролер (битий JSON → 400, завелике тіло → 413, невідомий маршрут → 404 у JSON); контролери й далі самі викликають `handleError` з контекстним текстом.
 - **Rate-limit** (`middlewares/rateLimit.middleware.ts`): загальний 1000 запитів / 15 хв на IP, `/auth/login` — 10 **невдалих** спроб / 15 хв, `/auth/refresh` — 60 / 15 хв. Лічильники в пам'яті процесу. За проксі хостингу обов'язково `TRUST_PROXY=1` — інакше всі клієнти мають IP балансувальника і ділять один ліміт.
+- **Транзакції — у репозиторіях.** Баланс RedCoins і запис у ledger — одна інтерактивна транзакція (`coinRepository.createWithBalance`), причому умова «вистачає монет» стоїть у самому `UPDATE ... WHERE red_coins >= сума`, а не в `SELECT` перед ним: під READ COMMITTED два одночасні списання інакше бачать однаковий баланс і обидва проходять. Масові оцінки/явка — пакетна `$transaction([...])`; проведення заняття кладе статус і явку в один пакет (`lessonRepository.completeWithAttendance` + `attendanceUpserts`). Тести — `repositories/__tests__/transactions.test.ts`.
 - **Секрети `User`** (`passwordHash`, `tokenVersion`) читають лише `userRepository.findCredentialsByEmail` / `findCredentialsById` / `updatePassword` — для `auth.service`. Решта методів мають явний `select` без них, а кожен зв'язок на `User` в інших репозиторіях — власний `select`. Це перевіряє `repositories/__tests__/secret-fields.test.ts` (проганяє кожен метод кожного репозиторію), тож новий запит без `select` на `users` зламає CI.
 
 ### Auth
 
 - Access-токен — короткоживучий (`JWT_ACCESS_EXPIRES`, дефолт 15m), у заголовку `Authorization: Bearer`.
 - Refresh-токен — httpOnly cookie, довгоживучий (дефолт 7d), містить `tokenVersion`.
-- Logout інкрементує `User.tokenVersion` → усі видані раніше refresh-токени (на всіх пристроях) миттєво стають невалідними (`auth.service.ts`).
+- Logout інкрементує `User.tokenVersion` → усі видані раніше refresh-токени (на всіх пристроях) миттєво стають невалідними (`auth.service.ts`). Так само — зміна пароля самим користувачем і скидання пароля адміном (`PATCH /users/:id`).
+- Пароль нового користувача задає адмін (`POST /users` без пароля — 400); спільного пароля за замовчуванням немає.
 - Реєстрації через публічний ендпоінт немає — користувачів створює `admin` (`POST /users`) або сід-скрипт.
 - Фронтенд: `frontend/src/api/axios.ts` — interceptor ловить 401, чергує паралельні запити (`isRefreshing`/`failedQueue`), рефрешить токен один раз і повторює оригінальний запит. Якщо refresh відхилено (401/403) — сесія завершується **один раз** (`clearAuth` + toast), усі запити отримують `SessionExpiredError`, а 401 після логауту вже не запускає новий рефреш. Збій мережі під час рефрешу не розлогінює. `/auth/login`, `/auth/refresh`, `/auth/logout` рефреш не запускають — їхній 401 означає невірні облікові дані.
 
@@ -165,9 +168,9 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 | coins | `/coins/transactions`, `/coins/leaderboard`, `/coins/students/:id/balance` | `CoinsPage` (`CoinAwardForm`, `CoinBalanceCard`, `CoinHistory`, `CoinLeaderboard`) |
 | dashboard | `stats.repository.ts` | `DashboardPage` з контентом за роллю |
 
-Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)). З п. 6.1 закрито безпеку backend (helmet, rate-limit, ліміт тіла, глобальний error-handler + 404, аудит секретних полів) і базу даних (міграції, `EXPLAIN` журналу й leaderboard). П. 6.2 (стійкість UI) закрито повністю: 404/403, ErrorBoundary, втрата сесії, Bottom Nav, loading/empty/error стани, кеш і скасування запитів, оптимістичні оновлення. Відкриті: деплой, ESLint у backend, демо-дані й документація. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
+Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)). З п. 6.1 закрито безпеку backend (helmet, rate-limit, ліміт тіла, глобальний error-handler + 404, аудит секретних полів) і базу даних (міграції, `EXPLAIN` журналу й leaderboard). П. 6.2 (стійкість UI) закрито повністю: 404/403, ErrorBoundary, втрата сесії, Bottom Nav, loading/empty/error стани, кеш і скасування запитів, оптимістичні оновлення. П. 6.3 (якість коду і CI) закрито: ESLint у backend і shared, Prettier на весь монорепо, format/lint/build/test у CI, тести транзакцій, код-рев'ю з виправленнями. Відкриті: деплой, документація, демо-дані й дрібниці з 6.6. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
 
-Свідомі борги, зафіксовані окремо: немає лінтера в backend, RLS вимкнений, `SettingsPage` — заглушка (з empty state). `GET /grades/summary` лишився на backend, але журнал рахує середнє з уже завантажених оцінок і цей запит не робить.
+Свідомі борги, зафіксовані окремо: RLS вимкнений, `SettingsPage` — заглушка (з empty state). `GET /grades/summary` лишився на backend, але журнал рахує середнє з уже завантажених оцінок і цей запит не робить.
 
 ## Тести
 
@@ -175,7 +178,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 - `shared` — Zod-схеми: межі діапазонів і тексти помилок (`Grade.value` 1..12 і `CoinTransaction.amount ≠ 0` живуть лише тут, у БД CHECK-обмежень немає).
 - `backend` unit — утиліти, `access.policy` (матриця ролей), сервіси з `vi.mock()` на репозиторії.
-- `backend` репозиторії — `repositories/__tests__/secret-fields.test.ts`: аудит проєкцій (див. «Секрети `User`» вище).
+- `backend` репозиторії — `repositories/__tests__/secret-fields.test.ts`: аудит проєкцій (див. «Секрети `User`» вище); `transactions.test.ts`: що саме йде в одну транзакцію (фейковий `$transaction` дає колбеку окремий `tx`, тож запис повз транзакцію видно). Конкурентність фейк не відтворить — такі речі перевіряй на локальному Postgres.
 - `backend` rate-limit — `src/__tests__/rateLimit.test.ts` окремим файлом: лічильники живуть у пам'яті модуля, а Vitest дає кожному файлу свіжий `app`, тож вичерпаний ліміт не зачіпає інші API-тести.
 - `backend` API — `src/__tests__/api.test.ts`: supertest ганяє справжні маршрути, middleware, контролери й сервіси, а моки стоять на найглибшому шарі (репозиторії + `lib/prisma.js`). Тому `app` зібрано в `src/app.ts` окремо від `listen()` у `src/index.ts` — не зливай їх назад.
 - `frontend` — jsdom + React Testing Library; HTTP підміняє адаптер axios (`axiosInstance.defaults.adapter`), а не реальні запити. Для сторінок є хелпер `src/test/apiMock.ts`: `installApi({ 'POST /grades': ... })`, `deferred()` (щоб перевірити стан UI, поки «сервер» думає), `httpError()`, `callsTo()` (що сторінка не перезапитала зайве).
@@ -190,7 +193,9 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 - Коміти — Conventional Commits (`feat(scope): ...`, `fix(scope): ...` тощо), докладно в [CONTRIBUTING.md](./CONTRIBUTING.md#-commit-messages).
 - Гілки — `feature/`, `fix/`, `chore/`, `refactor/`, `docs/` префікс + короткий опис через дефіс, від `develop`.
 - Не пиши docstring-блоки чи очевидні коментарі — тільки там, де є неочевидний "чому" (як-от коментарі в `access.policy.ts` про RLS-майбутнє).
-- CI (`.github/workflows/ci.yml`) при кожному PR/push у `main`/`develop` ганяє `npm run lint -w frontend` і `npm run build`. Backend-лінтера в CI немає (у `backend/package.json` немає `lint`-скрипта).
+- Форматування — Prettier (`.prettierrc.json`: одинарні лапки, `;`, ширина 100). Не форматуються ShadCN-компоненти (`components/ui/`, щоб оновлення з CLI давали чистий дифф) і Markdown. Масове переформатування — в `.git-blame-ignore-revs`.
+- ESLint — свій `eslint.config` у кожному workspace. У backend є правила на типах (`no-floating-promises`, `no-misused-promises`): вони ловлять забутий `await` на запиті до БД і `expect(...).rejects` без `await`. Типи тестів для лінтера — `backend/tsconfig.eslint.json`.
+- CI (`.github/workflows/ci.yml`) при кожному PR/push у `main`/`develop`: `format:check` → `build` → `lint` (після build, бо правилам на типах потрібні Prisma Client і `shared/dist`) → `npm test`.
 
 ## Файли, які варто прочитати за потреби
 

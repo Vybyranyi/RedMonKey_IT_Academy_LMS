@@ -1,0 +1,8 @@
+# Git на Windows (core.autocrlf=true) інакше видає файли з CRLF,
+# і `npm run format:check` падає на кожному з них
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

@@ -76,6 +76,9 @@ const SECRET_READERS = [
   'userRepository.updatePassword',
 ];
 
+/** Повертають лише { count } — рядків, а отже й секретів, у відповіді немає (і select вони не приймають). */
+const COUNT_ONLY_METHODS = ['updateMany', 'deleteMany', 'createMany', 'count'];
+
 /** Методи, яким дефолтні аргументи не підходять (масиви, числа). */
 const ARGS: Record<string, unknown[]> = {
   'attendanceRepository.upsertMany': [
@@ -93,6 +96,11 @@ const ARGS: Record<string, unknown[]> = {
   'groupRepository.create': [{ academyId: 'academy-1', name: 'JS-1' }, ['teacher-1']],
   'groupRepository.update': ['group-1', {}, ['teacher-1']],
   'coinRepository.createWithBalance': [{ studentId: 'student-1', amount: 5 }],
+  'lessonRepository.completeWithAttendance': [
+    'lesson-1',
+    'academy-1',
+    [{ studentId: 'student-1', status: 'present', note: '' }],
+  ],
   'coinRepository.findLeaderboard': [{}, 10],
 };
 const DEFAULT_ARGS = ['id-1', {}];
@@ -144,7 +152,11 @@ const inspect = async (name: string) => {
     const label = `prisma.${call.model}.${call.method}`;
     // Записи в users без select повертають увесь рядок — навіть якщо результат
     // зараз викидається, наступна правка легко почне віддавати його клієнту
-    if (call.model === 'user' && !('select' in (call.args ?? {}))) {
+    if (
+      call.model === 'user' &&
+      !COUNT_ONLY_METHODS.includes(call.method) &&
+      !('select' in (call.args ?? {}))
+    ) {
       problems.push(`${label}: запит до users без явного select`);
     }
     collectProblems(call.args, [label], problems);

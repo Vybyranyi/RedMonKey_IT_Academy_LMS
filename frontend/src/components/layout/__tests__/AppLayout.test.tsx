@@ -61,12 +61,11 @@ describe('BottomNav', () => {
     renderLayout('/');
     const nav = screen.getByRole('navigation', { name: 'Основна навігація' });
 
-    expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual([
-      'Головна',
-      'Розклад',
-      'Оцінки',
-      'Монети',
-    ]);
+    expect(
+      within(nav)
+        .getAllByRole('link')
+        .map((link) => link.textContent)
+    ).toEqual(['Головна', 'Розклад', 'Оцінки', 'Монети']);
     expect(within(nav).getByRole('button', { name: 'Ще' })).toBeInTheDocument();
   });
 
@@ -76,13 +75,11 @@ describe('BottomNav', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Ще' }));
     const menu = await screen.findByRole('dialog');
 
-    expect(within(menu).getAllByRole('link').map((link) => link.textContent)).toEqual([
-      'АКАнна КоваленкоАдміністратор',
-      'Студенти',
-      'Викладачі',
-      'Групи',
-      'Налаштування',
-    ]);
+    expect(
+      within(menu)
+        .getAllByRole('link')
+        .map((link) => link.textContent)
+    ).toEqual(['АКАнна КоваленкоАдміністратор', 'Студенти', 'Викладачі', 'Групи', 'Налаштування']);
     expect(within(menu).getByRole('button', { name: 'Вийти' })).toBeInTheDocument();
   });
 

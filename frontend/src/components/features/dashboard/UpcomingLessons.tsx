@@ -49,7 +49,8 @@ export default function UpcomingLessons({
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-800 truncate">{lesson.title}</p>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    {format(new Date(lesson.date), 'd MMM, HH:mm', { locale: uk })} · {lesson.group.name}
+                    {format(new Date(lesson.date), 'd MMM, HH:mm', { locale: uk })} ·{' '}
+                    {lesson.group.name}
                   </p>
                 </div>
                 <Badge variant="secondary" className="shrink-0">

@@ -10,7 +10,12 @@ import StudentsPage from '../StudentsPage';
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
 
-const admin = { id: 'admin-1', role: UserRole.ADMIN, firstName: 'Ірина', lastName: 'Адміненко' } as IUser;
+const admin = {
+  id: 'admin-1',
+  role: UserRole.ADMIN,
+  firstName: 'Ірина',
+  lastName: 'Адміненко',
+} as IUser;
 const anna = {
   id: 'student-1',
   firstName: 'Анна',

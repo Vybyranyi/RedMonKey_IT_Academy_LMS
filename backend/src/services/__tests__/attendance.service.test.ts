@@ -7,13 +7,18 @@ import { lessonRepository } from '../../repositories/lesson.repository.js';
 import { userRepository } from '../../repositories/user.repository.js';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../../utils/errors.js';
 import type { TokenPayload } from '../../utils/jwt.js';
-import { attendanceService } from '../attendance.service.js';
+import { assertGroupStudents, attendanceService } from '../attendance.service.js';
 
 vi.mock('../../repositories/academy.repository.js', () => ({
   academyRepository: { getDefaultId: vi.fn() },
 }));
 vi.mock('../../repositories/attendance.repository.js', () => ({
-  attendanceRepository: { findAll: vi.fn(), findById: vi.fn(), update: vi.fn(), upsertMany: vi.fn() },
+  attendanceRepository: {
+    findAll: vi.fn(),
+    findById: vi.fn(),
+    update: vi.fn(),
+    upsertMany: vi.fn(),
+  },
 }));
 vi.mock('../../repositories/group.repository.js', () => ({
   groupRepository: { findIdsByTeacher: vi.fn() },
@@ -91,9 +96,9 @@ describe('saveBulk', () => {
   it('викладач не відмічає явку за чуже заняття', async () => {
     findSubjectById.mockResolvedValue({ teacherId: 'teacher-9', groupId: OWN_GROUP } as never);
 
-    await expect(attendanceService.saveBulk({ lessonId: LESSON_ID, records }, teacher)).rejects.toThrow(
-      ForbiddenError
-    );
+    await expect(
+      attendanceService.saveBulk({ lessonId: LESSON_ID, records }, teacher)
+    ).rejects.toThrow(ForbiddenError);
   });
 
   // Не даємо відмітити чужих студентів: усі мають бути з групи цього заняття
@@ -107,6 +112,27 @@ describe('saveBulk', () => {
       attendanceService.saveBulk({ lessonId: LESSON_ID, records: withForeign }, teacher)
     ).rejects.toThrow(BadRequestError);
     expect(upsertMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('assertGroupStudents', () => {
+  it('звіряє записи з активними студентами групи', async () => {
+    await assertGroupStudents(OWN_GROUP, [
+      { studentId: 'student-1', status: AttendanceStatus.PRESENT, note: '' },
+    ]);
+
+    expect(userFindAll).toHaveBeenCalledWith({
+      role: UserRole.STUDENT,
+      groupId: OWN_GROUP,
+      isActive: true,
+    });
+  });
+
+  // Заняття можна провести без явки — тоді й перевіряти нема кого
+  it('без записів не робить запиту', async () => {
+    await assertGroupStudents(OWN_GROUP, []);
+
+    expect(userFindAll).not.toHaveBeenCalled();
   });
 });
 

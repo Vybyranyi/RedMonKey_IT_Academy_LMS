@@ -9,7 +9,7 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.
 import { TokenPayload } from '../utils/jwt.js';
 import { coinRepository } from '../repositories/coin.repository.js';
 import { statsRepository } from '../repositories/stats.repository.js';
-import type { ICreateUserDto, IUpdateUserDto, IUserStats } from '@redmonkey/shared';
+import type { ICreateUserDto, IUpdateUserDto, IUserFilters, IUserStats } from '@redmonkey/shared';
 
 /**
  * Помилки обмежень БД, які означають некоректний ввід, а не збій сервера:
@@ -24,27 +24,26 @@ const rethrowAsBadRequest = (error: unknown): never => {
 };
 
 export const userService = {
-  async getUsers(query: { role?: any; groupId?: any; q?: any }, currentUserRole?: UserRole) {
-    const { role, groupId, q } = query;
+  async getUsers(filters: IUserFilters, currentUserRole?: UserRole) {
+    const { role, groupId, q } = filters;
     const where: Prisma.UserWhereInput = { isActive: true };
 
     // Викладач бачить лише студентів — це обмеження перекриває будь-який фільтр role.
     if (currentUserRole === UserRole.TEACHER) {
       where.role = UserRole.STUDENT;
-    } else if (role && Object.values(UserRole).includes(role as UserRole)) {
-      where.role = role as UserRole;
+    } else if (role) {
+      where.role = role;
     }
 
     if (groupId) {
-      where.groupId = String(groupId);
+      where.groupId = groupId;
     }
 
     if (q) {
-      const term = String(q);
       where.OR = [
-        { firstName: { contains: term, mode: 'insensitive' } },
-        { lastName: { contains: term, mode: 'insensitive' } },
-        { email: { contains: term, mode: 'insensitive' } },
+        { firstName: { contains: q, mode: 'insensitive' } },
+        { lastName: { contains: q, mode: 'insensitive' } },
+        { email: { contains: q, mode: 'insensitive' } },
       ];
     }
 
@@ -69,7 +68,7 @@ export const userService = {
     return user;
   },
 
-/** Зведена статистика студента: оцінки, монети, відвідуваність (ТЗ 4.2). */
+  /** Зведена статистика студента: оцінки, монети, відвідуваність (ТЗ 4.2). */
   async getUserStats(id: string, actor: TokenPayload): Promise<IUserStats> {
     const user = await userRepository.findById(id);
     if (!user || !user.isActive) {
@@ -100,7 +99,6 @@ export const userService = {
     };
   },
 
-
   // Тіло вже пройшло createUserSchema: поля поза білим списком сюди не доходять
   async createUser(userData: ICreateUserDto) {
     const { firstName, lastName, email, password, role, phone, group } = userData;
@@ -110,7 +108,7 @@ export const userService = {
     }
 
     const academyId = await academyRepository.getDefaultId();
-    const passwordHash = await bcrypt.hash(password || 'TemporaryPassword123!', SALT_ROUNDS);
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
     // Членство в групі — це FK users.group_id. Жодних масивів для синхронізації.
     return userRepository
@@ -122,7 +120,7 @@ export const userService = {
         passwordHash,
         role,
         phone: phone ?? null,
-        groupId: role === UserRole.STUDENT ? group ?? null : null,
+        groupId: role === UserRole.STUDENT ? (group ?? null) : null,
         redCoins: 0,
       })
       .catch(rethrowAsBadRequest);
@@ -140,12 +138,18 @@ export const userService = {
 
     const data: Prisma.UserUncheckedUpdateInput = { ...rest };
     if (role !== undefined) data.role = role;
-    if (password) data.passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    if (password) {
+      data.passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+      // Адмін скидає пароль зазвичай тоді, коли акаунт скомпрометовано. Як і при
+      // зміні пароля самим користувачем, відкликаємо всі видані refresh-токени —
+      // інакше чужа сесія жила б іще до 7 днів
+      data.tokenVersion = { increment: 1 };
+    }
 
     // Перепризначення групи — одне поле FK. Не-студент групи не має.
     if ('group' in updateBody || role !== undefined) {
       const finalRole = (role ?? oldUser.role) as UserRole;
-      data.groupId = finalRole === UserRole.STUDENT ? group ?? null : null;
+      data.groupId = finalRole === UserRole.STUDENT ? (group ?? null) : null;
     }
 
     return userRepository.update(id, data).catch(rethrowAsBadRequest);

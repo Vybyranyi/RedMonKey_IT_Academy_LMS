@@ -1,5 +1,7 @@
-import { Prisma } from "@prisma/client";
-import { prisma } from "../lib/prisma.js";
+import { Prisma } from '@prisma/client';
+import type { IAttendanceRecordDto } from '@redmonkey/shared';
+import { prisma } from '../lib/prisma.js';
+import { attendanceUpserts } from './attendance.repository.js';
 
 const teacherSelect = {
   id: true,
@@ -19,7 +21,7 @@ export const lessonRepository = {
   async findAll(where: Prisma.LessonWhereInput) {
     return prisma.lesson.findMany({
       where,
-      orderBy: { date: "asc" },
+      orderBy: { date: 'asc' },
       include: lessonInclude,
     });
   },
@@ -51,5 +53,21 @@ export const lessonRepository = {
       data,
       include: lessonInclude,
     });
+  },
+
+  /**
+   * Проведення заняття: статус completed і явка — одна транзакція. Двома окремими
+   * збій між ними лишав би заняття «запланованим» із уже збереженою явкою.
+   */
+  async completeWithAttendance(id: string, academyId: string, records: IAttendanceRecordDto[]) {
+    const [lesson] = await prisma.$transaction([
+      prisma.lesson.update({
+        where: { id },
+        data: { status: 'completed' },
+        include: lessonInclude,
+      }),
+      ...attendanceUpserts(academyId, id, records),
+    ]);
+    return lesson;
   },
 };

@@ -89,7 +89,8 @@ RedMonKey_IT_Academy_LMS/
 | `npm run prisma:migrate -w backend -- --name <назва>` | Створює міграцію після зміни `schema.prisma` |
 | `npm run prisma:deploy -w backend` | Застосовує міграції з репозиторію |
 | `npm run prisma:status -w backend` | Показує, чи відстає БД від міграцій |
-| `npm run lint -w frontend` | Запускає ESLint у frontend |
+| `npm run lint` | ESLint у shared, backend і frontend |
+| `npm run format` | Форматує код Prettier'ом (`format:check` — лише перевіряє, як у CI) |
 
 ---
 

@@ -680,11 +680,11 @@ Bottom Navigation (mobile):
 
 #### 6.3 Якість коду і CI
 
-- [ ] ESLint + скрипт `lint` у `backend` (зараз його немає взагалі) і додати крок у CI
-- [ ] Prettier + `.editorconfig` на весь монорепо
-- [ ] Додати `npm test` у CI-workflow поруч із `build`
-- [ ] Дописати тести на транзакційну логіку: `grade.service`, `coin.service`, `attendance.service` (баланс + ledger в одній транзакції)
-- [ ] Код-рев'ю та фікс багів
+- [x] ESLint + скрипт `lint` у `backend` (зараз його немає взагалі) і додати крок у CI — `lint` є в `backend` і `shared`, у backend із правилами на типах (`no-floating-promises` ловить забутий `await` на запиті до БД і в `expect(...).rejects`); кореневий `npm run lint` ганяє всі три workspace, у CI — після build
+- [x] Prettier + `.editorconfig` на весь монорепо — `.prettierrc.json` (параметри підібрано під стиль, що вже переважав), `npm run format` / `format:check`, крок у CI; коміт переформатування в `.git-blame-ignore-revs`. Поза Prettier: ShadCN-компоненти й Markdown
+- [x] Додати `npm test` у CI-workflow поруч із `build` — був уже з тижня 5, лишається останнім кроком
+- [x] Дописати тести на транзакційну логіку: `grade.service`, `coin.service`, `attendance.service` (баланс + ledger в одній транзакції) — транзакції живуть у репозиторіях, тож тести там: `repositories/__tests__/transactions.test.ts`. Знайдено й виправлено два баги: одночасні списання заводили баланс у мінус (перевірку балансу перенесено в сам `UPDATE`), а проведення заняття зберігало явку і статус двома окремими транзакціями
+- [x] Код-рев'ю та фікс багів — спільний пароль за замовчуванням для нових акаунтів; скидання пароля адміном не відкликало сесії; 500 замість 400/404 на невалідних id у шляху, query `/users` і `/attendance`, `teacherId`/`groupId` заняття, `relatedLessonId`; проведення скасованого заняття
 
 #### 6.4 Документація
 

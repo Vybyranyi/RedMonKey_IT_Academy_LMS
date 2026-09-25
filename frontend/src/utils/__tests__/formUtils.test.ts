@@ -26,6 +26,8 @@ describe('getChangedFields', () => {
 
   // Очищення поля — теж зміна: інакше PATCH ніколи не зміг би стерти телефон
   it('вважає очищення поля зміною', () => {
-    expect(getChangedFields({ ...initial, phone: '+380671234567' }, initial)).toEqual({ phone: '' });
+    expect(getChangedFields({ ...initial, phone: '+380671234567' }, initial)).toEqual({
+      phone: '',
+    });
   });
 });

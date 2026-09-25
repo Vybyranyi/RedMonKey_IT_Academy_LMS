@@ -144,9 +144,11 @@ Issue → Branch → Commits → Pull Request → Code Review → Merge
    git checkout -b feature/your-feature-name
    ```
 3. **Роби невеликі атомарні коміти** в процесі роботи
-4. **Перед PR** — self-review: перечитай свій diff, запусти лінтер:
+4. **Перед PR** — self-review: перечитай свій diff і прожени те саме, що й CI:
    ```bash
-   npm run lint        # перевір помилки
+   npm run format      # Prettier (VS Code робить це сам при збереженні)
+   npm run lint        # ESLint у shared, backend і frontend
+   npm test            # тести всіх workspace
    npm run dev         # переконайся, що все запускається
    ```
 5. **Відкрий Pull Request** на `develop`, заповни шаблон
@@ -235,10 +237,26 @@ npm run test:watch -w frontend  # watch-режим під час розробк�
 
 ## 🎨 Стиль коду
 
-- **Форматер**: Prettier — запускається автоматично або вручну
-- **Лінтер**: ESLint — перевір помилки перед PR
+- **Форматер**: Prettier, правила в `.prettierrc.json` (одинарні лапки, `;`, ширина рядка 100). У VS Code форматує при збереженні (розширення — у `.vscode/extensions.json`), вручну — `npm run format`. CI запускає `npm run format:check` і падає на невідформатованому файлі. Не форматуються ShadCN-компоненти (`frontend/src/components/ui/`) і Markdown — див. `.prettierignore`.
+- **Лінтер**: ESLint — `npm run lint` з кореня перевіряє всі три workspace, CI падає на будь-якій помилці. У backend лінтер знає типи й ловить забутий `await` (запит до БД поза `try/catch` чи транзакцією, `expect(...).rejects` без `await` у тесті).
+- **`git blame`** пропускає коміт масового форматування, якщо один раз виконати `git config blame.ignoreRevsFile .git-blame-ignore-revs` (GitHub робить це сам).
 - **Мова коду**: англійська (назви змінних, функцій, коментарі в коді)
 - **Мова комунікації**: українська (PR описи, коментарі в review, коміт повідомлення)
+
+### Гілка, створена до появи Prettier
+
+Увесь код один раз переформатовано (коміт `4a3eefd`), тож старіша гілка при звичайному злитті отримає конфлікти в рядках, де змінилось лише форматування. Щоб лишились тільки справжні:
+
+```bash
+git fetch origin
+git merge 45d9369            # коміт із конфігом Prettier, ще до переформатування
+npm install
+npm run format && git commit -am "style: Prettier для файлів гілки"
+git merge -X ours 4a3eefd    # саме переформатування: у твоїх рядках лишається твоя, уже відформатована версія
+git merge origin/main        # решта змін — тут конфлікти вже справжні
+```
+
+`-X ours` безпечний лише для `4a3eefd`: у ньому немає нічого, крім форматування. Для звичайних комітів так не роби.
 
 ---
 

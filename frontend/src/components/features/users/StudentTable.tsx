@@ -1,4 +1,11 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -62,18 +69,26 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                   </TableCell>
                   <TableCell>
                     {student.group ? (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-600 border-none rounded-full px-3 font-semibold text-xs">
+                      <Badge
+                        variant="outline"
+                        className="bg-blue-50 text-blue-600 border-none rounded-full px-3 font-semibold text-xs"
+                      >
                         {typeof student.group === 'object' ? student.group.name : 'Група'}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="bg-slate-100 text-slate-600 border-none rounded-full px-3 font-semibold text-xs">
+                      <Badge
+                        variant="outline"
+                        className="bg-slate-100 text-slate-600 border-none rounded-full px-3 font-semibold text-xs"
+                      >
                         Без групи
                       </Badge>
                     )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded flex items-center justify-center font-bold text-xs ${getGradeColor(avgScore)}`}>
+                      <div
+                        className={`w-7 h-7 rounded flex items-center justify-center font-bold text-xs ${getGradeColor(avgScore)}`}
+                      >
                         {Math.round(avgScore)}
                       </div>
                       <span className="text-sm font-medium text-slate-600">{avgScore}</span>
@@ -97,7 +112,13 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={student.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600'}>
+                    <Badge
+                      className={
+                        student.isActive
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-slate-100 text-slate-600'
+                      }
+                    >
                       {student.isActive ? 'Активний' : 'Неактивний'}
                     </Badge>
                   </TableCell>

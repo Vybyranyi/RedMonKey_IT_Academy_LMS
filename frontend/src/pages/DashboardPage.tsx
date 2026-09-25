@@ -395,7 +395,9 @@ function StudentDashboard({
                 <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-sm text-slate-600">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-slate-400" />
-                    <span>{format(new Date(nextLesson.date), 'EEEE, d MMMM, HH:mm', { locale: uk })}</span>
+                    <span>
+                      {format(new Date(nextLesson.date), 'EEEE, d MMMM, HH:mm', { locale: uk })}
+                    </span>
                   </div>
                   <Button size="sm" onClick={onSelectLesson}>
                     Перейти до розкладу
@@ -404,7 +406,9 @@ function StudentDashboard({
               </div>
             ) : (
               <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center">
-                <p className="text-slate-400 text-sm font-medium">Найближчих занять не заплановано</p>
+                <p className="text-slate-400 text-sm font-medium">
+                  Найближчих занять не заплановано
+                </p>
               </div>
             )}
           </CardContent>

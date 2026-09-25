@@ -1,6 +1,11 @@
 import { Prisma } from '@prisma/client';
 import { UserRole } from '@redmonkey/shared';
-import type { IBulkAttendanceDto, IUpdateAttendanceDto } from '@redmonkey/shared';
+import type {
+  IAttendanceFilters,
+  IAttendanceRecordDto,
+  IBulkAttendanceDto,
+  IUpdateAttendanceDto,
+} from '@redmonkey/shared';
 import { attendanceRepository } from '../repositories/attendance.repository.js';
 import { lessonRepository } from '../repositories/lesson.repository.js';
 import { userRepository } from '../repositories/user.repository.js';
@@ -9,23 +14,41 @@ import { accessPolicy } from './access.policy.js';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.js';
 import { TokenPayload } from '../utils/jwt.js';
 
+/**
+ * Відмітити можна лише активних студентів групи заняття — інакше викладач
+ * поставив би явку чужим студентам. Спільне для масової явки й проведення заняття.
+ */
+export const assertGroupStudents = async (groupId: string, records: IAttendanceRecordDto[]) => {
+  if (records.length === 0) return;
+
+  const groupStudents = await userRepository.findAll({
+    role: UserRole.STUDENT,
+    groupId,
+    isActive: true,
+  });
+  const allowedIds = new Set(groupStudents.map((student) => student.id));
+  if (records.some((record) => !allowedIds.has(record.studentId))) {
+    throw new BadRequestError('Серед записів є студенти, які не належать до групи заняття');
+  }
+};
+
 export const attendanceService = {
-  async getAttendance(query: { lessonId?: any; studentId?: any }, actor: TokenPayload) {
-    const { lessonId, studentId } = query;
+  async getAttendance(filters: IAttendanceFilters, actor: TokenPayload) {
+    const { lessonId, studentId } = filters;
     const where: Prisma.AttendanceWhereInput = {};
 
     if (lessonId) {
       // Побачити явку заняття може лише той, хто має доступ до самого заняття
-      const subject = await lessonRepository.findSubjectById(String(lessonId));
+      const subject = await lessonRepository.findSubjectById(lessonId);
       if (!subject) throw new NotFoundError('Заняття не знайдено');
 
       const allowed = await accessPolicy.canViewLesson(actor, subject);
       if (!allowed) throw new ForbiddenError('У вас немає доступу до цього заняття');
 
-      where.lessonId = String(lessonId);
+      where.lessonId = lessonId;
     }
 
-    if (studentId) where.studentId = String(studentId);
+    if (studentId) where.studentId = studentId;
 
     // Студент бачить лише власну явку — це перекриває будь-який studentId із query
     if (actor.role === UserRole.STUDENT) {
@@ -52,17 +75,7 @@ export const attendanceService = {
       throw new ForbiddenError('Відмічати явку може лише адмін або викладач-власник заняття');
     }
 
-    // Не даємо відмітити чужих студентів: усі мають бути з групи цього заняття
-    const groupStudents = await userRepository.findAll({
-      role: UserRole.STUDENT,
-      groupId: subject.groupId,
-      isActive: true,
-    });
-    const allowedIds = new Set(groupStudents.map((student) => student.id));
-    const foreign = records.filter((record) => !allowedIds.has(record.studentId));
-    if (foreign.length > 0) {
-      throw new BadRequestError('Серед записів є студенти, які не належать до групи заняття');
-    }
+    await assertGroupStudents(subject.groupId, records);
 
     const academyId = await academyRepository.getDefaultId();
     return attendanceRepository.upsertMany(academyId, lessonId, records);

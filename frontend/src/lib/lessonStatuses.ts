@@ -2,7 +2,7 @@ import { LessonStatus } from '@redmonkey/shared';
 
 export interface LessonStatusMeta {
   label: string;
-  badge: string;  // класи бейджа статусу
+  badge: string; // класи бейджа статусу
 }
 
 export const LESSON_STATUS_META: Record<LessonStatus, LessonStatusMeta> = {
