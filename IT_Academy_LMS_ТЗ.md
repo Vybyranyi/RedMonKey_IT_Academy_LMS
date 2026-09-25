@@ -1,7 +1,7 @@
 # Технічне Завдання: IT Academy LMS
 ### Навчальна LMS-система для управління навчальним процесом в IT-академії
 
-> **Версія:** 1.1 | **Команда:** 5 студентів | **Стек:** React · Express · PostgreSQL (Prisma) · ShadCN UI · Tailwind CSS
+> **Версія:** 1.2 | **Команда:** 5 студентів | **Стек:** React · Express · PostgreSQL (Prisma) · ShadCN UI · Tailwind CSS · TypeScript
 
 ---
 
@@ -11,10 +11,10 @@
 2. [Ролі та права доступу](#2-ролі-та-права-доступу)
 3. [Архітектура бази даних (PostgreSQL / Prisma Schema)](#3-архітектура-бази-даних)
 4. [Backend API — Endpoints](#4-backend-api)
-5. [Frontend — Структура компонентів](#5-frontend-компоненти)
+5. [Frontend — Структура компонентів](#5-frontend--структура-компонентів)
 6. [Концепція дизайну та UX](#6-концепція-дизайну)
-7. [Roadmap — 6 тижнів](#7-roadmap)
-8. [Розподіл задач у команді](#8-розподіл-задач)
+7. [Roadmap — 6 тижнів](#7-roadmap--6-тижнів)
+8. [Розподіл задач у команді](#8-розподіл-задач-у-команді)
 
 ---
 
@@ -34,6 +34,8 @@
 | Backend | Node.js + Express 5 |
 | База даних | PostgreSQL (хостинг [Neon](https://neon.tech)) + Prisma ORM |
 | Автентифікація | Власний JWT (access + refresh tokens) |
+| Мова | TypeScript у frontend, backend і `shared` (спільні типи та Zod-схеми) |
+| Тести | Vitest, Supertest, React Testing Library |
 | Хмара (опц.) | Cloudinary (аватари) |
 
 ---
@@ -44,24 +46,31 @@
 
 | Дія | Адмін | Викладач | Студент |
 |-----|-------|----------|---------|
-| Створити/видалити користувача | ✅ | ❌ | ❌ |
-| Переглянути всіх студентів | ✅ | ✅ | ❌ |
-| Редагувати профіль будь-кого | ✅ | ❌ | ❌ |
-| Редагувати свій профіль | ✅ | ✅ | ✅ |
-| Створити заняття | ✅ | тільки своє | ❌ |
-| Редагувати/видалити заняття | ✅ | тільки своє | ❌ |
-| Переглянути розклад | ✅ | тільки свої | тільки свої |
-| Виставити оцінку | ✅ | ✅ | ❌ |
-| Переглянути оцінки | ✅ | ✅ | тільки свої |
-| Нарахувати RedCoins | ✅ | ✅ | ❌ |
-| Переглянути баланс | ✅ | ✅ | тільки свій |
-| Налаштування системи | ✅ | ❌ | ❌ |
+| Створити / деактивувати користувача | ✅ | ❌ | ❌ |
+| Список студентів | ✅ | ✅ | ❌ |
+| Профіль і статистика студента | ✅ | студентів своїх груп | тільки свої |
+| Редагувати профіль будь-кого (роль, група, email, пароль) | ✅ | ❌ | ❌ |
+| Редагувати свій профіль (ім'я, телефон, аватар, пароль) | ✅ | ✅ | ✅ |
+| Створити / змінити / деактивувати групу | ✅ | ❌ | ❌ |
+| Створити заняття | ✅ (для будь-якого викладача) | тільки своє | ❌ |
+| Редагувати / скасувати / провести заняття | ✅ | тільки своє | ❌ |
+| Переглянути розклад | ✅ | свої заняття й заняття своїх груп | своєї групи |
+| Виставити оцінку, відмітити явку | ✅ | на своїх заняттях | ❌ |
+| Редагувати оцінку | ✅ | тільки виставлену собою | ❌ |
+| Видалити оцінку | ✅ | ❌ | ❌ |
+| Переглянути оцінки | ✅ | своїх занять і груп | тільки свої |
+| Нарахувати / списати RedCoins | ✅ | студентам своїх груп | ❌ |
+| Переглянути баланс і історію монет | ✅ | студентів своїх груп | тільки свої |
+| Рейтинг RedCoins | ✅ | ✅ | своєї групи |
+| Налаштування системи | ✅ (поки сторінка-заглушка) | ❌ | ❌ |
+
+Роль перевіряють маршрути (`authorize` у `backend/src/routes/`), доступ до конкретного запису — сервіси через `backend/src/services/access.policy.ts`.
 
 ---
 
 ## 3. Архітектура бази даних
 
-> База даних — **PostgreSQL**, доступ через **Prisma ORM**. Джерело істини для схеми — [`backend/prisma/schema.prisma`](../backend/prisma/schema.prisma); нижче наведено спрощений опис для орієнтування. Кожна таблиця має `academy_id` (готовність до майбутньої мульти-тенантності — зараз в системі рівно одна академія) та `id uuid` замість Mongo `ObjectId`.
+> База даних — **PostgreSQL**, доступ через **Prisma ORM**. Джерело істини для схеми — [`backend/prisma/schema.prisma`](./backend/prisma/schema.prisma); нижче наведено спрощений опис для орієнтування. Кожна таблиця має `academy_id` (готовність до майбутньої мульти-тенантності — зараз в системі рівно одна академія) та `id uuid` замість Mongo `ObjectId`.
 
 ### 3.1 Model: User
 
@@ -233,58 +242,66 @@ flowchart TD
 
 ### Базовий URL: `/api/v1`
 
+- Захищені маршрути чекають access-токен у заголовку `Authorization: Bearer <token>`.
+- Тіло, query і `:id` проходять Zod-схеми з `shared/src/schema/` — невалідний ввід дає 400 з поясненням, `:id`, що не є UUID, — 404.
+- Помилки — JSON `{ "message": "..." }` зі статусом 400 / 401 / 403 / 404 / 413 / 429.
+- `GET /health` — перевірка живості без автентифікації.
+
 ### 4.1 Auth Routes
 
 ```
-POST   /auth/register       — реєстрація (тільки admin може реєструвати)
-POST   /auth/login          — вхід, повертає { accessToken, refreshToken }
-POST   /auth/refresh        — оновлення access token
-POST   /auth/logout         — вихід (інвалідація refresh token)
+POST   /auth/login          — вхід { email, password } → { accessToken, user } + refresh-токен у httpOnly cookie
+POST   /auth/refresh        — новий access-токен за refresh-cookie
+POST   /auth/logout         — вихід: відкликає refresh-токени на всіх пристроях (tokenVersion++)
 GET    /auth/me             — дані поточного користувача
-PATCH  /auth/me/password    — зміна пароля
+PATCH  /auth/me             — змінити свої firstName / lastName / phone / avatar
+PATCH  /auth/me/password    — зміна пароля: інші сесії відкликаються, поточна отримує нову пару токенів
 ```
+
+Публічної реєстрації немає — користувачів створює адмін (`POST /users`) або seed-скрипт.
 
 ### 4.2 Users Routes
 
 ```
-GET    /users               — список (admin: всі; teacher: студенти своїх груп)
-POST   /users               — створити користувача [admin]
-GET    /users/:id           — профіль користувача
-PATCH  /users/:id           — оновити профіль [admin | власний профіль]
+GET    /users               — список активних (?role=&groupId=&q=) [admin, teacher; викладач бачить лише студентів]
+POST   /users               — створити користувача, пароль обов'язковий [admin]
+GET    /users/:id           — профіль [admin | сам користувач | викладач групи студента]
+GET    /users/:id/stats     — статистика: оцінки, відвідуваність, RedCoins [ті самі права, що й на профіль]
+PATCH  /users/:id           — оновити профіль, роль, групу, пароль, активність [admin]; новий пароль відкликає сесії
 DELETE /users/:id           — деактивувати [admin]
-GET    /users/:id/stats     — статистика: оцінки, coins, відвідуваність
 ```
+
+Склад групи змінюється через поле `group` студента (`POST`/`PATCH /users`), окремих маршрутів `/groups/:id/students` немає.
 
 ### 4.3 Groups Routes
 
 ```
-GET    /groups              — всі групи
-POST   /groups              — створити групу [admin]
-GET    /groups/:id          — деталі групи + списки студентів/вчителів
+GET    /groups              — усі активні групи
+GET    /groups/:id          — деталі групи + студенти й викладачі [admin | викладач групи | студент групи]
+POST   /groups              — створити групу { name, description?, startDate?, endDate?, teachers[] } [admin]
 PATCH  /groups/:id          — оновити групу [admin]
-DELETE /groups/:id          — видалити/деактивувати [admin]
-POST   /groups/:id/students — додати студента до групи [admin]
-DELETE /groups/:id/students/:studentId — видалити студента [admin]
+DELETE /groups/:id          — деактивувати [admin]
 ```
 
 ### 4.4 Lessons Routes
 
 ```
-GET    /lessons             — список занять (фільтр: ?groupId=&teacherId=&from=&to=)
-POST   /lessons             — створити заняття [admin, teacher]
+GET    /lessons             — список занять (?groupId=&teacherId=&from=&to=), звужений за роллю
+POST   /lessons             — створити заняття [admin, teacher; викладач — завжди сам ведучий]
 GET    /lessons/:id         — деталі заняття
 PATCH  /lessons/:id         — оновити [admin | teacher-owner]
-DELETE /lessons/:id         — видалити [admin | teacher-owner]
-POST   /lessons/:id/complete — позначити як проведене + масова явка
+DELETE /lessons/:id         — скасувати: статус cancelled, оцінки й явка лишаються [admin | teacher-owner]
+POST   /lessons/:id/complete — позначити проведеним + явка { records } однією транзакцією [admin | teacher-owner]
 ```
 
 ### 4.5 Grades Routes
 
 ```
-GET    /grades              — оцінки (фільтр: ?studentId=&lessonId=&groupId=)
-POST   /grades              — виставити оцінку [admin, teacher]
-POST   /grades/bulk         — масове виставлення (для всієї групи за заняття)
-PATCH  /grades/:id          — редагувати оцінку [admin, teacher-who-issued]
+GET    /grades              — оцінки (?studentId=&lessonId=&groupId=&type=), звужені за роллю
+GET    /grades/summary      — середні студентів групи (?groupId=&type=)
+POST   /grades              — виставити оцінку [admin | викладач заняття]
+POST   /grades/bulk         — масове виставлення за заняття, одна транзакція [admin | викладач заняття]
+PATCH  /grades/:id          — редагувати оцінку [admin | викладач, який її виставив]
 DELETE /grades/:id          — видалити [admin]
 ```
 
@@ -300,34 +317,40 @@ DELETE /grades/:id          — видалити [admin]
 }
 ```
 
+Одна оцінка кожного типу на студента за заняття: `POST /grades` на вже виставлену дає 400, а `/grades/bulk` її оновлює — тож журнал можна зберігати повторно.
+
 ### 4.6 Coins Routes
 
 ```
 GET    /coins/transactions          — історія сторінками (?studentId=&groupId=&category=&limit=&cursor=) → { items, nextCursor }
-POST   /coins/transactions          — нарахувати/списати монети [admin, teacher]
-GET    /coins/leaderboard           — топ студентів за монетами (?groupId=)
-GET    /coins/students/:id/balance  — баланс конкретного студента
+POST   /coins/transactions          — нарахувати (+) / списати (−) { studentId, amount, reason, category, relatedLessonId? } [admin | викладач групи студента]
+GET    /coins/leaderboard           — топ студентів за монетами (?groupId=&limit=); студент бачить лише свою групу
+GET    /coins/students/:id/balance  — баланс студента → { balance, earned, spent }
 ```
+
+Списання більше за баланс — 400; баланс і запис у ledger змінюються в одній транзакції.
 
 ### 4.7 Attendance Routes
 
 ```
-GET    /attendance          — явка (?lessonId=&studentId=)
-POST   /attendance/bulk     — масова явка для заняття [teacher, admin]
-PATCH  /attendance/:id      — змінити статус
+GET    /attendance          — явка (?lessonId=&studentId=, хоча б один параметр); студент бачить лише свою
+POST   /attendance/bulk     — масова явка для заняття { lessonId, records } [admin | викладач заняття]
+PATCH  /attendance/:id      — змінити статус або примітку [admin | викладач заняття]
 ```
 
 ### Middleware
 
-```javascript
-// Порядок middleware для захищених routes:
-router.use(authenticate)         // перевірка JWT
-router.use(authorize(['admin'])) // перевірка ролі
+```typescript
+// Роль перевіряється на маршруті, доступ до конкретного запису — у сервісі
+router.get('/', authenticate, getGroups);
+router.post('/', authenticate, authorize([UserRole.ADMIN]), createGroup);
 
-// Приклад:
-router.post('/users', authenticate, authorize(['admin']), createUser);
-router.get('/users/:id/stats', authenticate, canAccessUserStats, getUserStats);
+// services/group.service.ts
+const allowed = await accessPolicy.canViewGroup(actor, { teacherIds, studentIds });
+if (!allowed) throw new ForbiddenError('У вас немає доступу до цієї групи');
 ```
+
+Глобально (`backend/src/app.ts`): `helmet` → `cors` → rate-limit на `/api/v1` (суворіший — на `/auth/login` і `/auth/refresh`) → `express.json({ limit: '1mb' })` → маршрути → 404 → обробник помилок.
 
 ---
 
@@ -335,100 +358,49 @@ router.get('/users/:id/stats', authenticate, canAccessUserStats, getUserStats);
 
 ### 5.1 Файлова структура
 
+TypeScript усюди; тести лежать поруч із кодом у теках `__tests__/`.
+
 ```
-src/
-├── api/                        # axios instance + API функції
-│   ├── axios.js                # базовий клієнт з interceptors
-│   ├── auth.api.js
-│   ├── users.api.js
-│   ├── lessons.api.js
-│   ├── grades.api.js
-│   └── coins.api.js
+frontend/src/
+├── api/                        # тонкі функції над axios, по файлу на ресурс
+│   ├── axios.ts                # клієнт з interceptor: рефреш токена, черга паралельних запитів
+│   ├── cache.ts                # кеш GET /groups (60 с) з дедуплікацією
+│   ├── auth.ts · users.ts · groups.ts · lessons.ts
+│   └── grades.ts · attendance.ts · coins.ts
 │
 ├── components/
-│   ├── ui/                     # перевикористовувані UI-примітиви (ShadCN)
-│   │   ├── Button/
-│   │   ├── Input/
-│   │   ├── Modal/
-│   │   ├── Table/
-│   │   ├── Badge/
-│   │   ├── Avatar/
-│   │   ├── CoinBadge/          # відображення монет (🪙 +10)
-│   │   └── GradeCell/          # клітинка журналу
-│   │
+│   ├── ui/                     # ShadCN-примітиви (button, card, dialog, sheet, table, skeleton...) — не редагуються під сторінку
+│   ├── common/                 # EmptyState, ErrorState, ErrorBoundary
 │   ├── layout/
-│   │   ├── AppLayout.jsx       # основний layout з sidebar
-│   │   ├── Sidebar.jsx         # навігація (адаптивна)
-│   │   ├── Header.jsx          # topbar з аватаром і нотифікаціями
-│   │   └── MobileNav.jsx       # bottom nav для мобайлу
+│   │   ├── AppLayout.tsx       # Sidebar + Header + сторінка + BottomNav
+│   │   ├── Sidebar.tsx · BottomNav.tsx · UserProfileWidget.tsx
+│   │   ├── Header.tsx          # заголовок і підзаголовок сторінки за маршрутом
+│   │   ├── navigation.ts       # пункти меню й ролі — одне джерело для Sidebar і BottomNav
+│   │   └── AppSkeleton.tsx
 │   │
-│   ├── features/               # feature-based компоненти
-│   │   ├── auth/
-│   │   │   ├── LoginForm.jsx
-│   │   │   └── ProtectedRoute.jsx
-│   │   │
-│   │   ├── users/
-│   │   │   ├── UserCard.jsx
-│   │   │   ├── UserTable.jsx
-│   │   │   ├── UserForm.jsx    # Formik/Zod форма
-│   │   │   ├── UserStats.jsx
-│   │   │   └── UserFilters.jsx
-│   │   │
-│   │   ├── groups/
-│   │   │   ├── GroupCard.jsx
-│   │   │   ├── GroupList.jsx
-│   │   │   └── GroupForm.jsx
-│   │   │
-│   │   ├── lessons/
-│   │   │   ├── LessonCalendar.jsx   # react-big-calendar або FullCalendar
-│   │   │   ├── LessonCard.jsx
-│   │   │   ├── LessonForm.jsx
-│   │   │   └── LessonDetails.jsx
-│   │   │
-│   │   ├── grades/
-│   │   │   ├── GradeJournal.jsx     # таблиця-журнал (ключовий компонент)
-│   │   │   ├── GradeCell.jsx        # клітинка для inline-редагування
-│   │   │   ├── BulkGradeForm.jsx    # масове виставлення
-│   │   │   └── StudentGrades.jsx    # вид студента
-│   │   │
-│   │   └── coins/
-│   │       ├── CoinBalance.jsx
-│   │       ├── CoinHistory.jsx
-│   │       ├── IssueCoinForm.jsx
-│   │       └── CoinLeaderboard.jsx
+│   └── features/               # складені компоненти за доменами
+│       ├── auth/               # LoginForm, ProtectedRoute
+│       ├── dashboard/          # StatCard, StudentStatsCards, UpcomingLessons
+│       ├── users/              # StudentTable, TeacherCard, UserForm, UserFilters, ProfileForm, ChangePasswordForm, *DetailsModal
+│       ├── groups/             # GroupCard, GroupForm
+│       ├── lessons/            # LessonForm, LessonDetailsModal, AttendanceList, LessonEvent, ScheduleToolbar
+│       ├── grades/             # GradeJournal, GradeCell (inline-редагування), BulkGradeForm, StudentGrades
+│       └── coins/              # CoinAwardForm, CoinBalanceCard, CoinHistory, CoinLeaderboard
 │
-├── pages/                      # Route-level компоненти
-│   ├── LoginPage.jsx
-│   ├── DashboardPage.jsx       # головна (адаптована під роль)
-│   ├── StudentsPage.jsx
-│   ├── TeachersPage.jsx
-│   ├── GroupsPage.jsx
-│   ├── SchedulePage.jsx
-│   ├── GradesJournalPage.jsx
-│   ├── CoinsPage.jsx
-│   ├── ProfilePage.jsx
-│   └── NotFoundPage.jsx
+├── pages/                      # по сторінці на маршрут
+│   ├── LoginPage · DashboardPage (контент за роллю) · StudentsPage · TeachersPage · GroupsPage
+│   ├── SchedulePage · GradesPage · CoinsPage · ProfilePage · SettingsPage (заглушка)
+│   └── NotFoundPage · ForbiddenPage
 │
-├── hooks/
-│   ├── useAuth.js              # контекст автентифікації
-│   ├── useUsers.js             # React Query хуки
-│   ├── useLessons.js
-│   ├── useGrades.js
-│   └── useCoins.js
-│
-├── store/                      # Zustand stores
-│   ├── authStore.js
-│   └── uiStore.js              # sidebar open/close, theme
-│
-├── utils/
-│   ├── formatDate.js
-│   ├── gradeColor.js           # колір оцінки (1-4 red, 5-7 yellow, 8-12 green)
-│   └── roleGuard.js
-│
-└── router/
-    ├── index.jsx               # React Router v6
-    └── routes.js               # конфіг роутів за ролями
+├── lib/                        # optimistic.ts (точкові оновлення стану), leaderboard.ts, кольори й підписи
+│                               # оцінок, типів і статусів занять, категорій монет
+├── store/authStore.ts          # Zustand: user, accessToken, isAuthenticated
+├── router/index.tsx            # React Router; ProtectedRoute з allowedRoles
+├── utils/                      # apiError.ts (toastApiError), validation, formUtils, stringUtils
+└── test/                       # setup Vitest і apiMock для тестів сторінок
 ```
+
+Серверний стан живе в самих сторінках (`useEffect` + функції з `api/`, скасування через `AbortController`), React Query й теки `hooks/` у проєкті немає. Спільні типи, enum'и й Zod-схеми імпортуються з `@redmonkey/shared`.
 
 ### 5.2 Ключовий компонент: GradeJournal
 
@@ -441,22 +413,22 @@ src/
 <GradeJournal>
   <TableHeader>
     <th>Студент</th>
-    {lessons.map(lesson => <th key={lesson._id}>{formatDate(lesson.date)}</th>)}
+    {lessons.map(lesson => <th key={lesson.id}>{formatDate(lesson.date)}</th>)}
     <th>Середнє</th>
   </TableHeader>
   <TableBody>
     {students.map(student => (
-      <tr key={student._id}>
+      <tr key={student.id}>
         <td><UserCell user={student} /></td>
         {lessons.map(lesson => (
           <GradeCell
-            key={lesson._id}
-            grade={getGrade(student._id, lesson._id)}
+            key={lesson.id}
+            grade={getGrade(student.id, lesson.id)}
             editable={canEdit}
-            onSave={(value) => saveGrade(student._id, lesson._id, value)}
+            onSave={(value) => saveGrade(student.id, lesson.id, value)}
           />
         ))}
-        <td><AvgBadge value={calcAvg(student._id)} /></td>
+        <td><AvgBadge value={calcAvg(student.id)} /></td>
       </tr>
     ))}
   </TableBody>
@@ -469,18 +441,33 @@ src/
 
 ### 6.1 Дизайн-система
 
+> Джерело правди — [DESIGN.md](./DESIGN.md): там токени, патерни сторінок і компонентів. Нижче — стислий витяг.
+
+**Стиль:** Clean Professional Dark-Accent — світлий робочий простір, темно-синій Sidebar і червоні акценти бренду.
+
 **Кольорова палітра:**
-- Primary: `#E63946` (Red — RedCoins brand)
-- Secondary: `#457B9D` (Blue)
-- Surface: `#F8F9FA` (Light background)
-- Dark: `#1D3557` (Headers, sidebar)
-- Success: `#2D6A4F`
-- Warning: `#E9C46A`
-- Danger: `#E76F51`
 
-**Типографіка:** Inter (Google Fonts) — читабельний, сучасний
+| Роль | Колір |
+|------|-------|
+| Brand Red — головна кнопка дії, активний пункт меню | `#C10000` (hover `#A00000`, фокус полів — `#BA0000`) |
+| Sidebar, екран входу, Bottom Nav | `#29425D` (hover `#1A3150`) |
+| Фон сторінки | `#F8F9FA` |
+| Картки й модалки | `#FFFFFF` |
+| Заголовок сторінки | `#1A2645` |
+| Основний / приглушений текст | Tailwind `slate-600`–`700` / `slate-400`–`500` |
+| Успіх, «Активний» | Tailwind `emerald` (`bg-emerald-50 text-emerald-700`) |
+| Помилка | Tailwind `red` (`bg-red-50 text-red-600`); помилки полів форми — `destructive` |
+| Fallback аватара (ініціали) | `#0070F3` |
 
-**Border radius:** 8px (компоненти), 12px (картки), 16px (модалки)
+**Оцінки:** 10–12 зелений · 7–9 синій · 4–6 жовтий · 1–3 червоний.
+
+**Типи занять у календарі:** лекція — синій, практика — зелений, іспит — червоний, консультація — сірий.
+
+**Типографіка:** Geist Variable (`@fontsource-variable/geist`, шрифт вбудований у збірку). Єдиний H1 на екрані — заголовок сторінки в Header (`28px`, extrabold, на телефоні `24px`).
+
+**Іконки:** `lucide-react`.
+
+**Border radius:** що більший елемент, то більший радіус — badge та поля вводу ~8px (`rounded-md`), картки 10–14px (`rounded-lg`/`rounded-xl`), пункти меню 12px, модалки 20px.
 
 ### 6.2 Структура екранів
 
@@ -518,22 +505,26 @@ src/
 ### 6.3 Навігація
 
 ```
-Sidebar (desktop, 240px):
+Sidebar (від md, 260px; згортається до 80px, на планшеті стартує згорнутим):
 ├── 🏠 Dashboard
-├── 👥 Студенти
+├── 👥 Студенти            [admin, teacher]
 ├── 👨‍🏫 Викладачі          [admin]
 ├── 🏫 Групи               [admin]
 ├── 📅 Розклад
 ├── 📊 Журнал оцінок
 ├── 🪙 RedCoins
 └── ⚙️  Налаштування        [admin]
+    Профіль і вихід — у віджеті користувача внизу Sidebar
 
-Bottom Navigation (mobile):
+Bottom Navigation (телефон, до md):
 ├── 🏠 Головна
 ├── 📅 Розклад
 ├── 📊 Оцінки
-└── 🪙 Монети
+├── 🪙 Монети
+└── ☰  Ще — профіль, решта розділів ролі, вихід
 ```
+
+Пункти меню й ролі для Sidebar і Bottom Nav беруться з одного місця — `frontend/src/components/layout/navigation.ts`.
 
 ### 6.4 Зручне виставлення оцінок (UX деталь)
 
@@ -688,11 +679,11 @@ Bottom Navigation (mobile):
 
 #### 6.4 Документація
 
-- [x] README.md з інструкцією запуску
-- [ ] Синхронізувати CLAUDE.md: розділ «Поточний стан реалізації» досі каже, що lessons/grades/coins не реалізовані
-- [ ] Оновити розділ 6.1 цього ТЗ — палітра там (`#E63946`, `#457B9D`, Inter) розходиться з реальною дизайн-системою з DESIGN.md (`#C10000`, `#29425D`, Geist)
-- [ ] CHANGELOG: підсумок усіх 6 тижнів + версія `1.0.0`
-- [ ] Скріншоти інтерфейсу в README
+- [x] README.md з інструкцією запуску — пройдено з чистого клону на порожній БД: без `prisma:generate` і збірки `shared` падали `seed`, backend і тести, тепер ці кроки в інструкції; додано тестові акаунти й попередження, що `seed` стирає базу
+- [x] Синхронізувати CLAUDE.md: розділ «Поточний стан реалізації» досі каже, що lessons/grades/coins не реалізовані — стан тижня 6, команди для свіжого клону, модель гілок (PR у `main`, `develop` немає), пастка з `bg-primary`
+- [x] Оновити розділ 6.1 цього ТЗ — палітра там (`#E63946`, `#457B9D`, Inter) розходиться з реальною дизайн-системою з DESIGN.md (`#C10000`, `#29425D`, Geist) — розділ 6.1 тепер витяг із DESIGN.md; заодно з кодом звірено матрицю прав (2), API (4), структуру frontend (5.1) і навігацію (6.3), а DESIGN.md — з Header і сторінками
+- [x] CHANGELOG: підсумок усіх 6 тижнів + версія `1.0.0` — таблиця етапів із періодами й посиланнями на PR, версія `1.0.0` у всіх `package.json`
+- [x] Скріншоти інтерфейсу в README — `docs/screenshots/`: вхід, дашборди адміна й студента, журнал, розклад, деталі заняття, RedCoins, телефон
 
 #### 6.5 Підготовка до презентації
 
@@ -716,11 +707,10 @@ Bottom Navigation (mobile):
 
 ### Git Flow
 
-Детальний опис гілок, коміт-конвенцій та workflow — у [CONTRIBUTING.md](../CONTRIBUTING.md). Коротко:
+Детальний опис гілок, коміт-конвенцій та workflow — у [CONTRIBUTING.md](./CONTRIBUTING.md). Коротко:
 
 ```
-main               — стабільна продакшн-версія, прямі пуші заборонені
-develop            — інтеграційна гілка, всі PR зливаються сюди
+main               — єдина довгоживуча гілка: прямі пуші заборонені, зміни — лише через PR з рев'ю і зеленим CI
 feature/...        — новий функціонал
 fix/...            — виправлення помилки
 chore/...          — конфіги, залежності
@@ -747,6 +737,8 @@ chore/...          — конфіги, залежності
 ---
 
 ## Додаток: Приклад валідації (Zod)
+
+> Спрощений приклад. Реальні схеми — у `shared/src/schema/`: їх використовують і backend (`parseBody`/`parseQuery`), і форми на frontend.
 
 ```typescript
 // schemas/lesson.schema.ts
@@ -775,4 +767,4 @@ export const bulkGradeSchema = z.object({
 
 ---
 
-*Документ підготовлено для команди розробки IT Academy LMS. Версія 1.1 — оновлено після міграції на PostgreSQL/Prisma.*
+*Документ підготовлено для команди розробки IT Academy LMS. Версія 1.1 — оновлено після міграції на PostgreSQL/Prisma. Версія 1.2 — API, матрицю прав, структуру frontend і дизайн-систему звірено з реалізацією 1.0.0.*

@@ -47,6 +47,8 @@ npm run prisma:generate -w backend  # регенерує Prisma Client
 npm run prisma:studio -w backend    # GUI для перегляду даних
 ```
 
+На свіжому клоні перед `seed` і `npm test` потрібні `npm run prisma:generate -w backend` (Prisma Client не генерується при `npm install`: схема лежить у `backend/prisma`, а не в корені) і `npm run build -w @redmonkey/shared` (`npm run dev` збирає shared сам через `predev`). Змінні, експортовані в shell, мають пріоритет над `.env` — і для backend, і для Prisma CLI, і для `seed`, який стирає базу.
+
 Локальний запуск потребує `backend/.env` (з `backend/.env.example`) і `frontend/.env` (з `frontend/.env.example`). Без валідних `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` (≥32 символи, різні) backend впаде одразу при старті — це навмисна перевірка в `backend/src/config/env.ts`.
 
 ## Архітектура backend
@@ -99,7 +101,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 - **Мутації — оптимістично або точково, без перезапиту всього списку.** Хелпери в `lib/optimistic.ts` (`replaceById`, `removeById`, `upsertById`, `createTempId`, тип `Pending<T>`) зберігають незмінені записи тими самими об'єктами — на цьому тримається `React.memo` рядків журналу (`GradeJournalRow` з порівнянням клітинок за вмістом) і відвідуваності (`AttendanceRow`). Колбеки, які йдуть у мемоізовані рядки, — `useCallback` з функціональним `setState`. Відкат при помилці — точковий (зворотна дельта, повернення попереднього запису), не знімок усього стану.
 - `store/authStore.ts` — Zustand, тримає `user`/`accessToken`/`isAuthenticated`; `accessToken` дублюється в `localStorage` для відновлення сесії при перезавантаженні сторінки.
 - `router/index.tsx` — React Router з захищеними маршрутами; `ProtectedRoute` приймає `allowedRoles` і використовується вкладено (спершу авторизація, далі — рівень ролі).
-- **Теки `hooks/` немає** — на відміну від розділу 5.1 ТЗ. Дані компоненти тягнуть самі через `useEffect` + функції з `api/`; React Query в проєкті не використовується. Не орієнтуйся на структуру з ТЗ, дивись реальні теки.
+- **Теки `hooks/` немає** — дані компоненти тягнуть самі через `useEffect` + функції з `api/`; React Query в проєкті не використовується. Дерево тек — у розділі 5.1 ТЗ (синхронізоване з кодом у 6.4).
 - Типи ролей/enum'ів (`UserRole`, `GradeType` тощо) і спільні інтерфейси (`IUser`, ...) імпортуються з `@redmonkey/shared`, а не дублюються локально.
 
 ## Дизайн-система (стисло — повна версія в [DESIGN.md](./DESIGN.md))
@@ -147,6 +149,8 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 **Card:** `border-t-2 border-t-slate-200`, іконка-плашка в хедері `p-3 bg-red-50 text-primary rounded-xl`, `hover:shadow-md transition-shadow`, footer `bg-slate-50/50`.
 
+**`bg-primary` / `text-primary` — не бренд.** Токен `--primary` в `index.css` лишився дефолтним ShadCN (майже чорний). Брендова кнопка — явно `bg-[#C10000] hover:bg-[#A00000] text-white`; «Нова група» з `bg-primary` і `<Button>` без класу кольору (як «Перейти до розкладу» на дашборді студента) виходять темними.
+
 **Input:** `h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000]`.
 
 **Стани:** loading → ShadCN `Skeleton` (не спінер) + кнопка disabled з текстом `"Збереження..."`; error форми → `text-xs text-destructive`; server error → `bg-red-50 text-red-600 border border-red-200`; сповіщення → `Sonner` toast через `toastApiError`; порожні списки — `EmptyState` з CTA, збій завантаження — `ErrorState` з «Спробувати знову» (обидва в `components/common/`), не голий екран.
@@ -168,7 +172,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 | coins | `/coins/transactions`, `/coins/leaderboard`, `/coins/students/:id/balance` | `CoinsPage` (`CoinAwardForm`, `CoinBalanceCard`, `CoinHistory`, `CoinLeaderboard`) |
 | dashboard | `stats.repository.ts` | `DashboardPage` з контентом за роллю |
 
-Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)). З п. 6.1 закрито безпеку backend (helmet, rate-limit, ліміт тіла, глобальний error-handler + 404, аудит секретних полів) і базу даних (міграції, `EXPLAIN` журналу й leaderboard). П. 6.2 (стійкість UI) закрито повністю: 404/403, ErrorBoundary, втрата сесії, Bottom Nav, loading/empty/error стани, кеш і скасування запитів, оптимістичні оновлення. П. 6.3 (якість коду і CI) закрито: ESLint у backend і shared, Prettier на весь монорепо, format/lint/build/test у CI, тести транзакцій, код-рев'ю з виправленнями. Відкриті: деплой, документація, демо-дані й дрібниці з 6.6. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
+Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)). З п. 6.1 закрито безпеку backend (helmet, rate-limit, ліміт тіла, глобальний error-handler + 404, аудит секретних полів) і базу даних (міграції, `EXPLAIN` журналу й leaderboard). П. 6.2 (стійкість UI) закрито повністю: 404/403, ErrorBoundary, втрата сесії, Bottom Nav, loading/empty/error стани, кеш і скасування запитів, оптимістичні оновлення. П. 6.3 (якість коду і CI) закрито: ESLint у backend і shared, Prettier на весь монорепо, format/lint/build/test у CI, тести транзакцій, код-рев'ю з виправленнями. П. 6.4 (документація) закрито: README з інструкцією, перевіреною з чистого клону, і скріншотами (`docs/screenshots/`), ТЗ (API, матриця прав, структура frontend, дизайн-система) і DESIGN.md звірено з кодом, CHANGELOG — версія `1.0.0` з підсумком шести тижнів. Відкриті: деплой (з 6.1), демо-дані й сценарій презентації (6.5), дрібниці з 6.6. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
 
 Свідомі борги, зафіксовані окремо: RLS вимкнений, `SettingsPage` — заглушка (з empty state). `GET /grades/summary` лишився на backend, але журнал рахує середнє з уже завантажених оцінок і цей запит не робить.
 
@@ -191,7 +195,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 - Мова коду (змінні, функції, коментарі в коді) — **англійська**. Мова комунікації (PR, issue, коміти, код-рев'ю) — **українська**. Це навмисний вибір з CONTRIBUTING.md, не змінюй.
 - Коміти — Conventional Commits (`feat(scope): ...`, `fix(scope): ...` тощо), докладно в [CONTRIBUTING.md](./CONTRIBUTING.md#-commit-messages).
-- Гілки — `feature/`, `fix/`, `chore/`, `refactor/`, `docs/` префікс + короткий опис через дефіс, від `develop`.
+- Гілки — `feature/`, `fix/`, `chore/`, `refactor/`, `docs/` префікс + короткий опис через дефіс, від `main`; PR — теж у `main` (гілки `develop` немає).
 - Не пиши docstring-блоки чи очевидні коментарі — тільки там, де є неочевидний "чому" (як-от коментарі в `access.policy.ts` про RLS-майбутнє).
 - Форматування — Prettier (`.prettierrc.json`: одинарні лапки, `;`, ширина 100). Не форматуються ShadCN-компоненти (`components/ui/`, щоб оновлення з CLI давали чистий дифф) і Markdown. Масове переформатування — в `.git-blame-ignore-revs`.
 - ESLint — свій `eslint.config` у кожному workspace. У backend є правила на типах (`no-floating-promises`, `no-misused-promises`): вони ловлять забутий `await` на запиті до БД і `expect(...).rejects` без `await`. Типи тестів для лінтера — `backend/tsconfig.eslint.json`.
@@ -204,5 +208,5 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 | [IT_Academy_LMS_ТЗ.md](./IT_Academy_LMS_ТЗ.md) | Перед новим фічером — там ролі, API-контракт, roadmap |
 | [DESIGN.md](./DESIGN.md) | Перед будь-якою UI-задачею — кольори, спейсинг, патерни компонентів |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Перед першим PR — гілки, коміти, код-рев'ю чекліст |
-| [CHANGELOG.md](./CHANGELOG.md) | Після завершення тижня розробки — додай запис |
+| [CHANGELOG.md](./CHANGELOG.md) | Помітна зміна — рядок у `[Unreleased]`; на реліз розділ стає версією |
 | `backend/prisma/schema.prisma` | Джерело істини для схеми БД (актуальніше за розділ 3 ТЗ) |

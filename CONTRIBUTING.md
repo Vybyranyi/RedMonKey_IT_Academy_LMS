@@ -21,8 +21,9 @@
 
 | Гілка | Призначення |
 |-------|-------------|
-| `main` | Стабільна продакшн-версія. Прямі пуші **заборонені**. |
-| `develop` | Інтеграційна гілка. Всі PR зливаються сюди. |
+| `main` | Єдина довгоживуча гілка і ціль усіх PR. Прямі пуші **заборонені**: кожна зміна — через PR з рев'ю ментора й зеленим CI. |
+
+Окремої гілки `develop` немає: з першого PR команда зливає все в `main`, а стабільність тримають обов'язкове рев'ю й CI.
 
 ### Робочі гілки
 
@@ -137,10 +138,10 @@ Issue → Branch → Commits → Pull Request → Code Review → Merge
 ### Покроково
 
 1. **Обери задачу** на GitHub Project Board і переведи її в `In Progress`
-2. **Створи гілку** від `develop`:
+2. **Створи гілку** від свіжого `main`:
    ```bash
-   git checkout develop
-   git pull origin develop
+   git checkout main
+   git pull origin main
    git checkout -b feature/your-feature-name
    ```
 3. **Роби невеликі атомарні коміти** в процесі роботи
@@ -151,7 +152,7 @@ Issue → Branch → Commits → Pull Request → Code Review → Merge
    npm test            # тести всіх workspace
    npm run dev         # переконайся, що все запускається
    ```
-5. **Відкрий Pull Request** на `develop`, заповни шаблон
+5. **Відкрий Pull Request** у `main`, заповни шаблон
 6. **Дочекайся code review** від ментора (`@Vybyranyi`)
 7. **Виправ зауваження** (якщо є) новими комітами
 8. **Після approval** — ментор зливає PR
