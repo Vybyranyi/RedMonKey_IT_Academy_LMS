@@ -191,7 +191,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 - Мова коду (змінні, функції, коментарі в коді) — **англійська**. Мова комунікації (PR, issue, коміти, код-рев'ю) — **українська**. Це навмисний вибір з CONTRIBUTING.md, не змінюй.
 - Коміти — Conventional Commits (`feat(scope): ...`, `fix(scope): ...` тощо), докладно в [CONTRIBUTING.md](./CONTRIBUTING.md#-commit-messages).
-- Гілки — `feature/`, `fix/`, `chore/`, `refactor/`, `docs/` префікс + короткий опис через дефіс, від `develop`.
+- Гілки — `feature/`, `fix/`, `chore/`, `refactor/`, `docs/` префікс + короткий опис через дефіс, від `main`; PR — теж у `main` (гілки `develop` немає).
 - Не пиши docstring-блоки чи очевидні коментарі — тільки там, де є неочевидний "чому" (як-от коментарі в `access.policy.ts` про RLS-майбутнє).
 - Форматування — Prettier (`.prettierrc.json`: одинарні лапки, `;`, ширина 100). Не форматуються ShadCN-компоненти (`components/ui/`, щоб оновлення з CLI давали чистий дифф) і Markdown. Масове переформатування — в `.git-blame-ignore-revs`.
 - ESLint — свій `eslint.config` у кожному workspace. У backend є правила на типах (`no-floating-promises`, `no-misused-promises`): вони ловлять забутий `await` на запиті до БД і `expect(...).rejects` без `await`. Типи тестів для лінтера — `backend/tsconfig.eslint.json`.
