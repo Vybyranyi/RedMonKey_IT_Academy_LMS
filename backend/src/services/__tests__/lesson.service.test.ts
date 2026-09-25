@@ -211,6 +211,95 @@ describe('updateLesson', () => {
   });
 });
 
+describe('домашнє завдання: дедлайн не раніше заняття', () => {
+  const LESSON_DATE = new Date('2026-09-10T15:00:00Z');
+
+  beforeEach(() => {
+    findSubjectById.mockResolvedValue({
+      teacherId: teacher.userId,
+      groupId: OWN_GROUP,
+      date: LESSON_DATE,
+      homeworkDueDate: new Date('2026-09-12T20:59:00Z'),
+    } as never);
+  });
+
+  it('створює заняття з домашнім завданням і дедлайном', async () => {
+    await lessonService.createLesson(
+      {
+        ...lessonPayload,
+        homeworkDescription: 'Задачі 1–5',
+        homeworkDueDate: '2026-09-03T20:59:00Z',
+      },
+      teacher
+    );
+
+    expect(lessonCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        homeworkDescription: 'Задачі 1–5',
+        homeworkDueDate: new Date('2026-09-03T20:59:00Z'),
+      })
+    );
+  });
+
+  it('без домашнього завдання пише null, а не порожній рядок', async () => {
+    await lessonService.createLesson({ ...lessonPayload, homeworkDescription: '' }, teacher);
+
+    expect(lessonCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ homeworkDescription: null, homeworkDueDate: null })
+    );
+  });
+
+  it('не створює заняття з дедлайном раніше за саме заняття', async () => {
+    await expect(
+      lessonService.createLesson(
+        { ...lessonPayload, homeworkDueDate: '2026-08-31T20:59:00Z' },
+        teacher
+      )
+    ).rejects.toMatchObject({ statusCode: 400, message: expect.stringContaining('Дедлайн') });
+    expect(lessonCreate).not.toHaveBeenCalled();
+  });
+
+  // Дата заняття в запиті відсутня — звіряємо з тією, що в БД
+  it('PATCH лише дедлайну раніше за збережену дату заняття — 400', async () => {
+    await expect(
+      lessonService.updateLesson(LESSON_ID, { homeworkDueDate: '2026-09-09T20:59:00Z' }, teacher)
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(lessonUpdate).not.toHaveBeenCalled();
+  });
+
+  it('перенесення заняття пізніше за збережений дедлайн — 400', async () => {
+    await expect(
+      lessonService.updateLesson(LESSON_ID, { date: '2026-09-14T15:00:00Z' }, teacher)
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it('перенесення разом із новим дедлайном проходить', async () => {
+    await lessonService.updateLesson(
+      LESSON_ID,
+      { date: '2026-09-14T15:00:00Z', homeworkDueDate: '2026-09-16T20:59:00Z' },
+      teacher
+    );
+
+    expect(lessonUpdate).toHaveBeenCalledWith(
+      LESSON_ID,
+      expect.objectContaining({ homeworkDueDate: new Date('2026-09-16T20:59:00Z') })
+    );
+  });
+
+  it('null прибирає дедлайн — і тоді заняття можна переносити як завгодно', async () => {
+    await lessonService.updateLesson(
+      LESSON_ID,
+      { date: '2026-10-01T15:00:00Z', homeworkDueDate: null },
+      teacher
+    );
+
+    expect(lessonUpdate).toHaveBeenCalledWith(
+      LESSON_ID,
+      expect.objectContaining({ homeworkDueDate: null })
+    );
+  });
+});
+
 describe('cancelLesson', () => {
   // Grade.lesson має onDelete: Cascade — реальний delete знищив би всі оцінки
   it('переводить заняття у статус cancelled, а не видаляє', async () => {

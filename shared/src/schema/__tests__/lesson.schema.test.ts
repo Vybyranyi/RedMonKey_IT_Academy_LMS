@@ -52,6 +52,30 @@ describe('updateLessonSchema', () => {
   });
 });
 
+describe('домашнє завдання', () => {
+  it('приймає опис і дедлайн в ISO', () => {
+    const result = createLessonSchema.safeParse({
+      ...validLesson,
+      homeworkDescription: '  Задачі 1–5  ',
+      homeworkDueDate: '2026-09-03T20:59:00Z',
+    });
+    expect(result.success).toBe(true);
+    expect(result.data?.homeworkDescription).toBe('Задачі 1–5');
+  });
+
+  it('відхиляє дедлайн не в ISO-форматі', () => {
+    const result = createLessonSchema.safeParse({ ...validLesson, homeworkDueDate: '03.09.2026' });
+    expect(firstIssue(result)).toBe(
+      'Некоректний дедлайн домашнього завдання (очікується ISO-рядок)'
+    );
+  });
+
+  // Порівняння з датою заняття — у сервісі: у PATCH друга дата лежить у БД
+  it('у PATCH null прибирає дедлайн', () => {
+    expect(updateLessonSchema.safeParse({ homeworkDueDate: null }).success).toBe(true);
+  });
+});
+
 describe('lessonFiltersSchema', () => {
   // Календар шле короткий день (2026-09-01), а навігація по тижню — повний ISO
   it.each(['2026-09-01', '2026-09-01T00:00:00Z'])('приймає межу діапазону %s', (from) => {

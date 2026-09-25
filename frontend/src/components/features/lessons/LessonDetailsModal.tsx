@@ -1,4 +1,4 @@
-import { CalendarDays, Clock3, UserRound } from 'lucide-react';
+import { BookOpenText, CalendarDays, Clock3, UserRound } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
@@ -171,6 +171,26 @@ export default function LessonDetailsModal({
               </span>
             </div>
           </div>
+
+          {(lesson.homeworkDescription || lesson.homeworkDueDate) && (
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+                <BookOpenText className="h-4 w-4 text-[#C10000]" aria-hidden="true" />
+                Домашнє завдання
+              </h3>
+              {lesson.homeworkDescription && (
+                <p className="mt-2 text-sm text-slate-700">{lesson.homeworkDescription}</p>
+              )}
+              {lesson.homeworkDueDate && (
+                <p className="mt-1 text-xs font-medium text-slate-500">
+                  Здати до{' '}
+                  {format(new Date(lesson.homeworkDueDate), 'd MMMM', {
+                    locale: uk,
+                  })}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="mt-6 mb-4 flex items-center justify-between">
             <h3 className="text-lg font-bold text-slate-900">Відвідуваність</h3>

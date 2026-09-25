@@ -20,6 +20,19 @@ const duration = z
   .min(15, 'Заняття не може бути коротшим за 15 хвилин')
   .max(480, 'Заняття не може бути довшим за 480 хвилин');
 
+const homeworkDescription = z
+  .string({ error: 'Опис домашнього завдання має бути рядком' })
+  .trim()
+  .max(2000, 'Опис домашнього завдання задовгий');
+
+/** null — прибрати дедлайн. Що він не раніше за саме заняття, перевіряє сервіс: одна з дат може вже лежати в БД. */
+const homeworkDueDate = z.iso
+  .datetime({
+    offset: true,
+    error: 'Некоректний дедлайн домашнього завдання (очікується ISO-рядок)',
+  })
+  .nullable();
+
 const type = z.enum(LessonType, { error: 'Некоректний тип заняття' });
 const status = z.enum(LessonStatus, { error: 'Некоректний статус заняття' });
 const groupId = z.uuid('groupId має бути UUID');
@@ -37,6 +50,8 @@ export const createLessonSchema = z.object({
   type,
   groupId,
   teacherId: teacherId.optional(),
+  homeworkDescription: homeworkDescription.optional(),
+  homeworkDueDate: homeworkDueDate.optional(),
 });
 
 export const updateLessonSchema = z
@@ -49,6 +64,8 @@ export const updateLessonSchema = z
     status: status.optional(),
     groupId: groupId.optional(),
     teacherId: teacherId.optional(),
+    homeworkDescription: homeworkDescription.optional(),
+    homeworkDueDate: homeworkDueDate.optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'Не передано жодного поля для оновлення',
@@ -64,3 +81,6 @@ export const lessonFiltersSchema = z.object({
 export type ILessonDto = z.infer<typeof createLessonSchema>;
 export type IUpdateLessonDto = z.infer<typeof updateLessonSchema>;
 export type ILessonFilters = z.infer<typeof lessonFiltersSchema>;
+
+export const HOMEWORK_BEFORE_LESSON_MESSAGE =
+  'Дедлайн домашнього завдання не може бути раніше заняття';
