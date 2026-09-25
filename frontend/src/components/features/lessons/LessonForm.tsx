@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toastApiError } from '@/utils/apiError';
 
 /** Значення форми: дата й час — окремі поля, бекенд же чекає один ISO-рядок. */
 export interface LessonFormValues {
@@ -80,7 +81,7 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
         const data = await apiGetGroups();
         setGroups(data);
       } catch (error) {
-        console.error('Не вдалося завантажити групи:', error);
+        toastApiError(error, 'Не вдалося завантажити список груп');
       }
     };
     fetchGroups();
@@ -95,7 +96,7 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
         const data = await apiGetUsers({ role: UserRole.TEACHER });
         setTeachers(data);
       } catch (error) {
-        console.error('Не вдалося завантажити викладачів:', error);
+        toastApiError(error, 'Не вдалося завантажити список викладачів');
       }
     };
     fetchTeachers();

@@ -1,8 +1,11 @@
-import axiosInstance from './axios';
+import axiosInstance, { type RequestOptions } from './axios';
 import type { IPopulatedLesson, ILessonDto, ILessonFilters } from '@redmonkey/shared';
 
-export const apiGetLessons = async (filters?: ILessonFilters): Promise<IPopulatedLesson[]> => {
-  const response = await axiosInstance.get('/lessons', { params: filters });
+export const apiGetLessons = async (
+  filters?: ILessonFilters,
+  { signal }: RequestOptions = {}
+): Promise<IPopulatedLesson[]> => {
+  const response = await axiosInstance.get('/lessons', { params: filters, signal });
   return response.data;
 };
 

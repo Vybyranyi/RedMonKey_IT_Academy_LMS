@@ -10,6 +10,7 @@ import type { IGroupDto } from '@redmonkey/shared';
 import { apiGetUsers } from '@/api/users';
 import  { UserRole } from '@redmonkey/shared';
 import type { IUser } from '@redmonkey/shared';
+import { toastApiError } from '@/utils/apiError';
 
 const groupSchema = z.object({
   name: z.string().min(3, 'Назва групи має містити не менше 3 символів'),
@@ -43,7 +44,7 @@ export default function GroupForm({ initialValues = defaultValues, onSubmit, isS
         const data = await apiGetUsers({ role: UserRole.TEACHER });
         setAllTeachers(data);
       } catch (error) {
-        console.error('Не вдалося завантажити викладачів:', error);
+        toastApiError(error, 'Не вдалося завантажити список викладачів');
       }
     };
     fetchTeachers();
