@@ -51,7 +51,13 @@ const formOnlySchema = z.object({
 });
 
 const lessonFormSchema = z
-  .intersection(createLessonSchema.omit({ date: true, homeworkDueDate: true }), formOnlySchema)
+  .intersection(
+    createLessonSchema
+      .omit({ date: true, homeworkDueDate: true })
+      // Порожній селект — це «не обрано», а не «groupId має бути UUID» зі схеми API
+      .extend({ groupId: z.uuid('Оберіть групу') }),
+    formOnlySchema
+  )
   // Обидва — рядки YYYY-MM-DD; дедлайн у день заняття дозволений (до кінця дня)
   .refine(({ date, homeworkDue }) => !homeworkDue || homeworkDue >= date, {
     message: HOMEWORK_BEFORE_LESSON_MESSAGE,
@@ -290,7 +296,7 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="homeworkDescription">Домашнє завдання</Label>
               <Field name="homeworkDescription">
