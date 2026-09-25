@@ -4,6 +4,7 @@ import { attendanceRepository } from '../attendance.repository.js';
 import { coinRepository } from '../coin.repository.js';
 import { gradeRepository } from '../grade.repository.js';
 import { lessonRepository } from '../lesson.repository.js';
+import { userRepository } from '../user.repository.js';
 
 /**
  * Транзакційна логіка без БД. Фейковий Prisma розрізняє запити в транзакції й поза нею:
@@ -18,7 +19,8 @@ const { prisma, tx } = vi.hoisted(() => {
   const query = (model: string, method: string) =>
     vi.fn((args: Record<string, unknown>) => ({ model, method, args }));
   const client = () => ({
-    user: { updateMany: vi.fn() },
+    $queryRaw: vi.fn(),
+    user: { updateMany: vi.fn(), update: vi.fn() },
     coinTransaction: { create: vi.fn() },
     grade: { upsert: query('grade', 'upsert') },
     attendance: { upsert: query('attendance', 'upsert') },
@@ -206,5 +208,38 @@ describe('lessonRepository.completeWithAttendance — проведення за�
     await lessonRepository.completeWithAttendance('lesson-1', 'academy-1', []);
 
     expect(batch().map((query) => query.model)).toEqual(['lesson']);
+  });
+});
+
+describe('userRepository.updateUnlessLastAdmin — не лишити академію без адміна', () => {
+  /** Текст SQL, яким транзакція блокує рядки адмінів. */
+  const lockSql = () => (tx.$queryRaw.mock.calls[0]?.[0] as string[]).join('?');
+
+  // Без блокування два адміни, що одночасно деактивують один одного, обидва
+  // бачили б «є ще один» — і в академії не лишилось би жодного
+  it('спершу блокує рядки активних адмінів академії, потім оновлює тим самим tx', async () => {
+    tx.$queryRaw.mockResolvedValue([{ id: 'admin-1' }, { id: 'admin-2' }]);
+    tx.user.update.mockResolvedValue({ id: 'admin-1', isActive: false });
+
+    const result = await userRepository.updateUnlessLastAdmin('admin-1', { isActive: false });
+
+    expect(result).toEqual({ id: 'admin-1', isActive: false });
+    expect(lockSql()).toMatch(/role = 'admin' AND is_active[\s\S]*FOR UPDATE/);
+    expect(tx.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'admin-1' }, data: { isActive: false } })
+    );
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.user.update.mock.invocationCallOrder[0]!
+    );
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('останнього активного адміна не чіпає й повертає null', async () => {
+    tx.$queryRaw.mockResolvedValue([{ id: 'admin-1' }]);
+
+    await expect(
+      userRepository.updateUnlessLastAdmin('admin-1', { role: 'teacher' })
+    ).resolves.toBeNull();
+    expect(tx.user.update).not.toHaveBeenCalled();
   });
 });

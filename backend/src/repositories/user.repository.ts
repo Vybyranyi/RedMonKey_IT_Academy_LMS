@@ -119,6 +119,26 @@ export const userRepository = {
   },
 
   /**
+   * Зміна, що забирає права адміна (деактивація чи інша роль). Повертає null, якщо
+   * після неї в академії не лишилось би жодного активного адміна.
+   * Рядки активних адмінів блокуються FOR UPDATE: два адміни, що одночасно
+   * деактивують один одного, інакше обидва побачили б «є ще один» і обидва пройшли б.
+   * Друга транзакція чекає на блокуванні й після коміту першої вже не бачить її адміна.
+   */
+  async updateUnlessLastAdmin(id: string, data: Prisma.UserUncheckedUpdateInput) {
+    return prisma.$transaction(async (tx) => {
+      const admins = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM users
+        WHERE role = 'admin' AND is_active
+          AND academy_id = (SELECT academy_id FROM users WHERE id = ${id}::uuid)
+        FOR UPDATE`;
+      if (!admins.some((admin) => admin.id !== id)) return null;
+
+      return tx.user.update({ where: { id }, data, select: publicUserSelect });
+    });
+  },
+
+  /**
    * Змінює пароль і тим самим запитом відкликає всі раніше видані refresh-токени.
    * Одна транзакція — щоб не існувало вікна, у якому пароль уже новий, а старі сесії ще живі.
    * Повертає нову tokenVersion, під якою треба випустити токени поточної сесії.

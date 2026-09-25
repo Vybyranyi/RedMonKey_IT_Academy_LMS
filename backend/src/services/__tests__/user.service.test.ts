@@ -14,13 +14,23 @@ vi.mock('../../repositories/stats.repository.js', () => ({
   statsRepository: { averageGrades: vi.fn(), attendanceRates: vi.fn() },
 }));
 vi.mock('../../repositories/user.repository.js', () => ({
-  userRepository: { findAll: vi.fn() },
+  userRepository: {
+    findAll: vi.fn(),
+    findById: vi.fn(),
+    update: vi.fn(),
+    deactivate: vi.fn(),
+    updateUnlessLastAdmin: vi.fn(),
+  },
 }));
 
 const findIdsByTeacher = vi.mocked(groupRepository.findIdsByTeacher);
 const averageGrades = vi.mocked(statsRepository.averageGrades);
 const attendanceRates = vi.mocked(statsRepository.attendanceRates);
 const findAll = vi.mocked(userRepository.findAll);
+const findById = vi.mocked(userRepository.findById);
+const update = vi.mocked(userRepository.update);
+const deactivate = vi.mocked(userRepository.deactivate);
+const updateUnlessLastAdmin = vi.mocked(userRepository.updateUnlessLastAdmin);
 
 const admin: TokenPayload = { userId: 'admin-1', role: UserRole.ADMIN };
 const teacher: TokenPayload = { userId: 'teacher-1', role: UserRole.TEACHER };
@@ -100,5 +110,83 @@ describe('userService.getUsers — withStats', () => {
     expect(averageGrades).not.toHaveBeenCalled();
     expect(attendanceRates).not.toHaveBeenCalled();
     expect(users).toMatchObject([{ id: 'student-2', stats: null }]);
+  });
+});
+
+describe('userService — останній адмін', () => {
+  const subject = (role: UserRole, isActive = true) =>
+    ({ id: 'user-1', role, isActive, groupId: null, redCoins: 0 }) as never;
+  const saved = { id: 'user-1' } as never;
+
+  beforeEach(() => {
+    update.mockResolvedValue(saved);
+    deactivate.mockResolvedValue(saved);
+    updateUnlessLastAdmin.mockResolvedValue(saved);
+  });
+
+  it('не деактивує єдиного активного адміна — 400', async () => {
+    findById.mockResolvedValue(subject(UserRole.ADMIN));
+    updateUnlessLastAdmin.mockResolvedValue(null);
+
+    await expect(userService.deleteUser('user-1')).rejects.toMatchObject({
+      statusCode: 400,
+      message: expect.stringContaining('єдиний активний адміністратор'),
+    });
+    expect(updateUnlessLastAdmin).toHaveBeenCalledWith('user-1', { isActive: false });
+    expect(deactivate).not.toHaveBeenCalled();
+  });
+
+  it('адміна деактивує, якщо є інший, — через ту саму захищену транзакцію', async () => {
+    findById.mockResolvedValue(subject(UserRole.ADMIN));
+
+    await expect(userService.deleteUser('user-1')).resolves.toBe(saved);
+    expect(updateUnlessLastAdmin).toHaveBeenCalledTimes(1);
+  });
+
+  it('не-адміна деактивує звичайним запитом', async () => {
+    findById.mockResolvedValue(subject(UserRole.TEACHER));
+
+    await userService.deleteUser('user-1');
+
+    expect(deactivate).toHaveBeenCalledWith('user-1');
+    expect(updateUnlessLastAdmin).not.toHaveBeenCalled();
+  });
+
+  it('неіснуючий користувач — 404', async () => {
+    findById.mockResolvedValue(null);
+
+    await expect(userService.deleteUser('user-1')).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it.each([
+    ['зміна ролі', { role: UserRole.TEACHER }],
+    ['деактивація через PATCH', { isActive: false }],
+  ])('%s єдиного адміна — 400', async (_label, body) => {
+    findById.mockResolvedValue(subject(UserRole.ADMIN));
+    updateUnlessLastAdmin.mockResolvedValue(null);
+
+    await expect(userService.updateUser('user-1', body)).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('звичайне редагування адміна не блокує рядки адмінів', async () => {
+    findById.mockResolvedValue(subject(UserRole.ADMIN));
+
+    await userService.updateUser('user-1', { firstName: 'Іван', role: UserRole.ADMIN });
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(updateUnlessLastAdmin).not.toHaveBeenCalled();
+  });
+
+  // Уже деактивований адмін нікого не «лишає без адміна» — його можна перевести в іншу роль
+  it('неактивного адміна змінює без перевірки', async () => {
+    findById.mockResolvedValue(subject(UserRole.ADMIN, false));
+
+    await userService.updateUser('user-1', { role: UserRole.TEACHER });
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(updateUnlessLastAdmin).not.toHaveBeenCalled();
   });
 });

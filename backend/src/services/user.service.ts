@@ -29,6 +29,18 @@ const rethrowAsBadRequest = (error: unknown): never => {
   throw error;
 };
 
+const LAST_ADMIN_MESSAGE =
+  'Це єдиний активний адміністратор — спершу призначте адміністратором когось іншого';
+
+/** Чи забирає зміна в активного адміна його права: деактивація або інша роль. */
+const removesAdmin = (
+  target: { role: string; isActive: boolean },
+  change: { role?: UserRole; isActive?: boolean }
+) =>
+  target.role === UserRole.ADMIN &&
+  target.isActive &&
+  ((change.role !== undefined && change.role !== UserRole.ADMIN) || change.isActive === false);
+
 export const userService = {
   async getUsers(filters: IUserFilters, actor: TokenPayload) {
     const { role, groupId, q, withStats } = filters;
@@ -184,17 +196,29 @@ export const userService = {
       data.groupId = finalRole === UserRole.STUDENT ? (group ?? null) : null;
     }
 
+    if (removesAdmin(oldUser, { role, isActive: rest.isActive })) {
+      const updated = await userRepository
+        .updateUnlessLastAdmin(id, data)
+        .catch(rethrowAsBadRequest);
+      if (!updated) throw new BadRequestError(LAST_ADMIN_MESSAGE);
+      return updated;
+    }
+
     return userRepository.update(id, data).catch(rethrowAsBadRequest);
   },
 
   async deleteUser(id: string) {
-    try {
-      return await userRepository.deactivate(id);
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        throw new NotFoundError('Користувача не знайдено');
-      }
-      throw error;
+    const user = await userRepository.findById(id);
+    if (!user) {
+      throw new NotFoundError('Користувача не знайдено');
     }
+
+    if (removesAdmin(user, { isActive: false })) {
+      const updated = await userRepository.updateUnlessLastAdmin(id, { isActive: false });
+      if (!updated) throw new BadRequestError(LAST_ADMIN_MESSAGE);
+      return updated;
+    }
+
+    return userRepository.deactivate(id);
   },
 };
