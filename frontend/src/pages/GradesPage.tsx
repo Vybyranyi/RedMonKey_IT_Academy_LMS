@@ -1,15 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { BookOpenCheck, Plus } from 'lucide-react';
 import { GradeType, UserRole } from '@redmonkey/shared';
-import type {
-  IBulkGradeDto,
-  IGradeSummaryRow,
-  IPopulatedGrade,
-  IPopulatedGroup,
-  IPopulatedLesson,
-  IUser,
-} from '@redmonkey/shared';
+import type { IBulkGradeDto, IPopulatedGroup, IPopulatedLesson, IUser } from '@redmonkey/shared';
 import { apiGetGroups } from '@/api/groups';
 import { apiGetLessons } from '@/api/lessons';
 import { apiGetUsers } from '@/api/users';
@@ -17,12 +11,12 @@ import {
   apiCreateGrade,
   apiDeleteGrade,
   apiGetGrades,
-  apiGetGradesSummary,
   apiSaveBulkGrades,
   apiUpdateGrade,
 } from '@/api/grades';
 import { useAuthStore } from '@/store/authStore';
-import { getApiErrorMessage } from '@/utils/apiError';
+import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
+import { createTempId, removeById, replaceById, upsertById } from '@/lib/optimistic';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,8 +27,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { GRADE_TYPE_META } from '@/lib/gradeColors';
+import EmptyState from '@/components/common/EmptyState';
+import ErrorState from '@/components/common/ErrorState';
 import BulkGradeForm from '@/components/features/grades/BulkGradeForm';
-import GradeJournal from '@/components/features/grades/GradeJournal';
+import GradeJournal, {
+  type JournalGrade,
+  type SaveGradeHandler,
+} from '@/components/features/grades/GradeJournal';
 import StudentGrades from '@/components/features/grades/StudentGrades';
 
 const ALL_TYPES = 'all';
@@ -48,23 +47,25 @@ export default function GradesPage() {
 
   const [students, setStudents] = useState<IUser[]>([]);
   const [lessons, setLessons] = useState<IPopulatedLesson[]>([]);
-  const [grades, setGrades] = useState<IPopulatedGrade[]>([]);
-  const [summary, setSummary] = useState<IGradeSummaryRow[]>([]);
+  const [grades, setGrades] = useState<JournalGrade[]>([]);
 
+  const [isGroupsLoading, setIsGroupsLoading] = useState(true);
+  const [groupsError, setGroupsError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [journalError, setJournalError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [savingCell, setSavingCell] = useState<{ studentId: string; lessonId: string } | null>(
-    null
-  );
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   // Лічильник ремонтує форму на кожне відкриття, щоб вона не памʼятала
   // оцінки з попереднього заняття — і щоб обійтись без setState в ефекті
   const [bulkKey, setBulkKey] = useState(0);
-  const [reloadKey, setReloadKey] = useState(0);
+  // «Спробувати знову» після помилки завантаження — перезапускає відповідний ефект
+  const [groupsAttempt, setGroupsAttempt] = useState(0);
+  const [journalAttempt, setJournalAttempt] = useState(0);
 
   const userId = user?.id;
   const isStudent = user?.role === UserRole.STUDENT;
-  const canEdit = user?.role === UserRole.ADMIN || user?.role === UserRole.TEACHER;
+  const isTeacher = user?.role === UserRole.TEACHER;
+  const canEdit = user?.role === UserRole.ADMIN || isTeacher;
   const gradeType = type === ALL_TYPES ? undefined : (type as GradeType);
 
   // Студент дивиться лише свої оцінки — селектор групи йому не потрібен,
@@ -74,21 +75,26 @@ export default function GradesPage() {
     let cancelled = false;
 
     const loadGroups = async () => {
+      setIsGroupsLoading(true);
+      setGroupsError(null);
       try {
         const data = await apiGetGroups();
         if (cancelled) return;
 
         // GET /groups віддає всі групи академії без звуження за роллю. Якщо
         // не відфільтрувати, викладач авто-обере чужу групу і отримає 403.
-        const visible =
-          user?.role === UserRole.TEACHER
-            ? data.filter((group) => group.teachers.some((teacher) => teacher.id === user.id))
-            : data;
+        const visible = isTeacher
+          ? data.filter((group) => group.teachers.some((teacher) => teacher.id === userId))
+          : data;
 
         setGroups(visible);
         setGroupId((current) => current || visible[0]?.id || '');
       } catch (error) {
-        if (!cancelled) toast.error(getApiErrorMessage(error, 'Не вдалося завантажити групи'));
+        if (!cancelled && !isSilentError(error)) {
+          setGroupsError(getApiErrorMessage(error, 'Не вдалося завантажити групи'));
+        }
+      } finally {
+        if (!cancelled) setIsGroupsLoading(false);
       }
     };
 
@@ -97,105 +103,129 @@ export default function GradesPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, isStudent, user?.role, user?.id]);
+  }, [userId, isStudent, isTeacher, groupsAttempt]);
 
   useEffect(() => {
     if (!userId) return;
     if (!isStudent && !groupId) return;
-    let cancelled = false;
+    // Перемкнули групу чи тип, поки журнал ще вантажився — старі запити
+    // скасовуються, і відповідь для попередньої групи не перезапише нову
+    const controller = new AbortController();
+    const { signal } = controller;
 
     const loadJournal = async () => {
       setIsLoading(true);
+      setJournalError(null);
       try {
         if (isStudent) {
-          const data = await apiGetGrades({ type: gradeType });
-          if (!cancelled) setGrades(data);
+          const data = await apiGetGrades({ type: gradeType }, { signal });
+          if (!signal.aborted) setGrades(data);
           return;
         }
 
-        const [studentList, lessonList, gradeList, summaryList] = await Promise.all([
-          apiGetUsers({ role: UserRole.STUDENT, groupId }),
-          apiGetLessons({ groupId }),
-          apiGetGrades({ groupId, type: gradeType }),
-          apiGetGradesSummary({ groupId, type: gradeType }),
+        const [studentList, lessonList, gradeList] = await Promise.all([
+          apiGetUsers({ role: UserRole.STUDENT, groupId }, { signal }),
+          apiGetLessons({ groupId }, { signal }),
+          apiGetGrades({ groupId, type: gradeType }, { signal }),
         ]);
 
-        if (cancelled) return;
+        if (signal.aborted) return;
         setStudents(studentList);
         setLessons(lessonList);
         setGrades(gradeList);
-        setSummary(summaryList);
       } catch (error) {
-        if (!cancelled) toast.error(getApiErrorMessage(error, 'Не вдалося завантажити журнал'));
+        if (!signal.aborted && !isSilentError(error)) {
+          setJournalError(getApiErrorMessage(error, 'Не вдалося завантажити журнал'));
+        }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!signal.aborted) setIsLoading(false);
       }
     };
 
     loadJournal();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, isStudent, groupId, gradeType, reloadKey]);
+    return () => controller.abort();
+  }, [userId, isStudent, groupId, gradeType, journalAttempt]);
 
-  const reload = () => setReloadKey((key) => key + 1);
+  // Оцінка з'являється в клітинці одразу, запит іде у фоні. Колбек стабільний
+  // (не залежить від grades), інакше memo рядків журналу не мав би сенсу
+  const handleSaveGrade = useCallback<SaveGradeHandler>(
+    async (student, lesson, current, value, comment) => {
+      if (!user) return;
 
-  const handleSaveGrade = async (
-    studentId: string,
-    lessonId: string,
-    value: number,
-    comment: string
-  ) => {
-    const existing = grades.find(
-      (grade) =>
-        grade.studentId === studentId &&
-        grade.lessonId === lessonId &&
-        (gradeType ? grade.type === gradeType : true)
-    );
+      const now = new Date().toISOString();
+      const optimistic: JournalGrade = current
+        ? { ...current, value, comment, isPending: true }
+        : {
+            id: createTempId(),
+            studentId: student.id,
+            lessonId: lesson.id,
+            teacherId: user.id,
+            value,
+            comment,
+            // Коли обрано «Усі типи», новій оцінці потрібен конкретний — беремо класну роботу
+            type: gradeType ?? GradeType.CLASSWORK,
+            createdAt: now,
+            updatedAt: now,
+            student: {
+              id: student.id,
+              firstName: student.firstName,
+              lastName: student.lastName,
+              avatar: student.avatar,
+            },
+            lesson: { id: lesson.id, title: lesson.title, date: lesson.date },
+            teacher: { id: user.id, firstName: user.firstName, lastName: user.lastName },
+            isPending: true,
+          };
 
-    setSavingCell({ studentId, lessonId });
-    try {
-      if (existing) {
-        await apiUpdateGrade(existing.id, { value, comment });
-      } else {
-        // Коли обрано «Усі типи», новій оцінці потрібен конкретний — беремо класну роботу
-        await apiCreateGrade({
-          studentId,
-          lessonId,
-          value,
-          comment,
-          type: gradeType ?? GradeType.CLASSWORK,
-        });
+      setGrades((list) =>
+        current ? replaceById(list, current.id, optimistic) : [...list, optimistic]
+      );
+
+      try {
+        const saved = current
+          ? await apiUpdateGrade(current.id, { value, comment })
+          : await apiCreateGrade({
+              studentId: student.id,
+              lessonId: lesson.id,
+              value,
+              comment,
+              type: optimistic.type,
+            });
+        setGrades((list) => replaceById(list, optimistic.id, saved));
+      } catch (error) {
+        // Відкочуємо лише цю клітинку: інші оцінки могли змінитися, поки йшов запит
+        setGrades((list) =>
+          current ? replaceById(list, optimistic.id, current) : removeById(list, optimistic.id)
+        );
+        toastApiError(error, 'Не вдалося зберегти оцінку');
       }
-      toast.success('Оцінку збережено');
-      reload();
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Не вдалося зберегти оцінку'));
-    } finally {
-      setSavingCell(null);
-    }
-  };
+    },
+    [user, gradeType]
+  );
 
-  const handleDeleteGrade = async (gradeId: string) => {
+  const handleDeleteGrade = useCallback(async (grade: JournalGrade) => {
+    setGrades((list) => removeById(list, grade.id));
     try {
-      await apiDeleteGrade(gradeId);
-      toast.success('Оцінку видалено');
-      reload();
+      await apiDeleteGrade(grade.id);
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Не вдалося видалити оцінку'));
+      setGrades((list) => [...list, grade]);
+      toastApiError(error, 'Не вдалося видалити оцінку');
     }
-  };
+  }, []);
 
   const handleBulkSubmit = async (data: IBulkGradeDto) => {
     setIsSubmitting(true);
     try {
-      await apiSaveBulkGrades(data);
+      const saved = await apiSaveBulkGrades(data);
+      // Бекенд повертає збережені оцінки — вливаємо їх у журнал замість повного
+      // перезапиту. Інший тип, ніж у фільтрі, у поточний вид не потрапляє
+      const visible = gradeType ? saved.filter((grade) => grade.type === gradeType) : saved;
+      setGrades((list) => upsertById(list, visible));
       toast.success('Оцінки збережено');
       setIsBulkOpen(false);
-      reload();
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Не вдалося зберегти оцінки'));
+      toastApiError(error, 'Не вдалося зберегти оцінки');
     } finally {
       setIsSubmitting(false);
     }
@@ -203,11 +233,41 @@ export default function GradesPage() {
 
   if (!user) return null;
 
+  if (!isStudent && groupsError) {
+    return (
+      <ErrorState
+        title="Не вдалося завантажити групи"
+        description={groupsError}
+        onRetry={() => setGroupsAttempt((value) => value + 1)}
+      />
+    );
+  }
+
+  if (!isStudent && !isGroupsLoading && groups.length === 0) {
+    return isTeacher ? (
+      <EmptyState
+        icon={BookOpenCheck}
+        title="Ви ще не закріплені за жодною групою"
+        description="Журнал з'явиться, щойно адміністратор призначить вас викладачем групи."
+      />
+    ) : (
+      <EmptyState
+        icon={BookOpenCheck}
+        title="Груп ще немає"
+        description="Журнал ведеться для навчальної групи — спершу створіть її."
+      >
+        <Button className="bg-[#C10000] hover:bg-[#A00000] text-white" asChild>
+          <Link to="/groups">Перейти до груп</Link>
+        </Button>
+      </EmptyState>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Заголовок і підзаголовок сторінки рендерить Header у AppLayout — тут лише лічильник і дія */}
       {!isStudent && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <Badge variant="secondary">{students.length} студентів</Badge>
 
           {canEdit && (
@@ -256,17 +316,21 @@ export default function GradesPage() {
         </Select>
       </div>
 
-      {isStudent ? (
+      {journalError ? (
+        <ErrorState
+          title="Не вдалося завантажити журнал"
+          description={journalError}
+          onRetry={() => setJournalAttempt((value) => value + 1)}
+        />
+      ) : isStudent ? (
         <StudentGrades grades={grades} isLoading={isLoading} />
       ) : (
         <GradeJournal
           students={students}
           lessons={lessons}
           grades={grades}
-          summary={summary}
           isLoading={isLoading}
           canEdit={canEdit}
-          savingCell={savingCell}
           onSaveGrade={handleSaveGrade}
           onDeleteGrade={handleDeleteGrade}
         />

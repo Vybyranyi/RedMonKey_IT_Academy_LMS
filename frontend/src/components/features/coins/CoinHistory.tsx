@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { ChevronDown, History } from 'lucide-react';
 import type { IPopulatedCoinTransaction } from '@redmonkey/shared';
+import type { Pending } from '@/lib/optimistic';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { COIN_CATEGORY_META, formatAmount, getAmountColor } from '@/lib/coinCategories';
 
 interface CoinHistoryProps {
-  transactions: IPopulatedCoinTransaction[];
+  /** isPending — транзакцію вже показано, але сервер її ще не підтвердив */
+  transactions: Pending<IPopulatedCoinTransaction>[];
   isLoading: boolean;
   /** студент бачить лише свої транзакції — імʼя в рядку йому нічого не додає */
   showStudent?: boolean;
@@ -49,7 +51,10 @@ export default function CoinHistory({
           transactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex items-start gap-3 rounded-xl border border-slate-100 p-3"
+              aria-busy={transaction.isPending || undefined}
+              className={`flex items-start gap-3 rounded-xl border border-slate-100 p-3 transition-opacity ${
+                transaction.isPending ? 'opacity-60' : ''
+              }`}
             >
               <span
                 className={`shrink-0 text-base font-bold tabular-nums ${getAmountColor(transaction.amount)}`}
@@ -67,8 +72,10 @@ export default function CoinHistory({
                   {transaction.reason}
                 </p>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  {format(new Date(transaction.createdAt), 'd MMMM yyyy, HH:mm', { locale: uk })} ·{' '}
-                  {transaction.issuer.firstName} {transaction.issuer.lastName}
+                  {transaction.isPending
+                    ? 'Зберігається…'
+                    : format(new Date(transaction.createdAt), 'd MMMM yyyy, HH:mm', { locale: uk })}{' '}
+                  · {transaction.issuer.firstName} {transaction.issuer.lastName}
                 </p>
               </div>
 

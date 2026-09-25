@@ -21,7 +21,8 @@ interface CoinAwardFormProps {
   students: IUser[];
   /** студент, якого обрали в рейтингу; порожній рядок — обирає користувач */
   initialStudentId?: string;
-  isSubmitting: boolean;
+  /** CoinsPage закриває форму одразу (оптимістичне оновлення), тож за замовчуванням false */
+  isSubmitting?: boolean;
   onSubmit: (data: ICoinTransactionDto) => void;
 }
 
@@ -32,7 +33,7 @@ export default function CoinAwardForm({
   onClose,
   students,
   initialStudentId,
-  isSubmitting,
+  isSubmitting = false,
   onSubmit,
 }: CoinAwardFormProps) {
   // Стан ініціалізується один раз: батько монтує форму лише на час відкриття,
