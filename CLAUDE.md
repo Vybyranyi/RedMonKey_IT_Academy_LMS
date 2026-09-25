@@ -75,6 +75,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 - Refresh-токен — httpOnly cookie, довгоживучий (дефолт 7d), містить `tokenVersion`.
 - Logout інкрементує `User.tokenVersion` → усі видані раніше refresh-токени (на всіх пристроях) миттєво стають невалідними (`auth.service.ts`). Так само — зміна пароля самим користувачем і скидання пароля адміном (`PATCH /users/:id`).
 - Пароль нового користувача задає адмін (`POST /users` без пароля — 400); спільного пароля за замовчуванням немає.
+- **Останній адмін.** Деактивація чи зміна ролі активного адміна йде через `userRepository.updateUnlessLastAdmin`: рядки активних адмінів блокуються `SELECT ... FOR UPDATE`, тож двоє адмінів, що одночасно деактивують один одного, не лишать академію без адміна. Звичайне редагування адміна блокувань не бере.
 - Реєстрації через публічний ендпоінт немає — користувачів створює `admin` (`POST /users`) або сід-скрипт.
 - Фронтенд: `frontend/src/api/axios.ts` — interceptor ловить 401, чергує паралельні запити (`isRefreshing`/`failedQueue`), рефрешить токен один раз і повторює оригінальний запит. Якщо refresh відхилено (401/403) — сесія завершується **один раз** (`clearAuth` + toast), усі запити отримують `SessionExpiredError`, а 401 після логауту вже не запускає новий рефреш. Збій мережі під час рефрешу не розлогінює. `/auth/login`, `/auth/refresh`, `/auth/logout` рефреш не запускають — їхній 401 означає невірні облікові дані.
 
@@ -88,6 +89,8 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 - **CHECK-обмеження не в БД**: `Grade.value` (1..12) і `CoinTransaction.amount` (≠ 0) валідуються лише на рівні застосунку (Prisma не вміє їх декларувати) — не забувай про валідацію Zod при додаванні нових ендпоінтів для оцінок/монет.
 - `GroupTeacher` — join-таблиця M:N викладач↔група (заміна масиву `teachers[]` з Mongo-версії). `User.groupId` — пряме 1:N для студента.
 - `id` — `uuid` скрізь.
+- **Час — у UTC, академія — у `ACADEMY_TIME_ZONE`** (`config/constants.ts`, `Europe/Kyiv`). Сервер на хостингу в UTC, тож код, що сам ставить години (seed), рахує їх через `utils/zonedTime.ts`, а не `setHours` — інакше «18:00» стає 21:00 за Києвом.
+- **Порядок дат, частина яких уже в БД, — у сервісах.** Схема бачить лише тіло запиту: `PATCH /groups/:id` з самим `endDate` чи `PATCH /lessons/:id` з новою датою заняття звіряються з другою датою із БД (`endDate > startDate`, `homeworkDueDate >= date`).
 
 ## Архітектура frontend
 
@@ -101,7 +104,9 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 - **Мутації — оптимістично або точково, без перезапиту всього списку.** Хелпери в `lib/optimistic.ts` (`replaceById`, `removeById`, `upsertById`, `createTempId`, тип `Pending<T>`) зберігають незмінені записи тими самими об'єктами — на цьому тримається `React.memo` рядків журналу (`GradeJournalRow` з порівнянням клітинок за вмістом) і відвідуваності (`AttendanceRow`). Колбеки, які йдуть у мемоізовані рядки, — `useCallback` з функціональним `setState`. Відкат при помилці — точковий (зворотна дельта, повернення попереднього запису), не знімок усього стану.
 - `store/authStore.ts` — Zustand, тримає `user`/`accessToken`/`isAuthenticated`; `accessToken` дублюється в `localStorage` для відновлення сесії при перезавантаженні сторінки.
 - `router/index.tsx` — React Router з захищеними маршрутами; `ProtectedRoute` приймає `allowedRoles` і використовується вкладено (спершу авторизація, далі — рівень ролі).
-- **Теки `hooks/` немає** — дані компоненти тягнуть самі через `useEffect` + функції з `api/`; React Query в проєкті не використовується. Дерево тек — у розділі 5.1 ТЗ (синхронізоване з кодом у 6.4).
+- **Теки `hooks/` немає** — дані компоненти тягнуть самі через `useEffect` + функції з `api/`; React Query в проєкті не використовується. Кілька дрібних загальних хуків живуть у `lib/`: `useDebouncedValue` (пошук студентів), `useDocumentTitle` (назва вкладки). Дерево тек — у розділі 5.1 ТЗ.
+- **Назва вкладки** — «Розділ · IT Academy LMS», її ставить `Header` з того ж `getPageMeta`, що й H1 (`tabTitle`, якщо заголовок для вкладки не підходить, як «Вітаємо, …!»). Новий роут — `case` у `getPageMeta`, і вкладка підхопиться сама.
+- **Час занять** у БД — момент в UTC; форма переводить місцевий час браузера в ISO, календар і дашборд показують назад у місцевому. Сітка тижня — 8:00–21:00 за замовчуванням і розширюється під заняття поза нею (`lib/calendarHours.ts`).
 - Типи ролей/enum'ів (`UserRole`, `GradeType` тощо) і спільні інтерфейси (`IUser`, ...) імпортуються з `@redmonkey/shared`, а не дублюються локально.
 
 ## Дизайн-система (стисло — повна версія в [DESIGN.md](./DESIGN.md))
@@ -149,6 +154,8 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 **Card:** `border-t-2 border-t-slate-200`, іконка-плашка в хедері `p-3 bg-red-50 text-primary rounded-xl`, `hover:shadow-md transition-shadow`, footer `bg-slate-50/50`.
 
+**Фокус з клавіатури.** Базове `:focus-visible` в `index.css` дає 2px контур кольору `--ring` усьому, що не має власного кільця (ShadCN-примітиви — мають). На темних Sidebar/Bottom Nav — білий (клас `focus-on-dark` на контейнері). Не став `focus:outline-none` без заміни; кнопки, що з'являються на hover, — ще й `focus-visible:opacity-100`. Іконкова кнопка — з `aria-label`; селект-фільтр без видимого підпису — з прихованим `<Label className="sr-only">`, не `aria-label`: той перекриє обране значення.
+
 **Токени = бренд.** У `:root` в `index.css` `--primary` = `#C10000`, `--primary-foreground` = білий, `--ring` = `#BA0000`, тож `bg-primary`/`text-primary`, дефолтні `<Button>`/`<Badge>` і фокус-кільця примітивів червоні. Брендова CTA-кнопка все одно пишеться явно — `bg-[#C10000] hover:bg-[#A00000] text-white`: дефолтний варіант на hover світлішає (`bg-primary/80`), а має темнішати. Змінюєш бренд — міняй і токени, і ці класи. Блок `.dark` — дефолт ShadCN, темної теми немає.
 
 **Input:** `h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000]`.
@@ -172,7 +179,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 | coins | `/coins/transactions`, `/coins/leaderboard`, `/coins/students/:id/balance` | `CoinsPage` (`CoinAwardForm`, `CoinBalanceCard`, `CoinHistory`, `CoinLeaderboard`) |
 | dashboard | `stats.repository.ts` | `DashboardPage` з контентом за роллю |
 
-Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)). З п. 6.1 закрито безпеку backend (helmet, rate-limit, ліміт тіла, глобальний error-handler + 404, аудит секретних полів) і базу даних (міграції, `EXPLAIN` журналу й leaderboard). П. 6.2 (стійкість UI) закрито повністю: 404/403, ErrorBoundary, втрата сесії, Bottom Nav, loading/empty/error стани, кеш і скасування запитів, оптимістичні оновлення. П. 6.3 (якість коду і CI) закрито: ESLint у backend і shared, Prettier на весь монорепо, format/lint/build/test у CI, тести транзакцій, код-рев'ю з виправленнями. П. 6.4 (документація) закрито: README з інструкцією, перевіреною з чистого клону, і скріншотами (`docs/screenshots/`), ТЗ (API, матриця прав, структура frontend, дизайн-система) і DESIGN.md звірено з кодом, CHANGELOG — версія `1.0.0` з підсумком шести тижнів. Відкриті: деплой (з 6.1), демо-дані й сценарій презентації (6.5), дрібниці з 6.6. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
+Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)). З п. 6.1 закрито безпеку backend (helmet, rate-limit, ліміт тіла, глобальний error-handler + 404, аудит секретних полів) і базу даних (міграції, `EXPLAIN` журналу й leaderboard). П. 6.2 (стійкість UI) закрито повністю: 404/403, ErrorBoundary, втрата сесії, Bottom Nav, loading/empty/error стани, кеш і скасування запитів, оптимістичні оновлення. П. 6.3 (якість коду і CI) закрито: ESLint у backend і shared, Prettier на весь монорепо, format/lint/build/test у CI, тести транзакцій, код-рев'ю з виправленнями. П. 6.4 (документація) закрито: README з інструкцією, перевіреною з чистого клону, і скріншотами (`docs/screenshots/`), ТЗ (API, матриця прав, структура frontend, дизайн-система) і DESIGN.md звірено з кодом, CHANGELOG — версія `1.0.0` з підсумком шести тижнів. П. 6.6 (дрібниці) закрито: favicon і назва вкладки, a11y-мінімум і клавіатура журналу, тайм-зони (seed і сітка календаря), валідації дат групи й домашнього завдання, debounce пошуку, захист останнього адміна. Відкриті: деплой (з 6.1), демо-дані й сценарій презентації (6.5). Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
 
 Свідомі борги, зафіксовані окремо: RLS вимкнений, `SettingsPage` — заглушка (з empty state). `GET /grades/summary` лишився на backend, але журнал рахує середнє з уже завантажених оцінок і цей запит не робить.
 
