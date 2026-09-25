@@ -36,11 +36,15 @@ const teachers = z
  * Перевіряється лише тоді, коли обидві дати прийшли в одному запиті:
  * порівняння з датою, що вже лежить у БД, — справа сервісу, а не схеми.
  */
-const endsAfterStart = (data: { startDate?: Date | null; endDate?: Date | null }) =>
+export const endsAfterStart = (data: { startDate?: Date | null; endDate?: Date | null }) =>
   !data.startDate || !data.endDate || data.endDate > data.startDate;
 
+export const GROUP_END_BEFORE_START_MESSAGE = 'Дата завершення має бути пізніше за дату початку';
+
+// Не експортується: Zod нормалізує параметри refine на місці, і message з цього
+// обʼєкта після створення схеми вже не прочитати — сервісу для тексту є константа вище
 const endsAfterStartIssue = {
-  message: 'Дата завершення має бути пізніше за дату початку',
+  message: GROUP_END_BEFORE_START_MESSAGE,
   path: ['endDate'],
 };
 

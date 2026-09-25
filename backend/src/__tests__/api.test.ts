@@ -29,6 +29,7 @@ vi.mock('../repositories/group.repository.js', () => ({
   groupRepository: {
     findIdsByTeacher: vi.fn(),
     findByName: vi.fn(),
+    findDatesById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
   },
@@ -63,6 +64,7 @@ const findIdsByTeacher = vi.mocked(groupRepository.findIdsByTeacher);
 const groupFindByName = vi.mocked(groupRepository.findByName);
 const groupCreate = vi.mocked(groupRepository.create);
 const groupUpdate = vi.mocked(groupRepository.update);
+const groupFindDates = vi.mocked(groupRepository.findDatesById);
 const averageGrades = vi.mocked(statsRepository.averageGrades);
 const attendanceRates = vi.mocked(statsRepository.attendanceRates);
 const userFindAll = vi.mocked(userRepository.findAll);
@@ -570,6 +572,41 @@ describe('PATCH /api/v1/groups/:id', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe('Група з такою назвою вже існує');
+  });
+
+  // Схема бачить лише тіло запиту: друга дата лежить у БД
+  it('лише endDate раніше за збережений startDate — 400', async () => {
+    groupFindDates.mockResolvedValue({ startDate: new Date('2026-09-01'), endDate: null });
+
+    const response = await patchGroup({ endDate: '2026-06-01' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Дата завершення має бути пізніше за дату початку');
+    expect(groupUpdate).not.toHaveBeenCalled();
+  });
+
+  it('лише startDate пізніше за збережений endDate — 400', async () => {
+    groupFindDates.mockResolvedValue({ startDate: null, endDate: new Date('2026-12-01') });
+
+    const response = await patchGroup({ startDate: '2027-01-15' });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('коректну одну дату зберігає', async () => {
+    groupFindDates.mockResolvedValue({
+      startDate: new Date('2026-09-01'),
+      endDate: new Date('2026-12-01'),
+    });
+
+    const response = await patchGroup({ endDate: '2027-01-31' });
+
+    expect(response.status).toBe(200);
+    expect(groupUpdate).toHaveBeenCalledWith(
+      GROUP_ID,
+      { endDate: new Date('2027-01-31') },
+      undefined
+    );
   });
 });
 

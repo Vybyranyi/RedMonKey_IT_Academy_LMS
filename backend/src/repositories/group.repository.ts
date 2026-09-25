@@ -58,6 +58,13 @@ export const groupRepository = {
     return group ? flatten(group) : null;
   },
 
+  async findDatesById(id: string) {
+    return prisma.group.findUnique({
+      where: { id },
+      select: { startDate: true, endDate: true },
+    });
+  },
+
   async findByName(name: string) {
     return prisma.group.findFirst({ where: { name } });
   },
