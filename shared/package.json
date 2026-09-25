@@ -6,11 +6,16 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.3.0",
+    "globals": "^17.6.0",
     "typescript": "^5.0.0",
+    "typescript-eslint": "^8.59.2",
     "vitest": "^5.0.2"
   },
   "dependencies": {

@@ -9,4 +9,5 @@ const startServer = async () => {
   });
 };
 
-startServer();
+// Якщо БД недоступна, connectDB сам завершує процес — ловити тут нічого
+void startServer();

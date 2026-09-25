@@ -14,6 +14,8 @@
 
   // ─── ESLint ─────────────────────────────────────────────
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  // У кожного workspace свій eslint.config — розширення бере той, що ближче до файлу
+  "eslint.workingDirectories": [{ "mode": "auto" }],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },

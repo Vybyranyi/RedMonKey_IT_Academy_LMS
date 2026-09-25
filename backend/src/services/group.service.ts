@@ -9,7 +9,7 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors.
 import { TokenPayload } from '../utils/jwt.js';
 
 /** teachers/students приходять як обʼєкти { id, ... } — витягуємо лише id. */
-const toIds = (rows: any[]): string[] => rows.map((row) => String(row.id));
+const toIds = (rows: { id: string }[]) => rows.map((row) => row.id);
 
 const isPrismaError = (error: unknown, code: string) =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === code;
@@ -44,8 +44,8 @@ export const groupService = {
     }
 
     const allowed = await accessPolicy.canViewGroup(actor, {
-      teacherIds: toIds(group.teachers as any[]),
-      studentIds: toIds(group.students as any[]),
+      teacherIds: toIds(group.teachers),
+      studentIds: toIds(group.students),
     });
     if (!allowed) {
       throw new ForbiddenError('У вас немає доступу до цієї групи');

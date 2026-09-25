@@ -25,12 +25,13 @@ const studentDetailSelect = {
   redCoins: true,
 } satisfies Prisma.UserSelect;
 
-type RawGroup = { teachers: { teacher: unknown }[]; students: unknown[] } & Record<string, unknown>;
-
 /** Розгортає M:N teachers → плоский масив User[], зберігаючи API-контракт із Mongo-часів. */
-const flatten = ({ teachers, ...group }: RawGroup) => ({
+const flatten = <TGroup extends { teachers: { teacher: unknown }[] }>({
+  teachers,
+  ...group
+}: TGroup) => ({
   ...group,
-  teachers: teachers.map((row) => row.teacher),
+  teachers: teachers.map((row) => row.teacher) as TGroup['teachers'][number]['teacher'][],
 });
 
 export const groupRepository = {
