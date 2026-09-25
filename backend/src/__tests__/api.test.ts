@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import request from 'supertest';
 import { CoinCategory, UserRole } from '@redmonkey/shared';
@@ -17,21 +18,26 @@ vi.mock('../repositories/academy.repository.js', () => ({
 }));
 vi.mock('../repositories/coin.repository.js', () => ({
   coinRepository: {
-    findAll: vi.fn(),
+    findPage: vi.fn(),
     createWithBalance: vi.fn(),
     findLeaderboard: vi.fn(),
     sumByDirection: vi.fn(),
   },
 }));
 vi.mock('../repositories/group.repository.js', () => ({
-  groupRepository: { findIdsByTeacher: vi.fn() },
+  groupRepository: { findIdsByTeacher: vi.fn(), findByName: vi.fn(), create: vi.fn(), update: vi.fn() },
 }));
 vi.mock('../repositories/user.repository.js', () => ({
   userRepository: {
     findAll: vi.fn(),
     findById: vi.fn(),
     findByIdActive: vi.fn(),
-    findByEmail: vi.fn(),
+    findCredentialsByEmail: vi.fn(),
+    findCredentialsById: vi.fn(),
+    existsByEmail: vi.fn(),
+    findStudentIdsByGroups: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
     incrementTokenVersion: vi.fn(),
   },
   toPublicUser: (user: Record<string, unknown>) => {
@@ -43,13 +49,26 @@ vi.mock('../repositories/user.repository.js', () => ({
 const getDefaultId = vi.mocked(academyRepository.getDefaultId);
 const createWithBalance = vi.mocked(coinRepository.createWithBalance);
 const sumByDirection = vi.mocked(coinRepository.sumByDirection);
+const findPage = vi.mocked(coinRepository.findPage);
 const findIdsByTeacher = vi.mocked(groupRepository.findIdsByTeacher);
+const groupFindByName = vi.mocked(groupRepository.findByName);
+const groupCreate = vi.mocked(groupRepository.create);
+const groupUpdate = vi.mocked(groupRepository.update);
 const userFindAll = vi.mocked(userRepository.findAll);
 const userFindById = vi.mocked(userRepository.findById);
-const findByEmail = vi.mocked(userRepository.findByEmail);
+const userCreate = vi.mocked(userRepository.create);
+const userUpdate = vi.mocked(userRepository.update);
+const existsByEmail = vi.mocked(userRepository.existsByEmail);
+const findCredentialsByEmail = vi.mocked(userRepository.findCredentialsByEmail);
 
 const OWN_GROUP = 'group-own';
 const STUDENT_ID = '11111111-1111-4111-8111-111111111111';
+const GROUP_ID = '44444444-4444-4444-8444-444444444444';
+const TEACHER_ID = '55555555-5555-4555-8555-555555555555';
+
+/** Помилка обмеження БД так, як її кидає Prisma Client. */
+const prismaError = (code: string) =>
+  new Prisma.PrismaClientKnownRequestError('constraint failed', { code, clientVersion: 'test' });
 
 const adminToken = generateAccessToken({ userId: 'admin-1', role: UserRole.ADMIN });
 const teacherToken = generateAccessToken({ userId: 'teacher-1', role: UserRole.TEACHER });
@@ -84,6 +103,12 @@ beforeEach(() => {
   userFindAll.mockResolvedValue([] as never);
   userFindById.mockResolvedValue(activeStudent as never);
   createWithBalance.mockResolvedValue({ id: 'tx-1' } as never);
+  existsByEmail.mockResolvedValue(false);
+  userCreate.mockResolvedValue({ id: STUDENT_ID } as never);
+  userUpdate.mockResolvedValue({ id: STUDENT_ID } as never);
+  groupFindByName.mockResolvedValue(null as never);
+  groupCreate.mockResolvedValue({ id: GROUP_ID } as never);
+  groupUpdate.mockResolvedValue({ id: GROUP_ID } as never);
 });
 
 describe('GET /api/v1/health', () => {
@@ -92,6 +117,56 @@ describe('GET /api/v1/health', () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({ status: 'ok' });
+  });
+});
+
+describe('заголовки безпеки (helmet)', () => {
+  it('вмикає захисні заголовки й ховає X-Powered-By', async () => {
+    const response = await request(app).get('/api/v1/health');
+
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+    expect(response.headers['strict-transport-security']).toBeDefined();
+    expect(response.headers['x-powered-by']).toBeUndefined();
+  });
+});
+
+describe('невідомі маршрути', () => {
+  it('віддають 404 у JSON, а не HTML-сторінку Express', async () => {
+    const response = await request(app).get('/api/v1/no-such-route');
+
+    expect(response.status).toBe(404);
+    expect(response.headers['content-type']).toContain('application/json');
+    expect(response.body.message).toBe('Маршрут GET /api/v1/no-such-route не знайдено');
+  });
+
+  it('обробляють і шляхи поза /api/v1', async () => {
+    const response = await request(app).post('/whatever');
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe('Маршрут POST /whatever не знайдено');
+  });
+});
+
+describe('розбір тіла запиту', () => {
+  it('битий JSON віддає 400 з поясненням, а не 500', async () => {
+    const response = await request(app)
+      .post('/api/v1/auth/login')
+      .set('Content-Type', 'application/json')
+      .send('{"email": "admin@academy.com",');
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Тіло запиту містить некоректний JSON');
+  });
+
+  it('тіло понад 1 МБ відхиляє з 413 ще до контролера', async () => {
+    const response = await request(app)
+      .post('/api/v1/coins/transactions')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ ...validTransaction, reason: 'x'.repeat(1024 * 1024) });
+
+    expect(response.status).toBe(413);
+    expect(response.body.message).toBe('Тіло запиту завелике (максимум 1mb)');
+    expect(createWithBalance).not.toHaveBeenCalled();
   });
 });
 
@@ -145,6 +220,225 @@ describe('GET /api/v1/users', () => {
     await request(app).get('/api/v1/users').set('Authorization', `Bearer ${adminToken}`);
 
     expect(userFindAll).toHaveBeenCalledWith({ isActive: true });
+  });
+});
+
+// Mass assignment: раніше тіло PATCH /users/:id ішло в Prisma як є, і адмін
+// (або викрадений адмінський токен) міг переписати баланс чи tokenVersion
+describe('PATCH /api/v1/users/:id — білий список полів', () => {
+  const patchUser = (body: object) =>
+    request(app)
+      .patch(`/api/v1/users/${STUDENT_ID}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(body);
+
+  it('не передає в БД redCoins, tokenVersion і passwordHash', async () => {
+    const response = await patchUser({
+      firstName: 'Анна',
+      redCoins: 999_999,
+      tokenVersion: 0,
+      passwordHash: '$2a$10$fake',
+      academyId: 'academy-evil',
+    });
+
+    expect(response.status).toBe(200);
+    expect(userUpdate).toHaveBeenCalledWith(STUDENT_ID, { firstName: 'Анна' });
+  });
+
+  it('тіло лише із забороненими полями відхиляє з 400', async () => {
+    const response = await patchUser({ redCoins: 999_999, tokenVersion: 0 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Не передано жодного поля для оновлення');
+    expect(userUpdate).not.toHaveBeenCalled();
+  });
+
+  it('невалідний тип поля відхиляє з 400, а не 500 від Prisma', async () => {
+    const response = await patchUser({ firstName: 123 });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Імʼя: очікується рядок');
+  });
+
+  it('пароль хешує, а не пише як є', async () => {
+    await patchUser({ password: 'newSecret1' });
+
+    const [, data] = userUpdate.mock.calls[0] as [string, Record<string, unknown>];
+    expect(data).not.toHaveProperty('password');
+    expect(await bcrypt.compare('newSecret1', data.passwordHash as string)).toBe(true);
+  });
+
+  it('зайнятий email віддає 400 замість 500', async () => {
+    userUpdate.mockRejectedValue(prismaError('P2002'));
+
+    const response = await patchUser({ email: 'taken@academy.com' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Користувач з таким email вже існує');
+  });
+});
+
+describe('POST /api/v1/users', () => {
+  const newStudent = {
+    firstName: 'Іван',
+    lastName: 'Петренко',
+    email: 'ivan@academy.com',
+    role: UserRole.STUDENT,
+    password: 'secret123',
+    group: GROUP_ID,
+  };
+
+  it('ігнорує баланс і службові поля з тіла', async () => {
+    const response = await request(app)
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ ...newStudent, redCoins: 1000, tokenVersion: 7, passwordHash: 'plain', academyId: 'x' });
+
+    expect(response.status).toBe(201);
+    const [data] = userCreate.mock.calls[0] as [Record<string, unknown>];
+    expect(data).toMatchObject({ academyId: 'academy-1', redCoins: 0, groupId: GROUP_ID });
+    expect(data).not.toHaveProperty('tokenVersion');
+    expect(data.passwordHash).not.toBe('plain');
+  });
+
+  it('невалідний email відхиляє з 400', async () => {
+    const response = await request(app)
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ ...newStudent, email: 'not-an-email' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Некоректний email');
+    expect(userCreate).not.toHaveBeenCalled();
+  });
+
+  it('неіснуючу групу відхиляє з 400', async () => {
+    userCreate.mockRejectedValue(prismaError('P2003'));
+
+    const response = await request(app)
+      .post('/api/v1/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(newStudent);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Вказаної групи не існує');
+  });
+});
+
+describe('POST /api/v1/groups', () => {
+  const postGroup = (body: object) =>
+    request(app).post('/api/v1/groups').set('Authorization', `Bearer ${adminToken}`).send(body);
+
+  // Саме це тіло шле GroupForm; раніше '' в датах падав у Prisma з 500
+  it('приймає тіло з форми з порожніми датами', async () => {
+    const response = await postGroup({
+      name: 'JS-2026-A',
+      description: '',
+      startDate: '',
+      endDate: '',
+      teachers: [],
+      students: [],
+      academyId: 'academy-evil',
+    });
+
+    expect(response.status).toBe(201);
+    expect(groupCreate).toHaveBeenCalledWith(
+      { name: 'JS-2026-A', description: '', startDate: null, endDate: null, academyId: 'academy-1' },
+      []
+    );
+  });
+
+  it('не дає призначити викладачем того, хто не є активним викладачем', async () => {
+    userFindAll.mockResolvedValue([] as never);
+
+    const response = await postGroup({ name: 'JS-2026-A', teachers: [TEACHER_ID] });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Серед teachers є id, які не належать активним викладачам');
+    expect(userFindAll).toHaveBeenCalledWith({
+      id: { in: [TEACHER_ID] },
+      role: UserRole.TEACHER,
+      isActive: true,
+    });
+    expect(groupCreate).not.toHaveBeenCalled();
+  });
+
+  it('відхиляє дату завершення раніше за дату початку', async () => {
+    const response = await postGroup({
+      name: 'JS-2026-A',
+      startDate: '2026-09-01',
+      endDate: '2026-06-01',
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Дата завершення має бути пізніше за дату початку');
+  });
+});
+
+describe('PATCH /api/v1/groups/:id', () => {
+  const patchGroup = (body: object) =>
+    request(app)
+      .patch(`/api/v1/groups/${GROUP_ID}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(body);
+
+  it('не передає в БД поля поза білим списком', async () => {
+    const response = await patchGroup({ description: 'Новий опис', isActive: false, academyId: 'x' });
+
+    expect(response.status).toBe(200);
+    expect(groupUpdate).toHaveBeenCalledWith(GROUP_ID, { description: 'Новий опис' }, undefined);
+  });
+
+  it('зайняту назву відхиляє з 400', async () => {
+    groupUpdate.mockRejectedValue(prismaError('P2002'));
+
+    const response = await patchGroup({ name: 'JS-2026-B' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Група з такою назвою вже існує');
+  });
+});
+
+describe('GET /api/v1/coins/transactions', () => {
+  const getHistory = (query = '') =>
+    request(app)
+      .get(`/api/v1/coins/transactions${query}`)
+      .set('Authorization', `Bearer ${adminToken}`);
+
+  it('віддає сторінку { items, nextCursor } з limit за замовчуванням', async () => {
+    findPage.mockResolvedValue({ items: [{ id: 'tx-1' }], nextCursor: 'tx-1' } as never);
+
+    const response = await getHistory();
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ items: [{ id: 'tx-1' }], nextCursor: 'tx-1' });
+    expect(findPage).toHaveBeenCalledWith({}, 20, undefined);
+  });
+
+  it('передає limit і cursor із query-рядка', async () => {
+    findPage.mockResolvedValue({ items: [], nextCursor: null } as never);
+
+    await getHistory(`?limit=50&cursor=${STUDENT_ID}`);
+
+    expect(findPage).toHaveBeenCalledWith({}, 50, STUDENT_ID);
+  });
+
+  // Без верхньої межі limit=100000 знову віддав би весь ledger одним запитом
+  it('limit понад 100 відхиляє з 400', async () => {
+    const response = await getHistory('?limit=101');
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('limit не може бути більшим за 100');
+    expect(findPage).not.toHaveBeenCalled();
+  });
+
+  it('невідомий курсор відхиляє з 400', async () => {
+    findPage.mockResolvedValue(null as never);
+
+    const response = await getHistory(`?cursor=${STUDENT_ID}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Некоректний курсор пагінації');
   });
 });
 
@@ -239,8 +533,19 @@ describe('POST /api/v1/auth/login', () => {
     tokenVersion: 1,
   });
 
+  // Без email Prisma отримала б where: { email: undefined } — тобто першого-ліпшого користувача
+  it('запит без email відхиляє з 400, не звертаючись до БД', async () => {
+    const response = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ password: 'secret123' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Потрібно вказати email');
+    expect(findCredentialsByEmail).not.toHaveBeenCalled();
+  });
+
   it('невірний пароль повертає 401', async () => {
-    findByEmail.mockResolvedValue(dbUser() as never);
+    findCredentialsByEmail.mockResolvedValue(dbUser() as never);
 
     const response = await request(app)
       .post('/api/v1/auth/login')
@@ -251,7 +556,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   it('успішний вхід повертає access-токен і профіль', async () => {
-    findByEmail.mockResolvedValue(dbUser() as never);
+    findCredentialsByEmail.mockResolvedValue(dbUser() as never);
 
     const response = await request(app)
       .post('/api/v1/auth/login')
@@ -263,7 +568,7 @@ describe('POST /api/v1/auth/login', () => {
   });
 
   it('не віддає хеш пароля у відповіді', async () => {
-    findByEmail.mockResolvedValue(dbUser() as never);
+    findCredentialsByEmail.mockResolvedValue(dbUser() as never);
 
     const response = await request(app)
       .post('/api/v1/auth/login')
@@ -274,7 +579,7 @@ describe('POST /api/v1/auth/login', () => {
 
   // Refresh живе лише в httpOnly-куці — інакше його дістав би будь-який скрипт на сторінці
   it('кладе refresh-токен у httpOnly-куку, а не в тіло відповіді', async () => {
-    findByEmail.mockResolvedValue(dbUser() as never);
+    findCredentialsByEmail.mockResolvedValue(dbUser() as never);
 
     const response = await request(app)
       .post('/api/v1/auth/login')

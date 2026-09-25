@@ -43,12 +43,14 @@ cp frontend/.env.example frontend/.env
 # Перевір VITE_API_URL (за замовчуванням http://localhost:3000/api/v1)
 ```
 
-### 4. Застосувати схему та заповнити базу тестовими даними
+### 4. Застосувати міграції та заповнити базу тестовими даними
 
 ```bash
-npm run prisma:push -w backend   # синхронізує prisma/schema.prisma з БД (db push, без міграцій)
-npm run seed -w backend          # опціонально: тестові користувачі та групи
+npm run prisma:deploy -w backend   # застосовує міграції з backend/prisma/migrations
+npm run seed -w backend            # опціонально: тестові користувачі та групи
 ```
+
+> Якщо твоя БД створена раніше через `db push`, `prisma:deploy` зупиниться з помилкою `P3005`. Одноразовий перехід на міграції описано в [backend/prisma/MIGRATIONS.md](./backend/prisma/MIGRATIONS.md#одноразово-перевести-наявну-бд-на-міграції).
 
 ### 5. Запустити проект
 
@@ -84,6 +86,9 @@ RedMonKey_IT_Academy_LMS/
 | `npm run build` | Збирає всі workspace-и |
 | `npm test` | Ганяє тести (Vitest) у всіх workspace-ах |
 | `npm run seed -w backend` | Заповнює БД тестовими даними |
+| `npm run prisma:migrate -w backend -- --name <назва>` | Створює міграцію після зміни `schema.prisma` |
+| `npm run prisma:deploy -w backend` | Застосовує міграції з репозиторію |
+| `npm run prisma:status -w backend` | Показує, чи відстає БД від міграцій |
 | `npm run lint -w frontend` | Запускає ESLint у frontend |
 
 ---
@@ -95,6 +100,8 @@ RedMonKey_IT_Academy_LMS/
 | [IT_Academy_LMS_ТЗ.md](./IT_Academy_LMS_ТЗ.md) | Технічне завдання: API, схеми БД, ролі |
 | [DESIGN.md](./DESIGN.md) | Дизайн-система: кольори, типографіка, компоненти |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Правила роботи з гілками, комітами, PR |
+| [backend/prisma/MIGRATIONS.md](./backend/prisma/MIGRATIONS.md) | Міграції БД: щоденна робота і перехід з `db push` |
+| [backend/prisma/QUERY_PLANS.md](./backend/prisma/QUERY_PLANS.md) | `EXPLAIN` журналу оцінок і leaderboard, рішення щодо індексів |
 
 ---
 

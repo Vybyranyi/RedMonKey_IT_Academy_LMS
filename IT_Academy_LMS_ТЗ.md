@@ -303,7 +303,7 @@ DELETE /grades/:id          — видалити [admin]
 ### 4.6 Coins Routes
 
 ```
-GET    /coins/transactions          — список транзакцій (?studentId=)
+GET    /coins/transactions          — історія сторінками (?studentId=&groupId=&category=&limit=&cursor=) → { items, nextCursor }
 POST   /coins/transactions          — нарахувати/списати монети [admin, teacher]
 GET    /coins/leaderboard           — топ студентів за монетами (?groupId=)
 GET    /coins/students/:id/balance  — баланс конкретного студента
@@ -646,14 +646,14 @@ Bottom Navigation (mobile):
 #### 6.1 Обов'язкове (без цього не здаємо)
 
 **Безпека backend**
-- [ ] `helmet` + `express-rate-limit` (окремий, суворіший ліміт на `/auth/login` і `/auth/refresh`)
-- [ ] Ліміт розміру тіла запиту: `express.json({ limit: '1mb' })`
-- [ ] Глобальний error-handling middleware у кінці ланцюжка + 404-хендлер для невідомих роутів
-- [ ] Аудит відповідей API: `passwordHash` і `tokenVersion` не витікають назовні (явний `select`, а не сподівання)
+- [x] `helmet` + `express-rate-limit` (окремий, суворіший ліміт на `/auth/login` і `/auth/refresh`)
+- [x] Ліміт розміру тіла запиту: `express.json({ limit: '1mb' })`
+- [x] Глобальний error-handling middleware у кінці ланцюжка + 404-хендлер для невідомих роутів
+- [x] Аудит відповідей API: `passwordHash` і `tokenVersion` не витікають назовні (явний `select`, а не сподівання)
 
 **База даних**
-- [ ] Ініціалізувати `prisma/migrations` — зараз схема застосована через `db push`, історії міграцій немає
-- [ ] Перевірити плани запитів (`EXPLAIN`) для журналу оцінок і leaderboard, дозакрити індексами за потреби
+- [x] Ініціалізувати `prisma/migrations` — baseline `0_init`, процес і перехід наявної БД: [`backend/prisma/MIGRATIONS.md`](./backend/prisma/MIGRATIONS.md)
+- [x] Перевірити плани запитів (`EXPLAIN`) для журналу оцінок і leaderboard, дозакрити індексами за потреби — звіт: [`backend/prisma/QUERY_PLANS.md`](./backend/prisma/QUERY_PLANS.md)
 
 **Деплой**
 - [ ] Dockerfile / інструкція деплою (backend — Railway/Render, frontend — Vercel/Netlify)

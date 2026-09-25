@@ -4,6 +4,8 @@ import { CoinCategory } from '../enums';
 export const COIN_AMOUNT_MIN = -1000;
 export const COIN_AMOUNT_MAX = 1000;
 export const LEADERBOARD_DEFAULT_LIMIT = 10;
+export const COIN_HISTORY_DEFAULT_LIMIT = 20;
+export const COIN_HISTORY_MAX_LIMIT = 100;
 
 // amount ≠ 0 не описати CHECK-обмеженням у Prisma, тож ця схема — єдине місце,
 // де правило реально перевіряється. Мінус — списання (penalty), плюс — нарахування.
@@ -34,9 +36,22 @@ export const createCoinTransactionSchema = z.object({
   relatedLessonId: relatedLessonId.optional(),
 });
 
+/**
+ * GET /coins/transactions — історія сторінками (keyset): без limit адмін
+ * отримував би весь ledger академії одним запитом.
+ * cursor — id останньої транзакції попередньої сторінки (nextCursor з відповіді).
+ */
 export const coinFiltersSchema = z.object({
   studentId: studentId.optional(),
+  groupId: groupId.optional(),
   category: category.optional(),
+  limit: z.coerce
+    .number({ error: 'limit має бути числом' })
+    .int('limit має бути цілим числом')
+    .min(1, 'limit не може бути меншим за 1')
+    .max(COIN_HISTORY_MAX_LIMIT, `limit не може бути більшим за ${COIN_HISTORY_MAX_LIMIT}`)
+    .default(COIN_HISTORY_DEFAULT_LIMIT),
+  cursor: z.uuid('cursor має бути UUID транзакції').optional(),
 });
 
 export const leaderboardFiltersSchema = z.object({

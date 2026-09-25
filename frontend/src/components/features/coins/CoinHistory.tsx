@@ -1,8 +1,9 @@
 import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
-import { History } from 'lucide-react';
+import { ChevronDown, History } from 'lucide-react';
 import type { IPopulatedCoinTransaction } from '@redmonkey/shared';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { COIN_CATEGORY_META, formatAmount, getAmountColor } from '@/lib/coinCategories';
@@ -12,9 +13,20 @@ interface CoinHistoryProps {
   isLoading: boolean;
   /** студент бачить лише свої транзакції — імʼя в рядку йому нічого не додає */
   showStudent?: boolean;
+  /** Історія приходить сторінками: true — на сервері є ще старіші транзакції */
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
-export default function CoinHistory({ transactions, isLoading, showStudent }: CoinHistoryProps) {
+export default function CoinHistory({
+  transactions,
+  isLoading,
+  showStudent,
+  hasMore,
+  isLoadingMore,
+  onLoadMore,
+}: CoinHistoryProps) {
   return (
     <Card className="border-t-2 border-t-slate-200">
       <CardHeader>
@@ -68,6 +80,23 @@ export default function CoinHistory({ transactions, isLoading, showStudent }: Co
               </Badge>
             </div>
           ))}
+
+        {!isLoading && hasMore && onLoadMore && (
+          <Button
+            variant="outline"
+            className="w-full h-11 border-slate-200 text-slate-600"
+            onClick={onLoadMore}
+            disabled={isLoadingMore}
+          >
+            {isLoadingMore ? (
+              'Завантаження...'
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" /> Показати ще
+              </>
+            )}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

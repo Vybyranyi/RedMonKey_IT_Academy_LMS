@@ -14,7 +14,7 @@ vi.mock('../../repositories/academy.repository.js', () => ({
 }));
 vi.mock('../../repositories/coin.repository.js', () => ({
   coinRepository: {
-    findAll: vi.fn(),
+    findPage: vi.fn(),
     createWithBalance: vi.fn(),
     findLeaderboard: vi.fn(),
     sumByDirection: vi.fn(),
@@ -24,16 +24,17 @@ vi.mock('../../repositories/group.repository.js', () => ({
   groupRepository: { findIdsByTeacher: vi.fn() },
 }));
 vi.mock('../../repositories/user.repository.js', () => ({
-  userRepository: { findById: vi.fn() },
+  userRepository: { findById: vi.fn(), findStudentIdsByGroups: vi.fn() },
 }));
 
 const getDefaultId = vi.mocked(academyRepository.getDefaultId);
-const findAll = vi.mocked(coinRepository.findAll);
+const findPage = vi.mocked(coinRepository.findPage);
 const createWithBalance = vi.mocked(coinRepository.createWithBalance);
 const findLeaderboard = vi.mocked(coinRepository.findLeaderboard);
 const sumByDirection = vi.mocked(coinRepository.sumByDirection);
 const findIdsByTeacher = vi.mocked(groupRepository.findIdsByTeacher);
 const findById = vi.mocked(userRepository.findById);
+const findStudentIdsByGroups = vi.mocked(userRepository.findStudentIdsByGroups);
 
 const admin: TokenPayload = { userId: 'admin-1', role: UserRole.ADMIN };
 const teacher: TokenPayload = { userId: 'teacher-1', role: UserRole.TEACHER };
@@ -63,29 +64,77 @@ beforeEach(() => {
   vi.clearAllMocks();
   getDefaultId.mockResolvedValue('academy-1');
   findIdsByTeacher.mockResolvedValue([OWN_GROUP]);
-  findAll.mockResolvedValue([] as never);
+  findPage.mockResolvedValue({ items: [], nextCursor: null } as never);
   createWithBalance.mockResolvedValue({ id: 'tx-1' } as never);
 });
 
 describe('getTransactions', () => {
-  it('адмін бачить вибірку без звуження за роллю', async () => {
-    await coinService.getTransactions({ studentId: 'student-9' }, admin);
+  const GROUP_STUDENTS = ['student-1', 'student-2'];
+  const page = { limit: 20 };
 
-    expect(findAll).toHaveBeenCalledWith({ studentId: 'student-9' });
+  beforeEach(() => {
+    findStudentIdsByGroups.mockResolvedValue(GROUP_STUDENTS);
+  });
+
+  it('адмін без фільтрів отримує першу сторінку всієї академії', async () => {
+    await coinService.getTransactions(page, admin);
+
+    expect(findPage).toHaveBeenCalledWith({}, 20, undefined);
+  });
+
+  it('передає limit і cursor у репозиторій', async () => {
+    await coinService.getTransactions({ limit: 50, cursor: 'tx-40' }, admin);
+
+    expect(findPage).toHaveBeenCalledWith({}, 50, 'tx-40');
+  });
+
+  // Групу фільтруємо id студентів — так запит іде індексом (student_id, created_at)
+  it('фільтр групи перетворює на список її студентів', async () => {
+    await coinService.getTransactions({ ...page, groupId: OWN_GROUP }, admin);
+
+    expect(findStudentIdsByGroups).toHaveBeenCalledWith([OWN_GROUP]);
+    expect(findPage).toHaveBeenCalledWith({ studentId: { in: GROUP_STUDENTS } }, 20, undefined);
+  });
+
+  it('поєднує studentId із групою, а не підміняє один іншим', async () => {
+    await coinService.getTransactions({ ...page, groupId: OWN_GROUP, studentId: 'student-9' }, admin);
+
+    expect(findPage).toHaveBeenCalledWith(
+      { studentId: { equals: 'student-9', in: GROUP_STUDENTS } },
+      20,
+      undefined
+    );
   });
 
   // Звуження за роллю має перекривати будь-який фільтр із query — інакше
   // студент прочитав би чужу історію, підставивши чужий studentId
-  it('студент бачить лише власні транзакції попри фільтр у запиті', async () => {
-    await coinService.getTransactions({ studentId: 'student-9' }, student);
+  it('студент бачить лише власні транзакції попри фільтри в запиті', async () => {
+    await coinService.getTransactions({ ...page, studentId: 'student-9', groupId: OWN_GROUP }, student);
 
-    expect(findAll).toHaveBeenCalledWith({ studentId: student.userId });
+    expect(findStudentIdsByGroups).not.toHaveBeenCalled();
+    expect(findPage).toHaveBeenCalledWith({ studentId: student.userId }, 20, undefined);
   });
 
-  it('викладач бачить транзакції лише студентів своїх груп', async () => {
-    await coinService.getTransactions({}, teacher);
+  it('викладач без фільтра групи бачить студентів усіх своїх груп', async () => {
+    await coinService.getTransactions(page, teacher);
 
-    expect(findAll).toHaveBeenCalledWith({ student: { groupId: { in: [OWN_GROUP] } } });
+    expect(findStudentIdsByGroups).toHaveBeenCalledWith([OWN_GROUP]);
+    expect(findPage).toHaveBeenCalledWith({ studentId: { in: GROUP_STUDENTS } }, 20, undefined);
+  });
+
+  it('викладач не бачить історію чужої групи', async () => {
+    await expect(
+      coinService.getTransactions({ ...page, groupId: OTHER_GROUP }, teacher)
+    ).rejects.toThrow(ForbiddenError);
+    expect(findPage).not.toHaveBeenCalled();
+  });
+
+  it('невідомий курсор відхиляє з 400', async () => {
+    findPage.mockResolvedValue(null as never);
+
+    await expect(
+      coinService.getTransactions({ ...page, cursor: 'missing' }, admin)
+    ).rejects.toThrow('Некоректний курсор пагінації');
   });
 });
 

@@ -13,7 +13,7 @@ import {
 
 export const authService = {
   async login(email: string, password: string) {
-    const user = await userRepository.findByEmail(email);
+    const user = await userRepository.findCredentialsByEmail(email);
     if (!user || !user.isActive) {
       throw new UnauthorizedError("Невірний email або пароль");
     }
@@ -50,7 +50,7 @@ export const authService = {
       throw new ForbiddenError("Невалідний refresh token");
     }
 
-    const user = await userRepository.findById(decoded.userId);
+    const user = await userRepository.findCredentialsById(decoded.userId);
     if (!user || !user.isActive) {
       throw new UnauthorizedError("Користувач не активний або не існує");
     }
@@ -99,7 +99,7 @@ export const authService = {
   },
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
-    const user = await userRepository.findById(userId);
+    const user = await userRepository.findCredentialsById(userId);
     if (!user || !user.isActive) {
       throw new UnauthorizedError('Користувача не знайдено або він не активний');
     }

@@ -17,19 +17,33 @@ import { accessPolicy } from './access.policy.js';
 export const coinService = {
   async getTransactions(filters: ICoinFilters, actor: TokenPayload) {
     const where: Prisma.CoinTransactionWhereInput = {};
-
-    if (filters.studentId) where.studentId = filters.studentId;
     if (filters.category) where.category = filters.category;
 
     // Звуження за роллю перекриває будь-який фільтр із query
-    if (actor.role === UserRole.STUDENT) {
-      where.studentId = actor.userId;
-    } else if (actor.role === UserRole.TEACHER) {
+    let groupIds = filters.groupId ? [filters.groupId] : undefined;
+    if (actor.role === UserRole.TEACHER) {
       const ownGroupIds = await groupRepository.findIdsByTeacher(actor.userId);
-      where.student = { groupId: { in: ownGroupIds } };
+      if (filters.groupId && !ownGroupIds.includes(filters.groupId)) {
+        throw new ForbiddenError('У вас немає доступу до цієї групи');
+      }
+      groupIds = groupIds ?? ownGroupIds;
     }
 
-    return coinRepository.findAll(where);
+    if (actor.role === UserRole.STUDENT) {
+      where.studentId = actor.userId;
+    } else {
+      // Групу фільтруємо через id її студентів, а не через зв'язок student.groupId:
+      // так Postgres іде індексом coin_transactions(student_id, created_at), а не
+      // сканує весь ledger. Заміри — у backend/prisma/QUERY_PLANS.md
+      const studentFilter: Prisma.UuidFilter = {};
+      if (filters.studentId) studentFilter.equals = filters.studentId;
+      if (groupIds) studentFilter.in = await userRepository.findStudentIdsByGroups(groupIds);
+      if (filters.studentId || groupIds) where.studentId = studentFilter;
+    }
+
+    const page = await coinRepository.findPage(where, filters.limit, filters.cursor);
+    if (!page) throw new BadRequestError('Некоректний курсор пагінації');
+    return page;
   },
 
   async createTransaction(data: ICoinTransactionDto, actor: TokenPayload) {

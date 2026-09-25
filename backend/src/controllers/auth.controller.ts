@@ -4,7 +4,11 @@ import { userRepository } from '../repositories/user.repository.js';
 import { authService } from '../services/auth.service.js';
 import { UnauthorizedError, handleError } from '../utils/errors.js';
 import { parseBody } from '../utils/validation.js';
-import { changePasswordSchema, updateProfileSchema } from '@redmonkey/shared';
+import {
+  changePasswordSchema,
+  loginCredentialsSchema,
+  updateProfileSchema,
+} from '@redmonkey/shared';
 
 const REFRESH_COOKIE = 'refreshToken';
 
@@ -18,7 +22,7 @@ const refreshCookieOptions: CookieOptions = {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = parseBody(loginCredentialsSchema, req.body);
     const result = await authService.login(email, password);
 
     res.cookie(REFRESH_COOKIE, result.refreshToken, {

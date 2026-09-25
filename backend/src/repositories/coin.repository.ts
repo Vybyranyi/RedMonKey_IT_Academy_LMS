@@ -20,12 +20,46 @@ const transactionInclude = {
 } satisfies Prisma.CoinTransactionInclude;
 
 export const coinRepository = {
-  async findAll(where: Prisma.CoinTransactionWhereInput) {
-    return prisma.coinTransaction.findMany({
-      where,
+  /**
+   * Сторінка історії, новіші першими. Keyset, а не OFFSET: наступна сторінка
+   * починається строго після курсора — рядок, доданий тим часом згори,
+   * не зсуває сторінки й не дублюється.
+   *
+   * Курсор — id останньої транзакції попередньої сторінки. Умову будуємо самі,
+   * а не через Prisma `cursor`: та генерує `(created_at = X AND id <= Y) OR created_at < X`,
+   * і через OR Postgres не може почати скан індексу з позиції курсора.
+   * `created_at <= X` окремою умовою — може. Заміри: backend/prisma/QUERY_PLANS.md.
+   *
+   * Повертає null, якщо транзакції-курсора не існує.
+   */
+  async findPage(where: Prisma.CoinTransactionWhereInput, limit: number, cursor?: string) {
+    const conditions: Prisma.CoinTransactionWhereInput[] = [where];
+
+    if (cursor) {
+      const after = await prisma.coinTransaction.findUnique({
+        where: { id: cursor },
+        select: { id: true, createdAt: true },
+      });
+      if (!after) return null;
+
+      conditions.push({
+        createdAt: { lte: after.createdAt },
+        OR: [{ createdAt: { lt: after.createdAt } }, { id: { lt: after.id } }],
+      });
+    }
+
+    const rows = await prisma.coinTransaction.findMany({
+      where: { AND: conditions },
       include: transactionInclude,
-      orderBy: { createdAt: 'desc' },
+      // id — тай-брейкер: кілька транзакцій можуть мати однаковий created_at
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      // Один зайвий рядок показує, чи є наступна сторінка, без окремого COUNT
+      take: limit + 1,
     });
+
+    const items = rows.slice(0, limit);
+    const nextCursor = rows.length > limit ? items[items.length - 1]!.id : null;
+    return { items, nextCursor };
   },
 
   /**
@@ -46,6 +80,7 @@ export const coinRepository = {
       await tx.user.update({
         where: { id: data.studentId },
         data: { redCoins: { increment: data.amount } },
+        select: { id: true },
       });
 
       return tx.coinTransaction.create({ data, include: transactionInclude });

@@ -1,6 +1,38 @@
 import { describe, expect, it } from 'vitest';
-import { PASSWORD_MIN_LENGTH, changePasswordSchema, updateProfileSchema } from '../auth.schema';
+import {
+  PASSWORD_MIN_LENGTH,
+  changePasswordSchema,
+  loginCredentialsSchema,
+  updateProfileSchema,
+} from '../auth.schema';
 import { firstIssue } from './fixtures';
+
+describe('loginCredentialsSchema', () => {
+  it('приймає email і пароль', () => {
+    expect(
+      loginCredentialsSchema.safeParse({ email: 'admin@academy.com', password: 'x' }).success
+    ).toBe(true);
+  });
+
+  it('відхиляє запит без email', () => {
+    const result = loginCredentialsSchema.safeParse({ password: 'secret123' });
+    expect(firstIssue(result)).toBe('Потрібно вказати email');
+  });
+
+  // Обʼєкт замість рядка інакше дійшов би до Prisma як фільтр { contains: ... }
+  it('відхиляє обʼєкт замість email', () => {
+    const result = loginCredentialsSchema.safeParse({
+      email: { contains: 'admin' },
+      password: 'secret123',
+    });
+    expect(firstIssue(result)).toBe('Потрібно вказати email');
+  });
+
+  it('відхиляє порожній пароль', () => {
+    const result = loginCredentialsSchema.safeParse({ email: 'admin@academy.com', password: '' });
+    expect(firstIssue(result)).toBe('Потрібно вказати пароль');
+  });
+});
 
 describe('updateProfileSchema', () => {
   it('приймає часткове оновлення', () => {

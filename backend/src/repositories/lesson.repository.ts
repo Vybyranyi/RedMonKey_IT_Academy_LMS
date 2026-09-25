@@ -28,6 +28,12 @@ export const lessonRepository = {
     return prisma.lesson.findUnique({ where: { id }, include: lessonInclude });
   },
 
+  /** Id усіх занять групи — для фільтра оцінок через lesson_id замість JOIN на lessons. */
+  async findIdsByGroup(groupId: string): Promise<string[]> {
+    const rows = await prisma.lesson.findMany({ where: { groupId }, select: { id: true } });
+    return rows.map((row) => row.id);
+  },
+
   async findSubjectById(id: string) {
     return prisma.lesson.findUnique({
       where: { id },

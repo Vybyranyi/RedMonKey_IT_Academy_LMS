@@ -21,6 +21,12 @@ export interface IPopulatedCoinTransaction extends ICoinTransaction {
   issuer: { id: string; firstName: string; lastName: string };
 }
 
+/** Сторінка історії транзакцій. nextCursor = null — далі сторінок немає. */
+export interface ICoinTransactionPage {
+  items: IPopulatedCoinTransaction[];
+  nextCursor: string | null;
+}
+
 /** Рядок таблиці лідерів. position рахується на бекенді, щоб фронт не робив це двічі. */
 export interface ILeaderboardRow {
   position: number;
