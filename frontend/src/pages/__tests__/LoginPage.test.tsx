@@ -38,6 +38,11 @@ afterEach(() => {
 
 describe('LoginPage', () => {
   // Раніше 401 від логіну запускав рефреш, і користувач бачив помилку рефрешу
+  it('називає вкладку «Вхід»', () => {
+    renderLogin();
+    expect(document.title).toBe('Вхід · IT Academy LMS');
+  });
+
   it('показує причину відмови від бекенда, без спроби рефрешу', async () => {
     const refresh = vi.spyOn(axios, 'post');
     installApi({

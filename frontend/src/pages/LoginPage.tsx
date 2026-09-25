@@ -6,11 +6,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { LoginForm, type LoginFormValues } from '@/components/features/auth/LoginForm';
 import { getApiErrorMessage } from '@/utils/apiError';
 import logo from '@/assets/logo.png';
+import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 export default function LoginPage() {
   const { setAuth, isAuthenticated } = useAuthStore();
   const location = useLocation();
   const [serverError, setServerError] = useState<string | null>(null);
+  useDocumentTitle('Вхід');
 
   // Сюди ProtectedRoute кладе сторінку, з якої користувача викинуло на вхід
   const from = (location.state as { from?: Location } | null)?.from;
