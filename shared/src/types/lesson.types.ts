@@ -7,6 +7,8 @@ export interface ILessonBase {
   duration: number;
   type: LessonType;
   status: LessonStatus;
+  homeworkDescription?: string | null;
+  homeworkDueDate?: Date | string | null;
 }
 
 export interface ILesson extends ILessonBase {

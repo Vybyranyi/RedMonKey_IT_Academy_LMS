@@ -39,7 +39,14 @@ export const lessonRepository = {
   async findSubjectById(id: string) {
     return prisma.lesson.findUnique({
       where: { id },
-      select: { id: true, teacherId: true, groupId: true, status: true },
+      select: {
+        id: true,
+        teacherId: true,
+        groupId: true,
+        status: true,
+        date: true,
+        homeworkDueDate: true,
+      },
     });
   },
 

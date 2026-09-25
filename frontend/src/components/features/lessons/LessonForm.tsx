@@ -3,7 +3,12 @@ import { Formik, Form, Field } from 'formik';
 import type { FieldProps } from 'formik';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { createLessonSchema, LessonType, UserRole } from '@redmonkey/shared';
+import {
+  createLessonSchema,
+  HOMEWORK_BEFORE_LESSON_MESSAGE,
+  LessonType,
+  UserRole,
+} from '@redmonkey/shared';
 import type { ILessonDto, IUser } from '@redmonkey/shared';
 import { apiGetGroups } from '@/api/groups';
 import { apiGetUsers } from '@/api/users';
@@ -33,15 +38,25 @@ export interface LessonFormValues {
   time: string;
   duration: number;
   teacherId: string;
+  homeworkDescription: string;
+  /** День дедлайну з <input type="date">, '' — без дедлайну */
+  homeworkDue: string;
 }
 
 // Поля, яких немає в API-контракті: у формі дата й час окремі
 const formOnlySchema = z.object({
   date: z.iso.date('Вкажіть дату'),
   time: z.string().regex(/^\d{2}:\d{2}$/, 'Вкажіть час'),
+  homeworkDue: z.union([z.literal(''), z.iso.date('Некоректна дата')]),
 });
 
-const lessonFormSchema = z.intersection(createLessonSchema.omit({ date: true }), formOnlySchema);
+const lessonFormSchema = z
+  .intersection(createLessonSchema.omit({ date: true, homeworkDueDate: true }), formOnlySchema)
+  // Обидва — рядки YYYY-MM-DD; дедлайн у день заняття дозволений (до кінця дня)
+  .refine(({ date, homeworkDue }) => !homeworkDue || homeworkDue >= date, {
+    message: HOMEWORK_BEFORE_LESSON_MESSAGE,
+    path: ['homeworkDue'],
+  });
 
 const defaultValues: LessonFormValues = {
   title: '',
@@ -53,6 +68,8 @@ const defaultValues: LessonFormValues = {
   // Дефолт тривалості теж живе у схемі — не дублюємо число тут
   duration: createLessonSchema.shape.duration.parse(undefined),
   teacherId: '',
+  homeworkDescription: '',
+  homeworkDue: '',
 };
 
 const toPayload = (values: LessonFormValues): ILessonDto => ({
@@ -66,6 +83,11 @@ const toPayload = (values: LessonFormValues): ILessonDto => ({
   // на захід від Гринвіча.
   date: new Date(`${values.date}T${values.time}`).toISOString(),
   ...(values.teacherId ? { teacherId: values.teacherId } : {}),
+  homeworkDescription: values.homeworkDescription,
+  // «Здати до 12 вересня» — до кінця цього дня за місцевим часом
+  homeworkDueDate: values.homeworkDue
+    ? new Date(`${values.homeworkDue}T23:59:59`).toISOString()
+    : null,
 });
 
 interface LessonFormProps {
@@ -126,7 +148,9 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
       }}
     >
       {({ values, errors, touched, setFieldValue, setFieldTouched }) => (
-        <Form className="space-y-4 pt-2">
+        // noValidate: min на даті дедлайну лише сірить ранні дні в календарику, а
+        // помилку показує Formik у стилі форми, а не системна підказка браузера
+        <Form noValidate className="space-y-4 pt-2">
           <div className="space-y-2">
             <Label htmlFor="title">Назва *</Label>
             <Field name="title">
@@ -264,6 +288,44 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
             {errors.duration && touched.duration && (
               <p className="text-xs text-destructive">{errors.duration}</p>
             )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="homeworkDescription">Домашнє завдання</Label>
+              <Field name="homeworkDescription">
+                {({ field }: FieldProps) => (
+                  <Input
+                    {...field}
+                    id="homeworkDescription"
+                    placeholder="Необовʼязково"
+                    className={`h-11 ${errors.homeworkDescription && touched.homeworkDescription ? 'border-destructive' : ''}`}
+                  />
+                )}
+              </Field>
+              {errors.homeworkDescription && touched.homeworkDescription && (
+                <p className="text-xs text-destructive">{errors.homeworkDescription}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="homeworkDue">Здати до</Label>
+              <Field name="homeworkDue">
+                {({ field }: FieldProps) => (
+                  <Input
+                    {...field}
+                    id="homeworkDue"
+                    type="date"
+                    min={values.date}
+                    aria-invalid={Boolean(errors.homeworkDue && touched.homeworkDue)}
+                    className={`h-11 ${errors.homeworkDue && touched.homeworkDue ? 'border-destructive' : ''}`}
+                  />
+                )}
+              </Field>
+              {errors.homeworkDue && touched.homeworkDue && (
+                <p className="text-xs text-destructive">{errors.homeworkDue}</p>
+              )}
+            </div>
           </div>
 
           {isAdmin && (

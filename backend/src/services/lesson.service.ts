@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import type { ILessonDto, ILessonFilters, IUpdateLessonDto } from '@redmonkey/shared';
-import { LessonStatus, UserRole } from '@redmonkey/shared';
+import { HOMEWORK_BEFORE_LESSON_MESSAGE, LessonStatus, UserRole } from '@redmonkey/shared';
 import { academyRepository } from '../repositories/academy.repository.js';
 import { groupRepository } from '../repositories/group.repository.js';
 import { lessonRepository } from '../repositories/lesson.repository.js';
@@ -25,6 +25,12 @@ const assertActiveTeacher = async (teacherId: string) => {
 const assertActiveGroup = async (groupId: string) => {
   const group = await groupRepository.findByIdActive(groupId);
   if (!group) throw new NotFoundError('Групу не знайдено');
+};
+
+const toDateOrNull = (value: string | null | undefined) => (value ? new Date(value) : null);
+
+const assertHomeworkAfterLesson = (lessonDate: Date, dueDate: Date | null) => {
+  if (dueDate && dueDate < lessonDate) throw new BadRequestError(HOMEWORK_BEFORE_LESSON_MESSAGE);
 };
 
 export const lessonService = {
@@ -68,6 +74,8 @@ export const lessonService = {
 
   async createLesson(lessonData: ILessonDto, actor: TokenPayload) {
     const { title, description, date, duration, type, groupId, teacherId } = lessonData;
+    const homeworkDueDate = toDateOrNull(lessonData.homeworkDueDate);
+    assertHomeworkAfterLesson(new Date(date), homeworkDueDate);
 
     const finalTeacherId = actor.role === UserRole.ADMIN ? teacherId || actor.userId : actor.userId;
 
@@ -85,6 +93,8 @@ export const lessonService = {
       date: new Date(date),
       duration,
       type,
+      homeworkDescription: lessonData.homeworkDescription || null,
+      homeworkDueDate,
     });
   },
 
@@ -114,6 +124,18 @@ export const lessonService = {
       await assertActiveTeacher(teacherId);
       data.teacherId = teacherId;
     }
+    if (lessonData.homeworkDescription !== undefined) {
+      data.homeworkDescription = lessonData.homeworkDescription || null;
+    }
+
+    // Дедлайн порівнюємо з датою заняття, навіть коли в запиті лише одна з них, —
+    // друга лежить у БД: перенесене на пізніше заняття теж не має «обігнати» дедлайн
+    const dueDate =
+      lessonData.homeworkDueDate !== undefined
+        ? toDateOrNull(lessonData.homeworkDueDate)
+        : subject.homeworkDueDate;
+    if (lessonData.homeworkDueDate !== undefined) data.homeworkDueDate = dueDate;
+    assertHomeworkAfterLesson(date !== undefined ? new Date(date) : subject.date, dueDate);
 
     return lessonRepository.update(id, data);
   },
