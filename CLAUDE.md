@@ -39,7 +39,9 @@ npm run lint -w frontend    # ESLint (у backend лінтера поки нем�
 npm run seed -w backend      # тестові користувачі/групи (backend/src/scripts/seed.ts)
 
 # Prisma (виконувати з backend/ або через -w backend)
-npm run prisma:push -w backend     # db push — синхронізує schema.prisma з БД
+npm run prisma:migrate -w backend -- --name <що_змінено>  # нова міграція після зміни schema.prisma
+npm run prisma:deploy -w backend    # застосувати міграції з репозиторію (нова БД, чужі міграції, прод)
+npm run prisma:status -w backend    # чи відстає БД від prisma/migrations
 npm run prisma:generate -w backend  # регенерує Prisma Client
 npm run prisma:studio -w backend    # GUI для перегляду даних
 ```
@@ -59,6 +61,9 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 - **`services/*.service.ts`** — бізнес-логіка. `access.policy.ts` — **єдине місце**, де живуть правила видимості записів (`canViewUser`, `canViewGroup`); нові перевірки доступу на рівні запису додавай туди, а не розкидай по контролерах.
 - **`repositories/*.repository.ts`** — єдиний шар, що торкається Prisma Client (`backend/src/lib/prisma.ts`). Контролери/сервіси не імпортують Prisma напряму.
 - Помилки — кидай `BadRequestError` / `UnauthorizedError` / `ForbiddenError` / `NotFoundError` (`utils/errors.ts`), вони мапляться на правильний HTTP-статус автоматично через `handleError`.
+- **Ланцюжок middleware** (`src/app.ts`): `helmet` → `cors` → `apiLimiter` (на `/api/v1`) → `express.json({ limit: '1mb' })` → маршрути → `notFoundHandler` → `errorHandler`. Глобальний `errorHandler` (`middlewares/error.middleware.ts`) — страховка для того, що проскочило повз контролер (битий JSON → 400, завелике тіло → 413, невідомий маршрут → 404 у JSON); контролери й далі самі викликають `handleError` з контекстним текстом.
+- **Rate-limit** (`middlewares/rateLimit.middleware.ts`): загальний 1000 запитів / 15 хв на IP, `/auth/login` — 10 **невдалих** спроб / 15 хв, `/auth/refresh` — 60 / 15 хв. Лічильники в пам'яті процесу. За проксі хостингу обов'язково `TRUST_PROXY=1` — інакше всі клієнти мають IP балансувальника і ділять один ліміт.
+- **Секрети `User`** (`passwordHash`, `tokenVersion`) читають лише `userRepository.findCredentialsByEmail` / `findCredentialsById` / `updatePassword` — для `auth.service`. Решта методів мають явний `select` без них, а кожен зв'язок на `User` в інших репозиторіях — власний `select`. Це перевіряє `repositories/__tests__/secret-fields.test.ts` (проганяє кожен метод кожного репозиторію), тож новий запит без `select` на `users` зламає CI.
 
 ### Auth
 
@@ -70,7 +75,8 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 ### База даних — важливі нюанси (не очевидні з коду)
 
-- **Немає `prisma/migrations/`** — схема застосована через `prisma db push`, не `migrate dev` (тертя з Neon shadow-DB). Перед виходом у прод варто ініціалізувати нормальну міграційну історію.
+- **Схема змінюється лише міграціями** (`backend/prisma/migrations/`, baseline `0_init` = стан, який раніше давав `db push`). `db push` більше не використовуємо. Процес і одноразовий перехід наявної БД (`migrate resolve --applied 0_init`) — у [`backend/prisma/MIGRATIONS.md`](./backend/prisma/MIGRATIONS.md).
+- **Фільтр оцінок за групою — через `lessonId IN (...)`, а не через зв'язок `lesson: { groupId }`**: зв'язок Prisma перетворює на JOIN, і Postgres сканує всю `grades` (~30 мс проти ~5 мс). Заміри й рішення щодо індексів — у [`backend/prisma/QUERY_PLANS.md`](./backend/prisma/QUERY_PLANS.md).
 - **Single-tenant перехідний стан**: у кожній таблиці є `academy_id` (готовність до майбутньої мульти-тенантності), але академія в системі рівно одна. `academyRepository.getDefaultId()` її резолвить. Коли з'явиться друга академія — замінити на `actor.academyId` з JWT-пейлоада.
 - **RLS не увімкнено**: увесь доступ до БД іде через `backend/src/lib/prisma.ts`, а `access.policy.ts` централізує правила авторизації — вони транслюються в RLS-політики майже 1:1, коли прийде час. Не покладайся на RLS зараз — авторизація повністю на рівні застосунку.
 - **CHECK-обмеження не в БД**: `Grade.value` (1..12) і `CoinTransaction.amount` (≠ 0) валідуються лише на рівні застосунку (Prisma не вміє їх декларувати) — не забувай про валідацію Zod при додаванні нових ендпоінтів для оцінок/монет.
@@ -155,9 +161,9 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 | coins | `/coins/transactions`, `/coins/leaderboard`, `/coins/students/:id/balance` | `CoinsPage` (`CoinAwardForm`, `CoinBalanceCard`, `CoinHistory`, `CoinLeaderboard`) |
 | dashboard | `stats.repository.ts` | `DashboardPage` з контентом за роллю |
 
-Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)): безпека backend (helmet/rate-limit/глобальний error-handler), міграції Prisma, деплой, стійкість UI (404/403/ErrorBoundary), ESLint у backend, демо-дані й документація. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
+Лишився **тиждень 6 — полірування та здача** ([roadmap, розділ 7](./IT_Academy_LMS_ТЗ.md#тиждень-6-полірування-та-здача)). З п. 6.1 закрито безпеку backend (helmet, rate-limit, ліміт тіла, глобальний error-handler + 404, аудит секретних полів) і базу даних (міграції, `EXPLAIN` журналу й leaderboard). Відкриті: деплой, стійкість UI (404/403/ErrorBoundary), ESLint у backend, демо-дані й документація. Перед новою задачею звіряйся саме з цим розділом — решта пунктів roadmap уже виконані.
 
-Свідомі борги, зафіксовані окремо: немає `prisma/migrations` (схема через `db push`), немає лінтера в backend, RLS вимкнений, `SettingsPage` — заглушка.
+Свідомі борги, зафіксовані окремо: немає лінтера в backend, RLS вимкнений, `SettingsPage` — заглушка, `GET /coins/transactions` без пагінації.
 
 ## Тести
 
@@ -165,6 +171,8 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 - `shared` — Zod-схеми: межі діапазонів і тексти помилок (`Grade.value` 1..12 і `CoinTransaction.amount ≠ 0` живуть лише тут, у БД CHECK-обмежень немає).
 - `backend` unit — утиліти, `access.policy` (матриця ролей), сервіси з `vi.mock()` на репозиторії.
+- `backend` репозиторії — `repositories/__tests__/secret-fields.test.ts`: аудит проєкцій (див. «Секрети `User`» вище).
+- `backend` rate-limit — `src/__tests__/rateLimit.test.ts` окремим файлом: лічильники живуть у пам'яті модуля, а Vitest дає кожному файлу свіжий `app`, тож вичерпаний ліміт не зачіпає інші API-тести.
 - `backend` API — `src/__tests__/api.test.ts`: supertest ганяє справжні маршрути, middleware, контролери й сервіси, а моки стоять на найглибшому шарі (репозиторії + `lib/prisma.js`). Тому `app` зібрано в `src/app.ts` окремо від `listen()` у `src/index.ts` — не зливай їх назад.
 - `frontend` — jsdom + React Testing Library; HTTP підміняє адаптер axios (`axiosInstance.defaults.adapter`), а не реальні запити.
 - `backend/vitest.setup.ts` виставляє фіктивні JWT-секрети: без них `config/env.ts` падає прямо на імпорті.
