@@ -3,6 +3,7 @@ import { env } from './config/env.js';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import path from 'node:path';
 import helmet from 'helmet';
 import { JSON_BODY_LIMIT } from './config/constants.js';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware.js';
@@ -32,6 +33,27 @@ app.use(cookieParser());
 
 // Маршрути
 app.use('/api/v1', apiRoutes);
+
+// Один сервіс замість двох: frontend і API на одному домені, тож не потрібні
+// ні CORS, ні SameSite=None для refresh-куки
+if (env.staticDir) {
+  const staticDir = path.resolve(env.staticDir);
+  // Файли в assets/ Vite називає з хешем вмісту — їх можна кешувати назавжди
+  app.use(
+    '/assets',
+    express.static(path.join(staticDir, 'assets'), { immutable: true, maxAge: '1y' })
+  );
+  app.use(express.static(staticDir));
+  // SPA: /grades, /coins тощо — роути React Router, файлу під ними немає.
+  // /api сюди не потрапляє — невідомий API-маршрут має дати JSON 404, а не index.html
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api/')) {
+      next();
+      return;
+    }
+    res.sendFile(path.join(staticDir, 'index.html'));
+  });
+}
 
 // Обидва — строго після маршрутів: 404 для всього, що ніхто не обробив,
 // і глобальний обробник помилок останнім у ланцюжку

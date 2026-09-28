@@ -1,0 +1,52 @@
+# Весь застосунок локально, як на продакшені: Postgres + один контейнер LMS.
+#
+#   docker compose up --build     → http://localhost:3000
+#   docker compose down           → зупинити (дані БД лишаються у volume)
+#   docker compose down -v        → зупинити й стерти БД
+#
+# Демо-дані (seed стирає базу!) — з хоста, поки compose запущений:
+#   DATABASE_URL=postgresql://lms:lms@localhost:5433/lms \
+#   DIRECT_URL=postgresql://lms:lms@localhost:5433/lms \
+#   npm run seed -w backend
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lms
+      POSTGRES_PASSWORD: lms
+      POSTGRES_DB: lms
+    # 5433 на хості, щоб не конфліктувати з локально встановленим Postgres
+    ports:
+      - '5433:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # app стартує лише коли Postgres справді приймає з'єднання, а не просто запущений
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U lms -d lms']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+    environment:
+      # Усередині мережі compose Postgres доступний за іменем сервісу — `db`
+      DATABASE_URL: postgresql://lms:lms@db:5432/lms
+      DIRECT_URL: postgresql://lms:lms@db:5432/lms
+      # Лише для локального запуску! На Render секрети генерує Blueprint
+      JWT_ACCESS_SECRET: local-docker-access-secret-change-me-0123456789
+      JWT_REFRESH_SECRET: local-docker-refresh-secret-change-me-0123456789
+      CLIENT_URL: http://localhost:3000
+      TRUST_PROXY: 0
+      # NODE_ENV=production (з Dockerfile) робить refresh-куку Secure. Без HTTPS
+      # її приймають лише для localhost (Chrome, Firefox) — відкривай саме його
+    restart: unless-stopped
+
+volumes:
+  db-data:

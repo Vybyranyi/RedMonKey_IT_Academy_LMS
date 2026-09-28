@@ -121,6 +121,14 @@ npm run dev
 | Backend API | http://localhost:3000/api/v1 |
 | Перевірка живості API | http://localhost:3000/api/v1/health |
 
+### Або все в Docker
+
+```bash
+docker compose up --build
+```
+
+Postgres і застосунок у контейнерах, фронтенд і API — на http://localhost:3000. Як залити демо-дані й задеплоїти на Render — у [docs/DEPLOY.md](./docs/DEPLOY.md).
+
 ---
 
 ## 📁 Структура монорепо
@@ -160,6 +168,7 @@ RedMonKey_IT_Academy_LMS/
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Правила роботи з гілками, комітами, PR, тестами |
 | [CHANGELOG.md](./CHANGELOG.md) | Історія змін і підсумок шести тижнів розробки |
 | [CLAUDE.md](./CLAUDE.md) | Архітектура й конвенції коротко — для AI-агентів і нових учасників |
+| [docs/DEPLOY.md](./docs/DEPLOY.md) | Деплой: Dockerfile, docker compose, Render Blueprint, CD |
 | [backend/prisma/MIGRATIONS.md](./backend/prisma/MIGRATIONS.md) | Міграції БД: щоденна робота і перехід з `db push` |
 | [backend/prisma/QUERY_PLANS.md](./backend/prisma/QUERY_PLANS.md) | `EXPLAIN` журналу оцінок і leaderboard, рішення щодо індексів |
 
