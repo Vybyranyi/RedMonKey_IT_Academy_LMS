@@ -1,0 +1,61 @@
+name: CD
+
+# Деплой лише після того, як CI (format → build → lint → test → docker) пройшов
+# на main. Сам Render збирає образ із Dockerfile — ми лише кажемо йому «пора».
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  # Ручний запуск: Actions → CD → Run workflow (напр., передеплой без нового коміту)
+  workflow_dispatch:
+
+# Два коміти поспіль — другий деплой чекає, а не біжить паралельно
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # workflow_run спрацьовує і на червоний CI, і на CI з PR — відсіюємо
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.RENDER_APP_URL }}
+    steps:
+      # Deploy Hook: Render → сервіс → Settings → Deploy Hook. Це секретний URL:
+      # будь-хто з ним може запускати деплої, тому він у Secrets, а не в коді
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::Секрет RENDER_DEPLOY_HOOK_URL не задано (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+          curl --fail --silent --show-error -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "Деплой поставлено в чергу Render"
+
+      # Необов'язково: якщо задано змінну RENDER_APP_URL, перевіряємо, що сервіс
+      # живий після деплою. Стара версія теж відповідає 200 (Render не вимикає її,
+      # поки нова не пройде health-check), тож точний статус деплою — у Dashboard
+      - name: Wait for service to be healthy
+        if: vars.RENDER_APP_URL != ''
+        env:
+          APP_URL: ${{ vars.RENDER_APP_URL }}
+        run: |
+          sleep 60
+          for i in $(seq 1 30); do
+            if curl --fail --silent "$APP_URL/api/v1/health" > /dev/null; then
+              echo "Сервіс відповідає: $APP_URL"
+              exit 0
+            fi
+            echo "Спроба $i: ще не готовий, чекаємо 20 с..."
+            sleep 20
+          done
+          echo "::error::Сервіс не відповів за ~11 хвилин — дивись логи деплою в Render"
+          exit 1

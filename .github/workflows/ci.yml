@@ -43,3 +43,19 @@ jobs:
       # репозиторії в тестах підмінені моками.
       - name: Test (shared → backend → frontend)
         run: npm test
+
+  # Паралельно з build-and-lint: перевіряє, що Dockerfile збирається, — інакше
+  # зламаний Dockerfile виявився б лише на Render після мерджу
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          # Кеш шарів між запусками: без змін у залежностях npm ci не повторюється
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

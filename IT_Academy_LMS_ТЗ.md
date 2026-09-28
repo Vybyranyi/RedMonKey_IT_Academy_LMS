@@ -655,7 +655,7 @@ Bottom Navigation (телефон, до md):
 - [x] Перевірити плани запитів (`EXPLAIN`) для журналу оцінок і leaderboard, дозакрити індексами за потреби — звіт: [`backend/prisma/QUERY_PLANS.md`](./backend/prisma/QUERY_PLANS.md)
 
 **Деплой**
-- [ ] Dockerfile / інструкція деплою (backend — Railway/Render, frontend — Vercel/Netlify)
+- [x] Dockerfile / інструкція деплою — один образ на Render через Blueprint (`docs/DEPLOY.md`)
 - [x] `GET /api/v1/health` — ендпоінт перевірки живості
 - [ ] Чеклист env-змінних для продакшену
 - [ ] Перевірити прод-збірку фронта (`vite preview` проти реального API URL), а не лише `npm run dev`

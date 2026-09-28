@@ -1,0 +1,22 @@
+# Усе, що не потрапляє в build context, не потрапить і в образ.
+# node_modules і dist ставляться/збираються всередині — локальні лише
+# завадили б (інша ОС, інші бінарники Prisma) і сповільнили б COPY . .
+**/node_modules
+**/dist
+**/.vite
+
+# Секрети — ніколи не в образ; змінні оточення передаються при запуску
+**/.env
+**/.env.*
+!**/.env.example
+
+.git
+.github
+.vscode
+.claude
+docs
+**/*.log
+**/.DS_Store
+Dockerfile
+docker-compose.yml
+.dockerignore

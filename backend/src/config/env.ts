@@ -69,9 +69,14 @@ export const env = {
   port: Number(process.env.PORT) || 3000,
   nodeEnv: process.env.NODE_ENV ?? 'development',
   isProduction: process.env.NODE_ENV === 'production',
-  clientUrl: process.env.CLIENT_URL ?? 'http://localhost:5173',
+  // RENDER_EXTERNAL_URL Render виставляє сам (https://<сервіс>.onrender.com) —
+  // у Blueprint не треба знати адресу сервісу наперед
+  clientUrl: process.env.CLIENT_URL ?? process.env.RENDER_EXTERNAL_URL ?? 'http://localhost:5173',
   trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
   databaseUrl: requireEnv('DATABASE_URL'),
+  // Тека зі зібраним frontend (Docker-образ). Порожня — backend віддає лише API,
+  // як у локальній розробці, де фронт крутить Vite
+  staticDir: process.env.STATIC_DIR?.trim() || null,
   jwt: {
     accessSecret,
     refreshSecret,
