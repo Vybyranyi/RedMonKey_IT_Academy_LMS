@@ -74,6 +74,7 @@ USER node
 WORKDIR /app/backend
 EXPOSE 3000
 
-# Міграції з репозиторію → старт сервера. `exec` робить node процесом PID 1,
+# Міграції → перший адмін, якщо задано ADMIN_EMAIL і адміна ще немає
+# (src/scripts/createAdmin.ts) → старт сервера. `exec` робить node процесом PID 1,
 # щоб SIGTERM від Docker/Render дійшов до нього (див. src/index.ts)
-CMD ["sh", "-c", "prisma migrate deploy && exec node dist/index.js"]
+CMD ["sh", "-c", "prisma migrate deploy && node dist/scripts/createAdmin.js && exec node dist/index.js"]

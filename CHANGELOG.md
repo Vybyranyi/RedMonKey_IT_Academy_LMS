@@ -10,6 +10,7 @@
 Зміни, які ще не потрапили в реліз.
 
 ### Added
+- Перший адмін без seed: `npm run create-admin -w backend` і крок старту Docker-контейнера створюють адміна з `ADMIN_EMAIL`/`ADMIN_PASSWORD` (і академію на порожній базі), лише якщо активного адміна ще немає. Нічого не стирає, повторний запуск безпечний
 - Деплой одним Docker-образом на Render через Blueprint (`Dockerfile`, `render.yaml`, `docker-compose.yml` з Postgres для локального запуску, `docs/DEPLOY.md`). Backend з `STATIC_DIR` віддає ще й зібраний frontend з того ж домену; міграції накочуються на старті контейнера. CI перевіряє збірку образу, CD (`cd.yml`) після зеленого CI на `main` запускає Deploy Hook Render
 - Graceful shutdown: на `SIGTERM` сервер дочікується поточних запитів і закриває з'єднання з БД — раніше контейнер зупинявся через `SIGKILL`
 - `GET /users?withStats=true` — середній бал і відсоток відвідуваності кожного студента двома `GROUP BY` на весь список (`stats: { averageGrade, attendanceRate }`). Викладач отримує їх лише для студентів своїх груп, як і в `GET /users/:id/stats`; для решти `stats: null` (`accessPolicy.filterViewableUsers`)

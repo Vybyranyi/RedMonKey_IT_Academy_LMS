@@ -33,7 +33,8 @@ DATABASE_URL=postgresql://lms:lms@localhost:5433/lms DIRECT_URL=postgresql://lms
 4. Сервіс → **Settings → Deploy Hook** → скопіювати URL. GitHub → **Settings → Secrets and variables → Actions**:
    - Secret `RENDER_DEPLOY_HOOK_URL` — URL хука;
    - Variable `RENDER_APP_URL` — `https://redmonkey-lms.onrender.com` (необов'язково, для перевірки після деплою).
-5. Демо-дані: база → **Connections → External Database URL**, і з ноутбука:
+5. Перший адмін: сервіс → **Environment** → задати `ADMIN_EMAIL` і `ADMIN_PASSWORD` (≥ 6 символів; необов'язково `ADMIN_FIRST_NAME`, `ADMIN_LAST_NAME`) → **Save, rebuild, and deploy**. На старті контейнер створить адміна (і академію, якщо база порожня), у логах — `[create-admin]: адміна створено`. Поки в базі є активний адмін, скрипт нічого не робить, тож змінні можна лишити; пароль зміни в профілі після першого входу. Без Render: `DATABASE_URL="<External URL>" DIRECT_URL="<External URL>" ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run create-admin -w backend`.
+6. Демо-дані (замість кроку 5, якщо потрібні групи й студенти): база → **Connections → External Database URL**, і з ноутбука:
 
    ```bash
    DATABASE_URL="<External URL>" DIRECT_URL="<External URL>" npm run seed -w backend

@@ -50,3 +50,9 @@ services:
       # бачить одну IP-адресу на всіх користувачів
       - key: TRUST_PROXY
         value: '1'
+      # Перший адмін (src/scripts/createAdmin.ts): створюється на старті, лише якщо
+      # активного адміна ще немає. sync: false — значення вводиш у Dashboard, не в git
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
