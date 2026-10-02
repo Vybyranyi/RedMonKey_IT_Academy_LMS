@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Eye, Pencil, UserX } from 'lucide-react';
+import { Coins as CoinsIcon, Eye, Pencil, UserX } from 'lucide-react';
 import type { IUser, IUserWithListStats } from '@redmonkey/shared';
 import { getAverageColor } from '@/lib/gradeColors';
 import { NARROW_QUERY, useMediaQuery } from '@/lib/useMediaQuery';
@@ -140,7 +140,7 @@ function StudentIdentity({ student }: { student: IUserWithListStats }) {
     <div className="flex items-center gap-3 min-w-0">
       <Avatar className="h-9 w-9 shrink-0">
         <AvatarImage src={student.avatar || undefined} />
-        <AvatarFallback className="bg-slate-100 text-xs font-bold text-slate-700">
+        <AvatarFallback className="bg-[#0070F3] text-xs font-bold text-white">
           {student.firstName[0]}
           {student.lastName[0]}
         </AvatarFallback>
@@ -188,9 +188,9 @@ function AverageBadge({ student }: { student: IUserWithListStats }) {
 
 function Coins({ student }: { student: IUserWithListStats }) {
   return (
-    <span className="font-bold text-slate-700 flex items-center gap-1.5">
-      <span className="text-[16px] leading-none opacity-80 grayscale">🪙</span>
-      <span className="text-slate-800">+{student.redCoins || 0}</span>
+    <span className="font-bold text-slate-800 flex items-center gap-1.5">
+      <CoinsIcon className="h-4 w-4 text-amber-500" aria-hidden="true" />
+      {student.redCoins || 0}
     </span>
   );
 }

@@ -24,13 +24,13 @@ export const COIN_CATEGORY_META: Record<CoinCategory, CoinCategoryMeta> = {
   },
   [CoinCategory.PENALTY]: {
     label: 'Штраф',
-    badge: 'bg-red-50 text-red-700 border-red-200',
+    badge: 'bg-rose-50 text-rose-700 border-rose-200',
   },
 };
 
 /** Плюс і мінус фарбуємо однаково всюди: у списку транзакцій і в картці балансу. */
 export const getAmountColor = (amount: number): string =>
-  amount >= 0 ? 'text-emerald-600' : 'text-[#C10000]';
+  amount >= 0 ? 'text-emerald-600' : 'text-rose-600';
 
 export const formatAmount = (amount: number): string => `${amount > 0 ? '+' : ''}${amount}`;
 

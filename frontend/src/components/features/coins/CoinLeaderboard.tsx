@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getPositionColor } from '@/lib/coinCategories';
+import EmptyState from '@/components/common/EmptyState';
 
 interface CoinLeaderboardProps {
   rows: ILeaderboardRow[];
@@ -35,9 +36,12 @@ export default function CoinLeaderboard({
           [1, 2, 3, 4, 5].map((n) => <Skeleton key={n} className="h-14 w-full rounded-xl" />)}
 
         {!isLoading && rows.length === 0 && (
-          <p className="text-slate-500 text-sm font-medium text-center py-6 border border-dashed border-slate-200 rounded-xl">
-            Рейтинг порожній — монети ще нікому не нараховували
-          </p>
+          <EmptyState
+            size="compact"
+            icon={Trophy}
+            title="Рейтинг порожній"
+            description="Монети ще нікому не нараховували."
+          />
         )}
 
         {!isLoading &&

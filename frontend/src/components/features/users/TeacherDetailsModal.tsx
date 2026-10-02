@@ -3,6 +3,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { IUser } from '@redmonkey/shared';
 import type { TeacherGroupsSummary } from '@/lib/teacherGroups';
+import EmptyState from '@/components/common/EmptyState';
+import { UsersRound } from 'lucide-react';
 
 interface TeacherDetailsModalProps {
   teacher: IUser | null;
@@ -27,13 +29,14 @@ export default function TeacherDetailsModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-slate-50">
-        <DialogHeader className="px-6 pt-6 pb-2">
+        {/* Назва діалогу — для скрінрідера: на екрані ім'я вже є у великій картці нижче */}
+        <DialogHeader className="sr-only">
           <DialogTitle className="text-xl font-bold text-slate-900">
             {teacher.firstName} {teacher.lastName}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="max-h-[80vh] overflow-y-auto px-6 pb-6 scrollbar-hide">
+        <div className="max-h-[80vh] overflow-y-auto px-6 pt-8 pb-6 scrollbar-hide">
           <div className="space-y-6">
             {/* Top Profile Card */}
             <div className="bg-[#1A2645] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 text-white shadow-sm mt-2">
@@ -94,11 +97,11 @@ export default function TeacherDetailsModal({
                   ))}
                 </div>
               ) : (
-                <div className="bg-white border border-slate-100 border-dashed rounded-xl p-6 text-center shadow-sm">
-                  <p className="text-slate-500 text-sm font-medium">
-                    Викладач не закріплений за групами
-                  </p>
-                </div>
+                <EmptyState
+                  size="compact"
+                  icon={UsersRound}
+                  title="Викладач не закріплений за групами"
+                />
               )}
             </div>
           </div>

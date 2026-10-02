@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { BookOpenCheck, Plus } from 'lucide-react';
+import { NotebookPen, Plus } from 'lucide-react';
 import { GradeType, UserRole } from '@redmonkey/shared';
 import type { IBulkGradeDto, IPopulatedGroup, IPopulatedLesson, IUser } from '@redmonkey/shared';
 import { apiGetGroups } from '@/api/groups';
@@ -310,13 +310,13 @@ export default function GradesPage() {
   if (!isStudent && !isGroupsLoading && groups.length === 0) {
     return isTeacher ? (
       <EmptyState
-        icon={BookOpenCheck}
+        icon={NotebookPen}
         title="Ви ще не закріплені за жодною групою"
         description="Журнал з'явиться, щойно адміністратор призначить вас викладачем групи."
       />
     ) : (
       <EmptyState
-        icon={BookOpenCheck}
+        icon={NotebookPen}
         title="Груп ще немає"
         description="Журнал ведеться для навчальної групи — спершу створіть її."
       >

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { CircleDollarSign, Plus } from 'lucide-react';
+import { Coins, Plus } from 'lucide-react';
 import { UserRole } from '@redmonkey/shared';
 import type {
   ICoinTransactionDto,
@@ -280,13 +280,13 @@ export default function CoinsPage() {
   if (!isStudent && !isGroupsLoading && groups.length === 0) {
     return isTeacher ? (
       <EmptyState
-        icon={CircleDollarSign}
+        icon={Coins}
         title="Ви ще не закріплені за жодною групою"
         description="Нараховувати монети можна студентам груп, які ви ведете."
       />
     ) : (
       <EmptyState
-        icon={CircleDollarSign}
+        icon={Coins}
         title="Груп ще немає"
         description="Рейтинг і нарахування ведуться в межах групи — спершу створіть її."
       >

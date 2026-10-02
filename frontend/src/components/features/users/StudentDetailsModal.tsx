@@ -1,8 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Coins, Lock } from 'lucide-react';
 import type { IUserWithListStats } from '@redmonkey/shared';
 import StudentActivity from './StudentActivity';
+import EmptyState from '@/components/common/EmptyState';
 
 interface StudentDetailsModalProps {
   student: IUserWithListStats | null;
@@ -28,19 +30,20 @@ export default function StudentDetailsModal({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden bg-slate-50">
-        <DialogHeader className="px-6 pt-6 pb-2">
+        {/* Назва діалогу — для скрінрідера: на екрані ім'я вже є у великій картці нижче */}
+        <DialogHeader className="sr-only">
           <DialogTitle className="text-xl font-bold text-slate-900">
             {student.firstName} {student.lastName}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="max-h-[80vh] overflow-y-auto px-6 pb-6 scrollbar-hide">
+        <div className="max-h-[80vh] overflow-y-auto px-6 pt-8 pb-6 scrollbar-hide">
           <div className="space-y-6">
             {/* Top Profile Card */}
             <div className="bg-[#1A2645] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 text-white shadow-sm mt-2">
               <Avatar className="h-20 w-20 border-2 border-white/20">
                 <AvatarImage src={student.avatar || undefined} />
-                <AvatarFallback className="bg-emerald-600 text-2xl font-bold text-white">
+                <AvatarFallback className="bg-[#0070F3] text-2xl font-bold text-white">
                   {student.firstName[0]}
                   {student.lastName[0]}
                 </AvatarFallback>
@@ -78,7 +81,7 @@ export default function StudentDetailsModal({
               </div>
               <div className="bg-white rounded-xl p-4 flex flex-col items-center justify-center border border-slate-100 shadow-sm text-center">
                 <span className="text-2xl font-bold text-slate-700 flex items-center gap-1.5">
-                  <span className="text-xl opacity-80 grayscale">🪙</span>
+                  <Coins className="h-5 w-5 text-amber-500" aria-hidden="true" />
                   {redCoins}
                 </span>
                 <span className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">
@@ -107,11 +110,12 @@ export default function StudentDetailsModal({
                 не дають 403, а мовчки звужують вибірку до занять і груп викладача — і картка
                 показала б порожню історію, наче її немає. Тому не питаємо зовсім */}
             {student.stats === null ? (
-              <div className="bg-white border border-slate-100 border-dashed rounded-xl p-6 text-center shadow-sm">
-                <p className="text-slate-500 text-sm font-medium">
-                  Оцінки й історію RedCoins видно лише для студентів ваших груп
-                </p>
-              </div>
+              <EmptyState
+                size="compact"
+                icon={Lock}
+                title="Статистика недоступна"
+                description="Оцінки й історію RedCoins видно лише для студентів ваших груп."
+              />
             ) : (
               <StudentActivity key={student.id} studentId={student.id} />
             )}

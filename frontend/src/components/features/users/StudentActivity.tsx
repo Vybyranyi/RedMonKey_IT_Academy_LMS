@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatAmount, getAmountColor } from '@/lib/coinCategories';
 import { GRADE_TYPE_META, getGradeColor } from '@/lib/gradeColors';
 import { getApiErrorMessage, isSilentError } from '@/utils/apiError';
+import EmptyState from '@/components/common/EmptyState';
 
 const RECENT_GRADES = 6;
 const RECENT_TRANSACTIONS = 5;
@@ -23,11 +24,7 @@ interface Activity {
   transactions: IPopulatedCoinTransaction[];
 }
 
-const EmptyBox = ({ text }: { text: string }) => (
-  <div className="bg-white border border-slate-100 border-dashed rounded-xl p-6 text-center shadow-sm">
-    <p className="text-slate-500 text-sm font-medium">{text}</p>
-  </div>
-);
+const EmptyBox = ({ text }: { text: string }) => <EmptyState size="compact" title={text} />;
 
 /** Останні оцінки й транзакції RedCoins студента — секції StudentDetailsModal. */
 export default function StudentActivity({ studentId }: StudentActivityProps) {

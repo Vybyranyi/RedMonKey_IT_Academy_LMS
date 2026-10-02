@@ -37,7 +37,7 @@ export default function Sidebar() {
             <span className="text-[15px] font-extrabold leading-tight text-white tracking-wide">
               IT Academy
             </span>
-            <span className="text-xs font-medium text-slate-300 mt-0.5">CRM Platform</span>
+            <span className="text-xs font-medium text-slate-300 mt-0.5">LMS</span>
           </div>
         )}
       </div>
