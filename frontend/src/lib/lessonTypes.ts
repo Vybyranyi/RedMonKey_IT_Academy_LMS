@@ -17,10 +17,11 @@ export const LESSON_TYPE_META: Record<LessonType, LessonTypeMeta> = {
     dot: 'bg-emerald-500',
     event: 'bg-emerald-50 border-l-4 border-l-emerald-500 text-emerald-700',
   },
+  // Не брендовий червоний: ним у системі позначені головні дії та помилки
   [LessonType.EXAM]: {
     label: 'Іспит',
-    dot: 'bg-[#C10000]',
-    event: 'bg-red-50 border-l-4 border-l-[#C10000] text-red-700',
+    dot: 'bg-violet-500',
+    event: 'bg-violet-50 border-l-4 border-l-violet-500 text-violet-700',
   },
   [LessonType.CONSULTATION]: {
     label: 'Консультація',

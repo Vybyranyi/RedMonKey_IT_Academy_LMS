@@ -1,10 +1,11 @@
-import { Coins, Trophy } from 'lucide-react';
+import { Coins, Plus, Trophy } from 'lucide-react';
 import type { ILeaderboardRow } from '@redmonkey/shared';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getPositionColor } from '@/lib/coinCategories';
+import EmptyState from '@/components/common/EmptyState';
 
 interface CoinLeaderboardProps {
   rows: ILeaderboardRow[];
@@ -35,9 +36,12 @@ export default function CoinLeaderboard({
           [1, 2, 3, 4, 5].map((n) => <Skeleton key={n} className="h-14 w-full rounded-xl" />)}
 
         {!isLoading && rows.length === 0 && (
-          <p className="text-slate-400 text-sm font-medium text-center py-6 border border-dashed border-slate-200 rounded-xl">
-            Рейтинг порожній — монети ще нікому не нараховували
-          </p>
+          <EmptyState
+            size="compact"
+            icon={Trophy}
+            title="Рейтинг порожній"
+            description="Монети ще нікому не нараховували."
+          />
         )}
 
         {!isLoading &&
@@ -71,7 +75,7 @@ export default function CoinLeaderboard({
                 <p className="text-sm font-semibold text-slate-800 truncate">
                   {row.firstName} {row.lastName}
                 </p>
-                <p className="text-xs text-slate-400 truncate">{row.groupName ?? 'Без групи'}</p>
+                <p className="text-xs text-slate-500 truncate">{row.groupName ?? 'Без групи'}</p>
               </div>
 
               <span className="flex shrink-0 items-center gap-1.5 text-sm font-bold text-slate-900">
@@ -80,13 +84,16 @@ export default function CoinLeaderboard({
               </span>
 
               {onAward && (
+                // На телефоні в рядку лишається лише іконка: інакше кнопка з'їдала ім'я
                 <Button
                   variant="outline"
                   size="sm"
                   className="shrink-0"
                   onClick={() => onAward(row.studentId)}
+                  aria-label={`Нарахувати: ${row.firstName} ${row.lastName}`}
                 >
-                  Нарахувати
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">Нарахувати</span>
                 </Button>
               )}
             </div>

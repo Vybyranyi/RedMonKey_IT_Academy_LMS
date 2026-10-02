@@ -43,6 +43,7 @@ const renderJournal = (
     grades={grades}
     isLoading={false}
     canEdit
+    typeLabel="Класна робота"
     {...handlers}
   />
 );

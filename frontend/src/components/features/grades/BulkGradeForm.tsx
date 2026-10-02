@@ -15,12 +15,16 @@ import {
 } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { GRADE_TYPE_META } from '@/lib/gradeColors';
+import EmptyState from '@/components/common/EmptyState';
+import { Users } from 'lucide-react';
 
 interface BulkGradeFormProps {
   isOpen: boolean;
   onClose: () => void;
   lessons: IPopulatedLesson[];
   students: IUser[];
+  /** Тип, обраний у журналі: масові оцінки мають з'явитися в тому ж виді */
+  initialType: GradeType;
   isSubmitting: boolean;
   onSubmit: (data: IBulkGradeDto) => void;
 }
@@ -30,13 +34,14 @@ export default function BulkGradeForm({
   onClose,
   lessons,
   students,
+  initialType,
   isSubmitting,
   onSubmit,
 }: BulkGradeFormProps) {
   // Стан ініціалізується один раз: батько ремонтує форму через key на кожне
   // відкриття, тож скидати її ефектом не треба
   const [lessonId, setLessonId] = useState(() => lessons[0]?.id ?? '');
-  const [type, setType] = useState<GradeType>(GradeType.CLASSWORK);
+  const [type, setType] = useState<GradeType>(initialType);
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 
@@ -132,9 +137,7 @@ export default function BulkGradeForm({
 
           <div className="space-y-2 pt-2">
             {students.length === 0 && (
-              <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center">
-                <p className="text-slate-400 text-sm font-medium">У цій групі немає студентів</p>
-              </div>
+              <EmptyState size="compact" icon={Users} title="У цій групі немає студентів" />
             )}
 
             {students.map((student) => (

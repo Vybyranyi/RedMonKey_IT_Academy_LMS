@@ -9,7 +9,7 @@ import { ATTENDANCE_STATUS_META } from '@/lib/attendanceStatuses';
 
 interface AttendanceListProps {
   students: IUser[];
-  /** studentId → статус */
+  /** studentId → статус; кого немає в обʼєкті, того ще не відмітили */
   value: Record<string, AttendanceStatus>;
   /** Має бути стабільним (useCallback) — інакше memo рядків не спрацює */
   onChange: (studentId: string, status: AttendanceStatus) => void;
@@ -37,7 +37,7 @@ export default function AttendanceList({
         <AttendanceRow
           key={student.id}
           student={student}
-          status={value[student.id] ?? AttendanceStatus.PRESENT}
+          status={value[student.id]}
           note={notes[student.id] ?? ''}
           readOnly={readOnly}
           onChange={onChange}
@@ -50,7 +50,7 @@ export default function AttendanceList({
 
 interface AttendanceRowProps {
   student: IUser;
-  status: AttendanceStatus;
+  status: AttendanceStatus | undefined;
   note: string;
   readOnly: boolean;
   onChange: (studentId: string, status: AttendanceStatus) => void;
@@ -84,8 +84,10 @@ const AttendanceRow = memo(function AttendanceRow({
         </div>
 
         {readOnly ? (
-          <Badge className={`self-start sm:self-auto ${ATTENDANCE_STATUS_META[status].badge}`}>
-            {ATTENDANCE_STATUS_META[status].label}
+          <Badge
+            className={`self-start sm:self-auto ${status ? ATTENDANCE_STATUS_META[status].badge : 'bg-slate-100 text-slate-600 border-slate-200'}`}
+          >
+            {status ? ATTENDANCE_STATUS_META[status].label : 'Не відмічено'}
           </Badge>
         ) : (
           <div

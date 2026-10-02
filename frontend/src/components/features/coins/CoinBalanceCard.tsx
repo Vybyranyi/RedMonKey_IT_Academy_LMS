@@ -31,8 +31,8 @@ export default function CoinBalanceCard({ balance, isLoading }: CoinBalanceCardP
             <span className="text-sm font-semibold text-emerald-600">+{balance?.earned ?? 0}</span>
           </div>
           <div className="flex items-center justify-center gap-2 pt-3">
-            <TrendingDown className="h-4 w-4 text-[#C10000]" />
-            <span className="text-sm font-semibold text-[#C10000]">−{balance?.spent ?? 0}</span>
+            <TrendingDown className="h-4 w-4 text-rose-600" />
+            <span className="text-sm font-semibold text-rose-600">−{balance?.spent ?? 0}</span>
           </div>
         </div>
       </CardContent>

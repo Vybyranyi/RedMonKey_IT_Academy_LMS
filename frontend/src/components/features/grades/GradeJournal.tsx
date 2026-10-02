@@ -35,8 +35,11 @@ interface GradeJournalProps {
   grades: JournalGrade[];
   isLoading: boolean;
   canEdit: boolean;
+  /** Тип оцінок у журналі — підпис під «Середнє», бо середнє рахується лише з нього */
+  typeLabel: string;
   onSaveGrade: SaveGradeHandler;
-  onDeleteGrade: (grade: JournalGrade) => void;
+  /** Лише для адміна — API не дає викладачу видаляти оцінки */
+  onDeleteGrade?: (grade: JournalGrade) => void;
 }
 
 type Cells = ReadonlyMap<string, JournalGrade>;
@@ -49,6 +52,7 @@ export default function GradeJournal({
   grades,
   isLoading,
   canEdit,
+  typeLabel,
   onSaveGrade,
   onDeleteGrade,
 }: GradeJournalProps) {
@@ -116,16 +120,25 @@ export default function GradeJournal({
               Студент
             </TableHead>
             {lessons.map((lesson) => (
-              <TableHead key={lesson.id} className="text-center min-w-[72px]">
+              // Назва в два рядки замість обрізаної до 72px — повна є в title
+              <TableHead
+                key={lesson.id}
+                className="text-center align-top min-w-[104px] max-w-[128px] whitespace-normal py-2"
+                title={`${format(new Date(lesson.date), 'd MMMM', { locale: uk })} · ${lesson.title}`}
+              >
                 <span className="block text-xs font-semibold text-slate-700">
                   {format(new Date(lesson.date), 'd MMM', { locale: uk })}
                 </span>
-                <span className="block text-[11px] text-slate-400 font-normal truncate max-w-[72px]">
+                <span className="block text-xs text-slate-500 font-normal leading-tight line-clamp-2">
                   {lesson.title}
                 </span>
               </TableHead>
             ))}
-            <TableHead className="text-center min-w-[90px]">Середнє</TableHead>
+            {/* «Середнє» прилипає праворуч: при прокрутці довгого журналу воно лишається видимим */}
+            <TableHead className="sticky right-0 z-10 bg-white text-center min-w-[90px] shadow-[-1px_0_0_#e2e8f0]">
+              <span className="block text-xs font-semibold text-slate-700">Середнє</span>
+              <span className="block text-xs text-slate-500 font-normal">{typeLabel}</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
 
@@ -155,7 +168,7 @@ interface GradeJournalRowProps {
   average: number | null;
   canEdit: boolean;
   onSaveGrade: SaveGradeHandler;
-  onDeleteGrade: (grade: JournalGrade) => void;
+  onDeleteGrade?: (grade: JournalGrade) => void;
 }
 
 const sameCells = (a: Cells, b: Cells) => {
@@ -218,13 +231,13 @@ const GradeJournalRow = memo(function GradeJournalRow({
               cellLabel={`${student.firstName} ${student.lastName}, ${format(new Date(lesson.date), 'd MMM', { locale: uk })} «${lesson.title}»`}
               isSaving={grade?.isPending}
               onSave={(value, comment) => onSaveGrade(student, lesson, grade, value, comment)}
-              onDelete={grade ? () => onDeleteGrade(grade) : undefined}
+              onDelete={grade && onDeleteGrade ? () => onDeleteGrade(grade) : undefined}
             />
           </TableCell>
         );
       })}
 
-      <TableCell className="text-center">
+      <TableCell className="sticky right-0 z-10 bg-white text-center shadow-[-1px_0_0_#e2e8f0]">
         <span
           className={`inline-flex h-9 min-w-[48px] items-center justify-center rounded-md border px-2 text-sm font-bold ${getAverageColor(average)}`}
         >

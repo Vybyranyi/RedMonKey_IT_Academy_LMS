@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import type { IPopulatedLesson } from '@redmonkey/shared';
+import EmptyState from '@/components/common/EmptyState';
+import { CalendarDays } from 'lucide-react';
 
 interface UpcomingLessonsProps {
   title: string;
@@ -30,9 +32,7 @@ export default function UpcomingLessons({
         {isLoading && [1, 2, 3].map((n) => <Skeleton key={n} className="h-16 w-full rounded-xl" />)}
 
         {!isLoading && lessons.length === 0 && (
-          <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center">
-            <p className="text-slate-400 text-sm font-medium">{emptyText}</p>
-          </div>
+          <EmptyState size="compact" icon={CalendarDays} title={emptyText} />
         )}
 
         {!isLoading &&

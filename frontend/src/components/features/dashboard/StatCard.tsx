@@ -18,7 +18,7 @@ export default function StatCard({ label, value, icon: Icon, hint }: StatCardPro
         <div className="min-w-0">
           <p className="text-2xl font-bold text-slate-900 leading-tight">{value}</p>
           <p className="text-sm text-slate-500 truncate">{label}</p>
-          {hint && <p className="text-xs text-slate-400 mt-0.5">{hint}</p>}
+          {hint && <p className="text-xs text-slate-500 mt-0.5">{hint}</p>}
         </div>
       </CardContent>
     </Card>
