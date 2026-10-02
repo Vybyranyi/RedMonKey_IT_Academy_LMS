@@ -60,15 +60,6 @@ export default function StudentDetailsModal({
                       Без групи
                     </Badge>
                   )}
-                  <Badge
-                    className={
-                      student.isActive
-                        ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border-none'
-                        : 'bg-red-500/20 text-red-300 hover:bg-red-500/30 border-none'
-                    }
-                  >
-                    {student.isActive ? 'Активний' : 'Неактивний'}
-                  </Badge>
                 </div>
               </div>
             </div>

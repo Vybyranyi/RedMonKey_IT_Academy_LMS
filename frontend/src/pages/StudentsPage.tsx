@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { apiGetStudentsWithStats, apiCreateUser, apiUpdateUser } from '@/api/users';
+import { apiGetStudentsWithStats, apiCreateUser, apiUpdateUser, apiDeleteUser } from '@/api/users';
 import { apiGetGroups } from '@/api/groups';
 import {
   UserRole,
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import EmptyState from '@/components/common/EmptyState';
 import ErrorState from '@/components/common/ErrorState';
 import UserFilters from '@/components/features/users/UserFilters';
@@ -28,6 +30,7 @@ import UserForm from '@/components/features/users/UserForm';
 import StudentDetailsModal from '@/components/features/users/StudentDetailsModal';
 import { useAuthStore } from '@/store/authStore';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
+import { pluralize } from '@/utils/stringUtils';
 import { Plus, SearchX, Users } from 'lucide-react';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -42,7 +45,20 @@ export default function StudentsPage() {
   const [search, setSearch] = useState('');
   // Бекенд однаково обрізає пробіли — зайвий пробіл у кінці не дає нового запиту
   const query = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
-  const [selectedGroup, setSelectedGroup] = useState('');
+  // Фільтр групи живе в URL: на нього веде «Переглянути склад» з картки групи,
+  // і він переживає перезавантаження сторінки
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedGroup = searchParams.get('groupId') ?? '';
+  const setSelectedGroup = (groupId: string) =>
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (groupId) next.set('groupId', groupId);
+        else next.delete('groupId');
+        return next;
+      },
+      { replace: true }
+    );
   const [isLoading, setIsLoading] = useState(true);
   // Скелетон — лише для першого завантаження. Далі при зміні фільтрів лишаємо
   // попередній список (приглушеним), щоб таблиця не блимала на кожну літеру пошуку
@@ -53,6 +69,8 @@ export default function StudentsPage() {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<IUserWithListStats | null>(null);
   const [editingStudent, setEditingStudent] = useState<IUser | null>(null);
+  const [deactivatingStudent, setDeactivatingStudent] = useState<IUser | null>(null);
+  const [isDeactivating, setIsDeactivating] = useState(false);
 
   useEffect(() => {
     // Запит іде за паузою в наборі, а не на кожну літеру. Попередній, що ще не
@@ -159,6 +177,25 @@ export default function StudentsPage() {
     }
   };
 
+  // DELETE /users/:id деактивує: студент не входить у систему і зникає зі списків,
+  // а його оцінки, явка й монети лишаються в історії
+  const handleDeactivateStudent = async () => {
+    if (!deactivatingStudent) return;
+    setIsDeactivating(true);
+    try {
+      await apiDeleteUser(deactivatingStudent.id);
+      setStudents((current) => current.filter((student) => student.id !== deactivatingStudent.id));
+      toast.success(
+        `Студента ${deactivatingStudent.firstName} ${deactivatingStudent.lastName} деактивовано`
+      );
+      setDeactivatingStudent(null);
+    } catch (error) {
+      toastApiError(error, 'Не вдалося деактивувати студента');
+    } finally {
+      setIsDeactivating(false);
+    }
+  };
+
   const handleViewDetails = (id: string) => {
     const student = students.find((s) => s.id === id);
     if (student) {
@@ -234,6 +271,7 @@ export default function StudentsPage() {
           students={students}
           onViewDetails={handleViewDetails}
           onEdit={isAdmin ? setEditingStudent : undefined}
+          onDeactivate={isAdmin ? setDeactivatingStudent : undefined}
         />
       </div>
     );
@@ -244,7 +282,7 @@ export default function StudentsPage() {
       <div className="flex items-center justify-between gap-3">
         {hasLoaded ? (
           <Badge variant="secondary">
-            {students.filter((s) => s.isActive).length} активних - {students.length} всього
+            {students.length} {pluralize(students.length, ['студент', 'студенти', 'студентів'])}
           </Badge>
         ) : (
           <Skeleton className="h-6 w-40" />
@@ -311,6 +349,19 @@ export default function StudentsPage() {
         student={selectedStudent}
         isOpen={!!selectedStudent}
         onClose={() => setSelectedStudent(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deactivatingStudent}
+        onOpenChange={(open) => !open && setDeactivatingStudent(null)}
+        title="Деактивувати студента?"
+        description={
+          deactivatingStudent &&
+          `${deactivatingStudent.firstName} ${deactivatingStudent.lastName} більше не зможе увійти в систему і зникне зі списків, журналу й рейтингу. Оцінки, явка та історія RedCoins лишаться в базі.`
+        }
+        confirmLabel="Деактивувати"
+        isPending={isDeactivating}
+        onConfirm={() => void handleDeactivateStudent()}
       />
     </div>
   );

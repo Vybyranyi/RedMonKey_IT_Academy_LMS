@@ -1,81 +1,77 @@
 import { logout } from '@/api/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/store/authStore';
+import { UserRole } from '@redmonkey/shared';
 import { LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  [UserRole.ADMIN]: 'Адміністратор',
+  [UserRole.TEACHER]: 'Викладач',
+  [UserRole.STUDENT]: 'Студент',
+};
 
 interface UserProfileWidgetProps {
   isCollapsed: boolean;
 }
 
+/**
+ * Профіль — справжнє посилання (Tab + Enter, активний стан як у меню), а «Вийти» —
+ * окрема кнопка поруч, завжди видима: кнопка всередині посилання недійсна в HTML,
+ * а показ лише на hover ховав її на планшетах без миші.
+ */
 export default function UserProfileWidget({ isCollapsed }: UserProfileWidgetProps) {
   const { user } = useAuthStore();
-  const navigate = useNavigate();
 
   if (!user) return null;
 
-  const handleLogout = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    void logout();
-  };
-
-  const handleProfileClick = () => {
-    navigate('/profile');
-  };
+  const fullName = `${user.firstName} ${user.lastName}`;
 
   return (
-    <div
-      className={`bg-[#1A3150] rounded-[16px] flex items-center cursor-pointer hover:bg-[#152744] transition-all duration-200 relative group border border-transparent hover:border-slate-700/50 shadow-sm ${isCollapsed ? 'p-2 justify-center' : 'p-3 gap-3'}`}
-      onClick={handleProfileClick}
-      title="Профіль"
-    >
-      <Avatar
-        className={`ring-2 ring-[#29425D] group-hover:ring-slate-600 transition-colors bg-[#0070F3] ${isCollapsed ? 'h-10 w-10' : 'h-9 w-9'}`}
+    <div className={`flex gap-2 ${isCollapsed ? 'flex-col items-center' : 'items-center'}`}>
+      <NavLink
+        to="/profile"
+        title={isCollapsed ? `Мій профіль: ${fullName}` : undefined}
+        aria-label={isCollapsed ? `Мій профіль: ${fullName}` : undefined}
+        className={({ isActive }) =>
+          `flex min-w-0 flex-1 items-center rounded-[16px] border transition-colors ${
+            isActive
+              ? 'bg-[#C10000] border-transparent'
+              : 'bg-[#1A3150] border-transparent hover:bg-[#152744] hover:border-slate-700/50'
+          } ${isCollapsed ? 'justify-center p-2' : 'gap-3 p-3'}`
+        }
       >
-        <AvatarImage src={user.avatar || undefined} />
-        <AvatarFallback className="bg-[#0070F3] text-white font-bold text-xs">
-          {user.firstName[0]}
-          {user.lastName[0]}
-        </AvatarFallback>
-      </Avatar>
+        <Avatar
+          className={`ring-2 ring-[#29425D] bg-[#0070F3] ${isCollapsed ? 'h-10 w-10' : 'h-9 w-9'}`}
+        >
+          <AvatarImage src={user.avatar || undefined} />
+          <AvatarFallback className="bg-[#0070F3] text-white font-bold text-xs">
+            {user.firstName[0]}
+            {user.lastName[0]}
+          </AvatarFallback>
+        </Avatar>
 
-      {!isCollapsed && (
-        <>
-          <div className="flex-1 overflow-hidden">
+        {!isCollapsed && (
+          <div className="min-w-0">
             <p className="text-[13px] font-bold text-white truncate leading-tight mb-0.5">
-              {user.firstName} {user.lastName}
+              {fullName}
             </p>
-            <p className="text-[11px] font-medium text-[#8B9DB4] truncate">
-              {user.role === 'admin'
-                ? 'Адміністратор'
-                : user.role === 'teacher'
-                  ? 'Викладач'
-                  : 'Студент'}
+            <p className="text-[11px] font-medium text-slate-300 truncate">
+              {ROLE_LABELS[user.role]}
             </p>
           </div>
-          <button
-            type="button"
-            className="absolute right-3 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:text-white p-1 rounded-md"
-            onClick={handleLogout}
-            title="Вийти"
-            aria-label="Вийти"
-          >
-            <LogOut className="h-3.5 w-3.5 text-slate-400 hover:text-white transition-colors" />
-          </button>
-        </>
-      )}
+        )}
+      </NavLink>
 
-      {isCollapsed && (
-        <button
-          type="button"
-          className="absolute -top-2 -right-2 bg-[#C10000] p-1.5 rounded-full text-white opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity shadow-md"
-          onClick={handleLogout}
-          title="Вийти"
-          aria-label="Вийти"
-        >
-          <LogOut className="h-3 w-3" />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => void logout()}
+        title="Вийти"
+        aria-label="Вийти"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-slate-300 hover:bg-[#1A3150] hover:text-white transition-colors"
+      >
+        <LogOut className="h-4 w-4" />
+      </button>
     </div>
   );
 }

@@ -35,8 +35,11 @@ interface GradeJournalProps {
   grades: JournalGrade[];
   isLoading: boolean;
   canEdit: boolean;
+  /** Тип оцінок у журналі — підпис під «Середнє», бо середнє рахується лише з нього */
+  typeLabel: string;
   onSaveGrade: SaveGradeHandler;
-  onDeleteGrade: (grade: JournalGrade) => void;
+  /** Лише для адміна — API не дає викладачу видаляти оцінки */
+  onDeleteGrade?: (grade: JournalGrade) => void;
 }
 
 type Cells = ReadonlyMap<string, JournalGrade>;
@@ -49,6 +52,7 @@ export default function GradeJournal({
   grades,
   isLoading,
   canEdit,
+  typeLabel,
   onSaveGrade,
   onDeleteGrade,
 }: GradeJournalProps) {
@@ -125,7 +129,10 @@ export default function GradeJournal({
                 </span>
               </TableHead>
             ))}
-            <TableHead className="text-center min-w-[90px]">Середнє</TableHead>
+            <TableHead className="text-center min-w-[90px]">
+              <span className="block text-xs font-semibold text-slate-700">Середнє</span>
+              <span className="block text-[11px] text-slate-500 font-normal">{typeLabel}</span>
+            </TableHead>
           </TableRow>
         </TableHeader>
 
@@ -155,7 +162,7 @@ interface GradeJournalRowProps {
   average: number | null;
   canEdit: boolean;
   onSaveGrade: SaveGradeHandler;
-  onDeleteGrade: (grade: JournalGrade) => void;
+  onDeleteGrade?: (grade: JournalGrade) => void;
 }
 
 const sameCells = (a: Cells, b: Cells) => {
@@ -218,7 +225,7 @@ const GradeJournalRow = memo(function GradeJournalRow({
               cellLabel={`${student.firstName} ${student.lastName}, ${format(new Date(lesson.date), 'd MMM', { locale: uk })} «${lesson.title}»`}
               isSaving={grade?.isPending}
               onSave={(value, comment) => onSaveGrade(student, lesson, grade, value, comment)}
-              onDelete={grade ? () => onDeleteGrade(grade) : undefined}
+              onDelete={grade && onDeleteGrade ? () => onDeleteGrade(grade) : undefined}
             />
           </TableCell>
         );
