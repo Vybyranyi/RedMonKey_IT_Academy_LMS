@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { COIN_CATEGORY_META, formatAmount, getAmountColor } from '@/lib/coinCategories';
+import EmptyState from '@/components/common/EmptyState';
 
 interface CoinHistoryProps {
   /** isPending — транзакцію вже показано, але сервер її ще не підтвердив */
@@ -42,9 +43,7 @@ export default function CoinHistory({
         {isLoading && [1, 2, 3].map((n) => <Skeleton key={n} className="h-16 w-full rounded-xl" />)}
 
         {!isLoading && transactions.length === 0 && (
-          <p className="text-slate-500 text-sm font-medium text-center py-6 border border-dashed border-slate-200 rounded-xl">
-            Транзакцій ще немає
-          </p>
+          <EmptyState size="compact" icon={History} title="Транзакцій ще немає" />
         )}
 
         {!isLoading &&

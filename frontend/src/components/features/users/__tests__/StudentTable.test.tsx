@@ -96,3 +96,13 @@ describe('StudentTable — вузький екран', () => {
     expect(onViewDetails).toHaveBeenCalledWith('student-1');
   });
 });
+
+describe('StudentTable — RedCoins', () => {
+  // Баланс — не приріст: «+40» вводило в оману
+  it('показує баланс без знака «+»', () => {
+    render(<StudentTable students={[student(null)]} onViewDetails={vi.fn()} />);
+    const row = screen.getByText('Анна Коваленко').closest('tr')!;
+
+    expect(within(row).getAllByRole('cell')[3]).toHaveTextContent(/^40$/);
+  });
+});

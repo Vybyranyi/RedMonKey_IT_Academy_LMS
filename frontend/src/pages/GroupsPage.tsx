@@ -23,7 +23,7 @@ import EmptyState from '@/components/common/EmptyState';
 import ErrorState from '@/components/common/ErrorState';
 import GroupCard from '@/components/features/groups/GroupCard';
 import GroupForm from '@/components/features/groups/GroupForm';
-import { BookOpen, Plus } from 'lucide-react';
+import { Plus, UsersRound } from 'lucide-react';
 
 export default function GroupsPage() {
   const { user } = useAuthStore();
@@ -163,7 +163,7 @@ export default function GroupsPage() {
         </div>
       ) : groups.length === 0 ? (
         <EmptyState
-          icon={BookOpen}
+          icon={UsersRound}
           title="Груп ще немає"
           description="Група об'єднує студентів, викладачів і розклад — з неї починається робота академії."
         >

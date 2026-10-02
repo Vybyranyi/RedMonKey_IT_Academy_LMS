@@ -117,8 +117,9 @@ describe('StudentDetailsModal — оцінки й транзакції', () => {
 
     renderModal(student(null));
 
+    expect(screen.getByText('Статистика недоступна')).toBeInTheDocument();
     expect(
-      screen.getByText('Оцінки й історію RedCoins видно лише для студентів ваших груп')
+      screen.getByText('Оцінки й історію RedCoins видно лише для студентів ваших груп.')
     ).toBeInTheDocument();
     expect(screen.queryByText('Історія транзакцій порожня')).not.toBeInTheDocument();
     expect(api).not.toHaveBeenCalled();

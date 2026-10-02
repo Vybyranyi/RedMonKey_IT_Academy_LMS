@@ -5,7 +5,6 @@ import { uk } from 'date-fns/locale';
 import {
   Users,
   GraduationCap,
-  BookOpenCheck,
   CalendarDays,
   Clock,
   ArrowRight,
@@ -36,6 +35,7 @@ import StatCard from '@/components/features/dashboard/StatCard';
 import StudentStatsCards from '@/components/features/dashboard/StudentStatsCards';
 import UpcomingLessons from '@/components/features/dashboard/UpcomingLessons';
 import CoinLeaderboard from '@/components/features/coins/CoinLeaderboard';
+import EmptyState from '@/components/common/EmptyState';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -220,7 +220,7 @@ function AdminDashboard({
           <>
             <StatCard label="Студенти" value={stats.students} icon={Users} />
             <StatCard label="Викладачі" value={stats.teachers} icon={GraduationCap} />
-            <StatCard label="Групи" value={stats.groups} icon={BookOpenCheck} />
+            <StatCard label="Групи" value={stats.groups} icon={UsersRound} />
             <StatCard
               label="Занять цього тижня"
               value={weekLessonsCount}
@@ -329,9 +329,11 @@ function TeacherDashboard({
           {isLoading && [1, 2].map((n) => <Skeleton key={n} className="h-12 w-full rounded-xl" />)}
 
           {!isLoading && groups.length === 0 && (
-            <p className="text-slate-500 text-sm font-medium text-center py-4 border border-dashed border-slate-200 rounded-xl">
-              Ви не закріплені за жодною групою
-            </p>
+            <EmptyState
+              size="compact"
+              icon={UsersRound}
+              title="Ви не закріплені за жодною групою"
+            />
           )}
 
           {!isLoading &&
@@ -423,11 +425,11 @@ function StudentDashboard({
                 </div>
               </div>
             ) : (
-              <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center">
-                <p className="text-slate-500 text-sm font-medium">
-                  Найближчих занять не заплановано
-                </p>
-              </div>
+              <EmptyState
+                size="compact"
+                icon={CalendarDays}
+                title="Найближчих занять не заплановано"
+              />
             )}
           </CardContent>
         </Card>

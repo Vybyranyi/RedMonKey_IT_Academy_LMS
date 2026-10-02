@@ -8,6 +8,8 @@ interface EmptyStateProps {
   description?: string;
   /** CTA: «Додати студента», «Скинути фільтри» тощо */
   children?: ReactNode;
+  /** compact — усередині картки чи модалки, де повнорозмірний стан задавить сусідів */
+  size?: 'default' | 'compact';
   className?: string;
 }
 
@@ -17,21 +19,39 @@ export default function EmptyState({
   title,
   description,
   children,
+  size = 'default',
   className,
 }: EmptyStateProps) {
+  const isCompact = size === 'compact';
+
   return (
     <div
       className={cn(
-        'bg-white border border-dashed border-slate-200 rounded-xl p-8 text-center flex flex-col items-center',
+        'bg-white border border-dashed border-slate-200 rounded-xl text-center flex flex-col items-center',
+        isCompact ? 'p-5' : 'p-8',
         className
       )}
     >
-      <div className="p-3 bg-slate-50 text-slate-400 rounded-xl">
-        <Icon className="h-6 w-6" />
+      <div className={cn('bg-slate-50 text-slate-400 rounded-xl', isCompact ? 'p-2' : 'p-3')}>
+        <Icon className={isCompact ? 'h-5 w-5' : 'h-6 w-6'} />
       </div>
-      <p className="mt-4 text-base font-semibold text-slate-700">{title}</p>
+      <p
+        className={cn(
+          'font-semibold text-slate-700',
+          isCompact ? 'mt-3 text-sm' : 'mt-4 text-base'
+        )}
+      >
+        {title}
+      </p>
       {description && (
-        <p className="mt-1 max-w-md text-sm font-medium text-slate-500">{description}</p>
+        <p
+          className={cn(
+            'mt-1 max-w-md font-medium text-slate-500',
+            isCompact ? 'text-xs' : 'text-sm'
+          )}
+        >
+          {description}
+        </p>
       )}
       {children && <div className="mt-5 flex flex-wrap justify-center gap-3">{children}</div>}
     </div>

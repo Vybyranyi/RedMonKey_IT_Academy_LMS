@@ -5,8 +5,9 @@ import {
   Users,
   GraduationCap,
   CalendarDays,
-  BookOpenCheck,
-  CircleDollarSign,
+  Coins,
+  NotebookPen,
+  UsersRound,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -22,8 +23,7 @@ export interface NavItem {
 
 export const navigationItems: NavItem[] = [
   {
-    name: 'Dashboard',
-    shortName: 'Головна',
+    name: 'Головна',
     path: '/',
     icon: LayoutDashboard,
     roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT],
@@ -31,7 +31,7 @@ export const navigationItems: NavItem[] = [
   },
   { name: 'Студенти', path: '/students', icon: Users, roles: [UserRole.ADMIN, UserRole.TEACHER] },
   { name: 'Викладачі', path: '/teachers', icon: GraduationCap, roles: [UserRole.ADMIN] },
-  { name: 'Групи', path: '/groups', icon: BookOpenCheck, roles: [UserRole.ADMIN] },
+  { name: 'Групи', path: '/groups', icon: UsersRound, roles: [UserRole.ADMIN] },
   {
     name: 'Розклад',
     path: '/schedule',
@@ -43,7 +43,7 @@ export const navigationItems: NavItem[] = [
     name: 'Журнал оцінок',
     shortName: 'Оцінки',
     path: '/grades',
-    icon: BookOpenCheck,
+    icon: NotebookPen,
     roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT],
     inBottomNav: true,
   },
@@ -51,7 +51,7 @@ export const navigationItems: NavItem[] = [
     name: 'RedCoins',
     shortName: 'Монети',
     path: '/coins',
-    icon: CircleDollarSign,
+    icon: Coins,
     roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT],
     inBottomNav: true,
   },

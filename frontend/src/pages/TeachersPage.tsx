@@ -22,6 +22,7 @@ import UserForm from '@/components/features/users/UserForm';
 import TeacherDetailsModal from '@/components/features/users/TeacherDetailsModal';
 import { useAuthStore } from '@/store/authStore';
 import { EMPTY_TEACHER_SUMMARY, summarizeTeacherGroups } from '@/lib/teacherGroups';
+import { pluralize } from '@/utils/stringUtils';
 import { GraduationCap, Plus } from 'lucide-react';
 
 export default function TeachersPage() {
@@ -149,7 +150,9 @@ export default function TeachersPage() {
         {isLoading ? (
           <Skeleton className="h-6 w-24" />
         ) : (
-          <Badge variant="secondary">{teachers.length} всього</Badge>
+          <Badge variant="secondary">
+            {teachers.length} {pluralize(teachers.length, ['викладач', 'викладачі', 'викладачів'])}
+          </Badge>
         )}
 
         {isAdmin && (
@@ -216,7 +219,7 @@ export default function TeachersPage() {
           aria-label="Завантаження викладачів"
         >
           {[1, 2, 3].map((n) => (
-            <Skeleton key={n} className="h-72 w-full rounded-[20px]" />
+            <Skeleton key={n} className="h-72 w-full rounded-xl" />
           ))}
         </div>
       ) : teachers.length === 0 ? (
