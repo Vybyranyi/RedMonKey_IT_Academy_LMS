@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { createTempId, removeById, replaceById, upsertById } from '@/lib/optimistic';
+import { pluralize } from '@/utils/stringUtils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -38,13 +39,19 @@ import GradeJournal, {
 import StudentGrades from '@/components/features/grades/StudentGrades';
 
 const ALL_TYPES = 'all';
+// Журнал викладача й адміна завжди показує один тип: на заняття в студента може бути
+// по оцінці кожного типу, а клітинка журналу вміщає рівно одну
+const DEFAULT_JOURNAL_TYPE = GradeType.CLASSWORK;
 
 export default function GradesPage() {
   const { user } = useAuthStore();
 
   const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
   const [groupId, setGroupId] = useState('');
-  const [type, setType] = useState<string>(ALL_TYPES);
+  // Студенту — усі свої оцінки списком (тип видно в рядку), решті — журнал одного типу
+  const [type, setType] = useState<string>(() =>
+    user?.role === UserRole.STUDENT ? ALL_TYPES : DEFAULT_JOURNAL_TYPE
+  );
 
   const [students, setStudents] = useState<IUser[]>([]);
   const [lessons, setLessons] = useState<IPopulatedLesson[]>([]);
@@ -66,8 +73,11 @@ export default function GradesPage() {
   const userId = user?.id;
   const isStudent = user?.role === UserRole.STUDENT;
   const isTeacher = user?.role === UserRole.TEACHER;
-  const canEdit = user?.role === UserRole.ADMIN || isTeacher;
+  const isAdmin = user?.role === UserRole.ADMIN;
+  const canEdit = isAdmin || isTeacher;
   const gradeType = type === ALL_TYPES ? undefined : (type as GradeType);
+  // Тип нових оцінок у журналі — завжди той, що обраний у фільтрі
+  const journalType = gradeType ?? DEFAULT_JOURNAL_TYPE;
 
   // Студент дивиться лише свої оцінки — селектор групи йому не потрібен,
   // а бекенд усе одно звузить вибірку до нього
@@ -164,8 +174,7 @@ export default function GradesPage() {
             teacherId: user.id,
             value,
             comment,
-            // Коли обрано «Усі типи», новій оцінці потрібен конкретний — беремо класну роботу
-            type: gradeType ?? GradeType.CLASSWORK,
+            type: journalType,
             createdAt: now,
             updatedAt: now,
             student: {
@@ -202,18 +211,45 @@ export default function GradesPage() {
         toastApiError(error, 'Не вдалося зберегти оцінку');
       }
     },
-    [user, gradeType]
+    [user, journalType]
   );
 
-  const handleDeleteGrade = useCallback(async (grade: JournalGrade) => {
-    setGrades((list) => removeById(list, grade.id));
+  // «Скасувати» в toast замість діалогу підтвердження: видалення — часта дрібна дія,
+  // а відновлення — це звичайне створення тієї ж оцінки (тип, значення, коментар)
+  const restoreGrade = useCallback(async (grade: JournalGrade) => {
+    const pending: JournalGrade = { ...grade, id: createTempId(), isPending: true };
+    setGrades((list) => [...list, pending]);
     try {
-      await apiDeleteGrade(grade.id);
+      const saved = await apiCreateGrade({
+        studentId: grade.studentId,
+        lessonId: grade.lessonId,
+        value: grade.value,
+        comment: grade.comment ?? '',
+        type: grade.type,
+      });
+      setGrades((list) => replaceById(list, pending.id, saved));
+      toast.success('Оцінку відновлено');
     } catch (error) {
-      setGrades((list) => [...list, grade]);
-      toastApiError(error, 'Не вдалося видалити оцінку');
+      setGrades((list) => removeById(list, pending.id));
+      toastApiError(error, 'Не вдалося відновити оцінку');
     }
   }, []);
+
+  const handleDeleteGrade = useCallback(
+    async (grade: JournalGrade) => {
+      setGrades((list) => removeById(list, grade.id));
+      try {
+        await apiDeleteGrade(grade.id);
+        toast.success(`Оцінку ${grade.value} видалено`, {
+          action: { label: 'Скасувати', onClick: () => void restoreGrade(grade) },
+        });
+      } catch (error) {
+        setGrades((list) => [...list, grade]);
+        toastApiError(error, 'Не вдалося видалити оцінку');
+      }
+    },
+    [restoreGrade]
+  );
 
   const handleBulkSubmit = async (data: IBulkGradeDto) => {
     setIsSubmitting(true);
@@ -269,7 +305,10 @@ export default function GradesPage() {
       {/* Заголовок і підзаголовок сторінки рендерить Header у AppLayout — тут лише лічильник і дія */}
       {!isStudent && (
         <div className="flex items-center justify-between gap-3">
-          <Badge variant="secondary">{students.length} студентів</Badge>
+          <Badge variant="secondary">
+            {GRADE_TYPE_META[journalType].label} · {students.length}{' '}
+            {pluralize(students.length, ['студент', 'студенти', 'студентів'])}
+          </Badge>
 
           {canEdit && (
             <Button
@@ -318,7 +357,7 @@ export default function GradesPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_TYPES}>Усі типи</SelectItem>
+            {isStudent && <SelectItem value={ALL_TYPES}>Усі типи</SelectItem>}
             {Object.entries(GRADE_TYPE_META).map(([key, meta]) => (
               <SelectItem key={key} value={key}>
                 {meta.label}
@@ -343,8 +382,10 @@ export default function GradesPage() {
           grades={grades}
           isLoading={isLoading}
           canEdit={canEdit}
+          typeLabel={GRADE_TYPE_META[journalType].label}
           onSaveGrade={handleSaveGrade}
-          onDeleteGrade={handleDeleteGrade}
+          // DELETE /grades/:id дозволений лише адміну: викладач оцінку виправляє, а не видаляє
+          onDeleteGrade={isAdmin ? handleDeleteGrade : undefined}
         />
       )}
 
@@ -354,6 +395,7 @@ export default function GradesPage() {
         onClose={() => setIsBulkOpen(false)}
         lessons={lessons}
         students={students}
+        initialType={journalType}
         isSubmitting={isSubmitting}
         onSubmit={handleBulkSubmit}
       />

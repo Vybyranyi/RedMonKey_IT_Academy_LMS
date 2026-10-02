@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { apiGetUsers, apiCreateUser, apiUpdateUser } from '@/api/users';
-import { UserRole, type IUser, type IUserDto } from '@redmonkey/shared';
+import { apiGetUsers, apiCreateUser, apiUpdateUser, apiDeleteUser } from '@/api/users';
+import { apiGetGroups } from '@/api/groups';
+import { UserRole, type IPopulatedGroup, type IUser, type IUserDto } from '@redmonkey/shared';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,23 +14,28 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import EmptyState from '@/components/common/EmptyState';
 import ErrorState from '@/components/common/ErrorState';
 import TeacherCard from '@/components/features/users/TeacherCard';
 import UserForm from '@/components/features/users/UserForm';
 import TeacherDetailsModal from '@/components/features/users/TeacherDetailsModal';
 import { useAuthStore } from '@/store/authStore';
+import { EMPTY_TEACHER_SUMMARY, summarizeTeacherGroups } from '@/lib/teacherGroups';
 import { GraduationCap, Plus } from 'lucide-react';
 
 export default function TeachersPage() {
   const { user: currentUser } = useAuthStore();
   const [teachers, setTeachers] = useState<IUser[]>([]);
+  const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<IUser | null>(null);
   const [editingTeacher, setEditingTeacher] = useState<IUser | null>(null);
+  const [deactivatingTeacher, setDeactivatingTeacher] = useState<IUser | null>(null);
+  const [isDeactivating, setIsDeactivating] = useState(false);
 
   // «Спробувати знову» після помилки: ефект перечитує список. Після створення
   // чи редагування список не перечитуємо — оновлюємо один запис з відповіді сервера
@@ -43,8 +49,14 @@ export default function TeachersPage() {
       setIsLoading(true);
       setLoadError(null);
       try {
-        const data = await apiGetUsers({ role: UserRole.TEACHER }, { signal });
-        if (!signal.aborted) setTeachers(data);
+        // Групи й кількість студентів викладача /users не віддає — рахуємо зі складу груп
+        const [teacherList, groupList] = await Promise.all([
+          apiGetUsers({ role: UserRole.TEACHER }, { signal }),
+          apiGetGroups(),
+        ]);
+        if (signal.aborted) return;
+        setTeachers(teacherList);
+        setGroups(groupList);
       } catch (error) {
         if (!signal.aborted && !isSilentError(error)) {
           setLoadError(getApiErrorMessage(error, 'Не вдалося завантажити викладачів'));
@@ -89,6 +101,28 @@ export default function TeachersPage() {
       setIsSubmitLoading(false);
     }
   };
+
+  // DELETE /users/:id не видаляє, а деактивує: викладач більше не входить у систему
+  // і зникає зі списку (GET /users віддає лише активних)
+  const handleDeactivateTeacher = async () => {
+    if (!deactivatingTeacher) return;
+    setIsDeactivating(true);
+    try {
+      await apiDeleteUser(deactivatingTeacher.id);
+      setTeachers((current) => current.filter((teacher) => teacher.id !== deactivatingTeacher.id));
+      toast.success(
+        `Викладача ${deactivatingTeacher.firstName} ${deactivatingTeacher.lastName} деактивовано`
+      );
+      setDeactivatingTeacher(null);
+    } catch (error) {
+      toastApiError(error, 'Не вдалося деактивувати викладача');
+    } finally {
+      setIsDeactivating(false);
+    }
+  };
+
+  const summaries = useMemo(() => summarizeTeacherGroups(groups), [groups]);
+  const summaryOf = (teacherId: string) => summaries.get(teacherId) ?? EMPTY_TEACHER_SUMMARY;
 
   const handleViewDetails = (id: string) => {
     const teacher = teachers.find((t) => t.id === id);
@@ -206,8 +240,10 @@ export default function TeachersPage() {
             <TeacherCard
               key={teacher.id}
               teacher={teacher}
+              summary={summaryOf(teacher.id)}
               onViewDetails={handleViewDetails}
               onEdit={isAdmin ? setEditingTeacher : undefined}
+              onDeactivate={isAdmin ? setDeactivatingTeacher : undefined}
             />
           ))}
         </div>
@@ -215,8 +251,27 @@ export default function TeachersPage() {
 
       <TeacherDetailsModal
         teacher={selectedTeacher}
+        summary={selectedTeacher ? summaryOf(selectedTeacher.id) : EMPTY_TEACHER_SUMMARY}
         isOpen={!!selectedTeacher}
         onClose={() => setSelectedTeacher(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deactivatingTeacher}
+        onOpenChange={(open) => !open && setDeactivatingTeacher(null)}
+        title="Деактивувати викладача?"
+        description={
+          deactivatingTeacher && (
+            <>
+              {deactivatingTeacher.firstName} {deactivatingTeacher.lastName} більше не зможе увійти
+              в систему і зникне зі списку викладачів. Його заняття й виставлені оцінки лишаться в
+              історії.
+            </>
+          )
+        }
+        confirmLabel="Деактивувати"
+        isPending={isDeactivating}
+        onConfirm={() => void handleDeactivateTeacher()}
       />
     </div>
   );

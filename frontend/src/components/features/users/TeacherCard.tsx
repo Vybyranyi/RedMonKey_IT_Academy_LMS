@@ -1,28 +1,28 @@
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Eye, Pencil } from 'lucide-react';
+import { Eye, Pencil, UserX } from 'lucide-react';
 import type { IUser } from '@redmonkey/shared';
-import type { IUserWithStats } from '@/types/userStats';
+import type { TeacherGroupsSummary } from '@/lib/teacherGroups';
+import { pluralize } from '@/utils/stringUtils';
 
 interface TeacherCardProps {
-  teacher: IUserWithStats;
+  teacher: IUser;
+  summary: TeacherGroupsSummary;
   onViewDetails?: (id: string) => void;
   onEdit?: (teacher: IUser) => void;
+  onDeactivate?: (teacher: IUser) => void;
 }
 
-export default function TeacherCard({ teacher, onViewDetails, onEdit }: TeacherCardProps) {
-  // Replace with actual data when available from backend
-  const subjects = teacher.subjects ?? [];
-  const groups = teacher.groups ?? [];
-  const groupsCount = groups.length;
-  const studentsCount = teacher.studentsCount || 0;
-
-  // Helper for mock avatar colors based on name length or something simple
-  const avatarColors = ['bg-orange-600', 'bg-emerald-600', 'bg-blue-600'];
-  const colorClass =
-    avatarColors[(teacher.firstName.length + teacher.lastName.length) % avatarColors.length];
+export default function TeacherCard({
+  teacher,
+  summary,
+  onViewDetails,
+  onEdit,
+  onDeactivate,
+}: TeacherCardProps) {
+  const fullName = `${teacher.firstName} ${teacher.lastName}`;
 
   return (
     <Card className="hover:shadow-md transition-all border border-slate-100 rounded-[20px] shadow-sm bg-white relative group">
@@ -33,7 +33,7 @@ export default function TeacherCard({ teacher, onViewDetails, onEdit }: TeacherC
             size="icon"
             className="h-8 w-8 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 shadow-sm"
             onClick={() => onViewDetails(teacher.id)}
-            aria-label="Переглянути картку викладача"
+            aria-label={`Переглянути картку: ${fullName}`}
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -44,64 +44,78 @@ export default function TeacherCard({ teacher, onViewDetails, onEdit }: TeacherC
             size="icon"
             className="h-8 w-8 bg-white/80 hover:bg-white text-slate-500 hover:text-slate-900 shadow-sm"
             onClick={() => onEdit(teacher)}
-            aria-label="Редагувати викладача"
+            aria-label={`Редагувати: ${fullName}`}
           >
             <Pencil className="h-4 w-4" />
+          </Button>
+        )}
+        {onDeactivate && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 bg-white/80 hover:bg-red-50 text-slate-500 hover:text-[#C10000] shadow-sm"
+            onClick={() => onDeactivate(teacher)}
+            aria-label={`Деактивувати: ${fullName}`}
+          >
+            <UserX className="h-4 w-4" />
           </Button>
         )}
       </div>
 
       <CardHeader className="flex flex-col items-center pb-2 pt-8 text-center">
-        <Avatar className={`h-20 w-20 shadow-sm border-0 ${colorClass} text-white`}>
-          <AvatarFallback className={`${colorClass} text-2xl font-bold text-white`}>
+        <Avatar className="h-20 w-20 shadow-sm border-0">
+          <AvatarImage src={teacher.avatar || undefined} />
+          <AvatarFallback className="bg-[#0070F3] text-2xl font-bold text-white">
             {teacher.firstName[0]}
             {teacher.lastName[0]}
           </AvatarFallback>
         </Avatar>
         <CardTitle className="text-[18px] font-bold text-[#1A2645] mt-4 tracking-tight">
-          {teacher.firstName} {teacher.lastName}
+          {fullName}
         </CardTitle>
-        <CardDescription className="text-sm font-medium text-slate-400 mt-1">
-          {subjects.length > 0 ? subjects.join(', ') : 'Не призначено предметів'}
+        <CardDescription className="text-sm font-medium text-slate-500 mt-1 break-all">
+          {teacher.email}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6 pt-3 text-center">
-        {groups.length > 0 ? (
-          <div className="flex justify-center flex-wrap gap-2">
-            {groups.map((grp, idx) => (
+        <div className="flex justify-center flex-wrap gap-2">
+          {summary.groups.length > 0 ? (
+            summary.groups.map((group) => (
               <Badge
-                key={idx}
+                key={group.id}
                 variant="outline"
-                className={`${idx % 2 === 0 ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'} border-none rounded-full px-3 font-semibold text-xs`}
+                className="bg-blue-50 text-blue-700 border-none rounded-full px-3 font-semibold text-xs"
               >
-                {grp}
+                {group.name}
               </Badge>
-            ))}
-          </div>
-        ) : (
-          <div className="flex justify-center">
+            ))
+          ) : (
             <Badge
               variant="outline"
-              className="bg-slate-50 text-slate-500 border-none rounded-full px-3 font-semibold text-xs"
+              className="bg-slate-100 text-slate-600 border-none rounded-full px-3 font-semibold text-xs"
             >
-              Немає груп
+              Не закріплений за групами
             </Badge>
-          </div>
-        )}
+          )}
+        </div>
 
-        <div className="grid grid-cols-2 pt-5 pb-2 border-t border-slate-100 text-slate-600 relative w-48 mx-auto">
+        <div className="grid grid-cols-2 pt-5 pb-2 border-t border-slate-100 text-slate-600 w-48 mx-auto">
           <div className="flex flex-col items-center">
             <span className="font-extrabold text-slate-800 text-lg leading-tight">
-              {groupsCount}
+              {summary.groups.length}
             </span>
-            <span className="text-[10px] text-slate-400 font-medium tracking-wide">груп</span>
+            <span className="text-xs text-slate-500 font-medium">
+              {pluralize(summary.groups.length, ['група', 'групи', 'груп'])}
+            </span>
           </div>
           <div className="flex flex-col items-center">
             <span className="font-extrabold text-slate-800 text-lg leading-tight">
-              {studentsCount}
+              {summary.studentsCount}
             </span>
-            <span className="text-[10px] text-slate-400 font-medium tracking-wide">студентів</span>
+            <span className="text-xs text-slate-500 font-medium">
+              {pluralize(summary.studentsCount, ['студент', 'студенти', 'студентів'])}
+            </span>
           </div>
         </div>
       </CardContent>
