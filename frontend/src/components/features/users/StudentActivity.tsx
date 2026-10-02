@@ -25,7 +25,7 @@ interface Activity {
 
 const EmptyBox = ({ text }: { text: string }) => (
   <div className="bg-white border border-slate-100 border-dashed rounded-xl p-6 text-center shadow-sm">
-    <p className="text-slate-400 text-sm font-medium">{text}</p>
+    <p className="text-slate-500 text-sm font-medium">{text}</p>
   </div>
 );
 
@@ -83,7 +83,7 @@ export default function StudentActivity({ studentId }: StudentActivityProps) {
         <div className="flex items-baseline justify-between gap-3">
           <h4 className="font-bold text-slate-800 text-lg">Оцінки</h4>
           {activity && activity.gradesTotal > activity.grades.length && (
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-slate-500 font-medium">
               останні {activity.grades.length} із {activity.gradesTotal}
             </span>
           )}
@@ -110,7 +110,7 @@ export default function StudentActivity({ studentId }: StudentActivityProps) {
                   <p className="text-sm font-medium text-slate-700 truncate">
                     {grade.lesson.title}
                   </p>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     {format(new Date(grade.lesson.date), 'd MMM yyyy', { locale: uk })} ·{' '}
                     {GRADE_TYPE_META[grade.type].label}
                   </p>
@@ -140,7 +140,7 @@ export default function StudentActivity({ studentId }: StudentActivityProps) {
               >
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-700 truncate">{transaction.reason}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     {transaction.issuer.firstName} {transaction.issuer.lastName} ·{' '}
                     {format(new Date(transaction.createdAt), 'd MMMM yyyy', { locale: uk })}
                   </p>

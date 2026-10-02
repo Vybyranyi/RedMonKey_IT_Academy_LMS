@@ -1,4 +1,4 @@
-import { GradeType, UserRole } from '@redmonkey/shared';
+import { GradeType, LessonStatus, UserRole } from '@redmonkey/shared';
 import type { IPopulatedGrade, IUser } from '@redmonkey/shared';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -282,5 +282,38 @@ describe('GradesPage — видалення оцінки', () => {
       type: GradeType.CLASSWORK,
     });
     await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Оцінку відновлено'));
+  });
+});
+
+describe('GradesPage — колонки журналу', () => {
+  it('скасоване заняття не стає колонкою, а легенда пояснює кольори', async () => {
+    installApi({
+      '/groups': () => [group],
+      '/users': () => [student],
+      '/lessons': () => [
+        lesson,
+        { ...lesson, id: 'lesson-2', title: 'Скасоване', status: LessonStatus.CANCELLED },
+      ],
+      'GET /grades': () => [],
+    });
+    renderPage();
+
+    expect(await screen.findByRole('columnheader', { name: /Вступ/ })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: /Скасоване/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Кольори оцінок' })).toHaveTextContent('10–12');
+  });
+
+  it('фільтр періоду пропонує місяці із заняттями', async () => {
+    installApi({
+      '/groups': () => [group],
+      '/users': () => [student],
+      '/lessons': () => [lesson],
+      'GET /grades': () => [],
+    });
+    renderPage();
+
+    // Заняття у вересні 2026, а в поточному місяці занять немає — за замовчуванням увесь курс
+    const period = await screen.findByRole('combobox', { name: 'Період' });
+    expect(period).toHaveTextContent('Увесь курс');
   });
 });

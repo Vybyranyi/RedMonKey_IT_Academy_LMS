@@ -141,4 +141,20 @@
   .focus-on-dark :focus-visible {
     outline-color: white;
   }
+  /*
+   * Під палець — щонайменше 44×44 (iOS HIG). Кнопки ShadCN мають 28–32px: мишею
+   * влучити легко, пальцем у рядку таблиці — ні. min-* не чіпає десктоп і не
+   * конфліктує з h-8/size-8: утиліти задають height/width, а не мінімум.
+   */
+  @media (pointer: coarse) {
+    [data-slot='button'],
+    [data-slot='select-trigger'],
+    [data-grade-cell] {
+      min-height: 44px;
+    }
+    [data-slot='button'][data-size^='icon'],
+    [data-grade-cell] {
+      min-width: 44px;
+    }
+  }
 }

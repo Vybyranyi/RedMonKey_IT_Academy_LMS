@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import type { View } from 'react-big-calendar';
 import {
@@ -12,18 +13,21 @@ import {
   addMinutes,
   addWeeks,
   addMonths,
+  isToday,
+  isValid,
 } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
 import { LessonStatus, UserRole } from '@redmonkey/shared';
 import type { ILessonDto, IPopulatedLesson } from '@redmonkey/shared';
-import { apiCreateLesson, apiGetLessons, apiUpdateLesson } from '@/api/lessons';
+import { apiCreateLesson, apiGetLessonById, apiGetLessons, apiUpdateLesson } from '@/api/lessons';
 import { useAuthStore } from '@/store/authStore';
 import { calendarHours } from '@/lib/calendarHours';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import { replaceById } from '@/lib/optimistic';
+import { PHONE_QUERY, useMediaQuery } from '@/lib/useMediaQuery';
 import ErrorState from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -32,6 +36,7 @@ import LessonDetailsModal from '@/components/features/lessons/LessonDetailsModal
 import LessonEvent from '@/components/features/lessons/LessonEvent';
 import LessonForm, { type LessonFormValues } from '@/components/features/lessons/LessonForm';
 import LessonTypeLegend from '@/components/features/lessons/LessonTypeLegend';
+import ScheduleAgenda from '@/components/features/lessons/ScheduleAgenda';
 import ScheduleToolbar from '@/components/features/lessons/ScheduleToolbar';
 import type { ScheduleView } from '@/components/features/lessons/ScheduleToolbar';
 // Стилі бібліотеки підключені всередині calendar.css — там вони заводяться
@@ -57,6 +62,12 @@ const CALENDAR_VIEWS: View[] = ['week', 'month'];
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
+/** ?date=2026-09-22 — місцевий день; без параметра чи з битим — сьогодні. */
+const parseDateParam = (value: string | null) => {
+  const parsed = value ? parse(value, 'yyyy-MM-dd', new Date()) : null;
+  return parsed && isValid(parsed) ? parsed : new Date();
+};
+
 // Форма працює з місцевими датою й часом окремо — як і при створенні
 const toFormValues = (lesson: IPopulatedLesson): LessonFormValues => {
   const start = new Date(lesson.date);
@@ -80,13 +91,39 @@ export default function SchedulePage() {
   const { user } = useAuthStore();
   const canManage = user?.role === UserRole.ADMIN || user?.role === UserRole.TEACHER;
 
-  const [date, setDate] = useState(new Date());
-  const [view, setView] = useState<ScheduleView>('week');
+  const isPhone = useMediaQuery(PHONE_QUERY);
+
+  // Тиждень/місяць, дата і відкрите заняття живуть в URL: дашборд веде одразу на
+  // заняття, а перезавантаження чи «Назад» не повертають на поточний тиждень
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view: ScheduleView = searchParams.get('view') === 'month' ? 'month' : 'week';
+  const dateParam = searchParams.get('date');
+  const date = useMemo(() => parseDateParam(dateParam), [dateParam]);
+  const lessonId = searchParams.get('lesson');
+
+  const updateParams = (patch: Record<string, string | null>) =>
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        Object.entries(patch).forEach(([key, value]) =>
+          value === null ? next.delete(key) : next.set(key, value)
+        );
+        return next;
+      },
+      { replace: true }
+    );
+  const setView = (next: ScheduleView) => updateParams({ view: next === 'week' ? null : next });
+  const setDate = (next: Date) =>
+    updateParams({ date: isToday(next) ? null : format(next, 'yyyy-MM-dd') });
+  const selectLesson = (lesson: IPopulatedLesson | null) =>
+    updateParams({ lesson: lesson?.id ?? null });
+
   const [lessons, setLessons] = useState<IPopulatedLesson[]>([]);
+  // Заняття з посилання, якого немає у видимому діапазоні
+  const [linkedLesson, setLinkedLesson] = useState<IPopulatedLesson | null>(null);
   const [loadedRangeKey, setLoadedRangeKey] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState<IPopulatedLesson | null>(null);
   const [editingLesson, setEditingLesson] = useState<IPopulatedLesson | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -133,6 +170,32 @@ export default function SchedulePage() {
     return () => controller.abort();
   }, [range, rangeKey, loadAttempt]);
 
+  const lessonInRange = lessonId ? (lessons.find((item) => item.id === lessonId) ?? null) : null;
+  const selectedLesson =
+    lessonInRange ?? (linkedLesson && linkedLesson.id === lessonId ? linkedLesson : null);
+
+  // Посилання на заняття поза завантаженим тижнем — дочитуємо його окремо
+  useEffect(() => {
+    if (!lessonId || isLoading || lessonInRange || linkedLesson?.id === lessonId) return;
+    let cancelled = false;
+
+    apiGetLessonById(lessonId)
+      .then((lesson) => {
+        if (!cancelled) setLinkedLesson(lesson);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        toastApiError(error, 'Не вдалося відкрити заняття');
+        updateParams({ lesson: null });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // updateParams — нова функція на кожен рендер, а дочитувати треба лише при зміні id
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lessonId, isLoading, lessonInRange, linkedLesson]);
+
   const events = useMemo<ScheduleEvent[]>(
     () =>
       lessons.map((lesson) => {
@@ -161,7 +224,7 @@ export default function SchedulePage() {
     }
 
     const step = action === 'NEXT' ? 1 : -1;
-    setDate((current) => (view === 'week' ? addWeeks(current, step) : addMonths(current, step)));
+    setDate(view === 'week' ? addWeeks(date, step) : addMonths(date, step));
   };
 
   const handleCreateLesson = async (values: ILessonDto | Partial<ILessonDto>) => {
@@ -190,11 +253,12 @@ export default function SchedulePage() {
   // Заняття проведене, скасоване чи змінене: міняємо один запис, а не перечитуємо календар
   const handleLessonUpdated = (lesson: IPopulatedLesson) => {
     setLessons((current) => replaceById(current, lesson.id, lesson));
+    if (linkedLesson?.id === lesson.id) setLinkedLesson(lesson);
   };
 
   // Деталі закриваються, щоб поверх календаря була одна модалка — форма
   const openEdit = (lesson: IPopulatedLesson) => {
-    setSelectedLesson(null);
+    selectLesson(null);
     setEditingLesson(lesson);
   };
 
@@ -251,7 +315,7 @@ export default function SchedulePage() {
       <LessonTypeLegend />
 
       {!isLoading && !loadError && events.length === 0 && (
-        <p className="text-sm font-medium text-slate-400">
+        <p className="text-sm font-medium text-slate-500">
           {view === 'week' ? 'На цьому тижні' : 'У цьому місяці'} занять немає
           {canManage ? ' — додайте перше кнопкою «Додати заняття»' : ''}
         </p>
@@ -263,8 +327,18 @@ export default function SchedulePage() {
           description={loadError}
           onRetry={() => setLoadAttempt((value) => value + 1)}
         />
+      ) : isPhone ? (
+        // На телефоні сім колонок тижня не вміщаються — ті самі заняття списком за днями
+        isLoading ? (
+          <div className="space-y-2" aria-busy="true" aria-label="Завантаження розкладу">
+            {[1, 2, 3].map((n) => (
+              <Skeleton key={n} className="h-16 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : (
+          <ScheduleAgenda lessons={lessons} onSelect={selectLesson} />
+        )
       ) : (
-        // На телефоні 7 колонок тижня не вміщаються — календар гортається горизонтально
         <div className="bg-white rounded-xl border border-slate-200 p-2 sm:p-4 overflow-x-auto">
           {isLoading ? (
             <Skeleton className="h-[700px] w-full rounded-lg" />
@@ -291,7 +365,7 @@ export default function SchedulePage() {
                   }${selectedLesson?.id === event.resource.id ? ' ring-2 ring-[#BA0000]' : ''}`,
                 })}
                 components={{ event: LessonEvent }}
-                onSelectEvent={(event) => setSelectedLesson(event.resource)}
+                onSelectEvent={(event) => selectLesson(event.resource)}
                 messages={{
                   next: 'Далі',
                   previous: 'Назад',
@@ -309,13 +383,13 @@ export default function SchedulePage() {
       <LessonDetailsModal
         lesson={selectedLesson}
         isOpen={Boolean(selectedLesson)}
-        onClose={() => setSelectedLesson(null)}
+        onClose={() => selectLesson(null)}
         onLessonUpdated={handleLessonUpdated}
         onEdit={openEdit}
       />
 
       <Dialog open={!!editingLesson} onOpenChange={(open) => !open && setEditingLesson(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Редагування заняття</DialogTitle>
           </DialogHeader>
@@ -330,7 +404,7 @@ export default function SchedulePage() {
       </Dialog>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Нове заняття</DialogTitle>
           </DialogHeader>

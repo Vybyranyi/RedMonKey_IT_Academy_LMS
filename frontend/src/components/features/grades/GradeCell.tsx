@@ -94,7 +94,7 @@ export default function GradeCell({
             {grade.value}
           </span>
         ) : (
-          <span className="text-slate-300 text-sm">—</span>
+          <span className="text-slate-500 text-sm">—</span>
         )}
       </div>
     );
@@ -121,7 +121,7 @@ export default function GradeCell({
           className={`mx-auto flex h-9 w-9 items-center justify-center rounded-md border text-sm font-bold transition-colors disabled:animate-pulse disabled:opacity-60 ${
             grade
               ? getGradeColor(grade.value)
-              : 'border-dashed border-slate-200 text-slate-300 hover:border-slate-300 hover:text-slate-400'
+              : 'border-dashed border-slate-300 text-slate-500 hover:border-slate-400 hover:text-slate-700'
           }`}
         >
           {grade?.value ?? '+'}
@@ -159,7 +159,7 @@ export default function GradeCell({
             className={error ? 'border-destructive' : undefined}
           />
           {!error && (
-            <p id="grade-hint" className="text-[11px] text-slate-400">
+            <p id="grade-hint" className="text-xs text-slate-500">
               Enter або Tab — зберегти й до наступного студента, Esc — скасувати
             </p>
           )}
