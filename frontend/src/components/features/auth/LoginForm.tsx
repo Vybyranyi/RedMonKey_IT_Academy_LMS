@@ -68,7 +68,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Сховати пароль' : 'Показати пароль'}
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 left-0 pl-3 flex items-center rounded-md text-slate-400 hover:text-slate-600"
+                    className="absolute inset-y-0 left-0 pl-3 flex items-center rounded-md text-slate-500 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>

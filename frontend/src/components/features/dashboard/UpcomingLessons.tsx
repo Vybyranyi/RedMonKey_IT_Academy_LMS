@@ -31,7 +31,7 @@ export default function UpcomingLessons({
 
         {!isLoading && lessons.length === 0 && (
           <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center">
-            <p className="text-slate-400 text-sm font-medium">{emptyText}</p>
+            <p className="text-slate-500 text-sm font-medium">{emptyText}</p>
           </div>
         )}
 

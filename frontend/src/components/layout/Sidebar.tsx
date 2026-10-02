@@ -37,7 +37,7 @@ export default function Sidebar() {
             <span className="text-[15px] font-extrabold leading-tight text-white tracking-wide">
               IT Academy
             </span>
-            <span className="text-[11px] font-medium text-slate-400 mt-0.5">CRM Platform</span>
+            <span className="text-xs font-medium text-slate-300 mt-0.5">CRM Platform</span>
           </div>
         )}
       </div>
@@ -77,7 +77,7 @@ export default function Sidebar() {
           onClick={() => setIsCollapsed(!isCollapsed)}
           aria-label={isCollapsed ? 'Розгорнути меню' : 'Згорнути меню'}
           aria-expanded={!isCollapsed}
-          className={`flex items-center gap-2 text-[12px] font-semibold text-[#8B9DB4] hover:text-white transition-colors w-full mb-4 ${isCollapsed ? 'justify-center' : 'justify-end px-2'}`}
+          className={`flex items-center gap-2 text-[12px] font-semibold text-[#A9B8CA] hover:text-white transition-colors w-full mb-4 ${isCollapsed ? 'justify-center' : 'justify-end px-2'}`}
           title={isCollapsed ? 'Розгорнути' : 'Згорнути'}
         >
           {isCollapsed ? (
