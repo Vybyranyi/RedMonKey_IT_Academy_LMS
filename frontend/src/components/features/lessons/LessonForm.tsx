@@ -18,6 +18,7 @@ import { getChangedFields } from '@/utils/formUtils';
 import { validateWithZod } from '@/utils/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -27,6 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toastApiError } from '@/utils/apiError';
+import { errorA11y } from '@/utils/formA11y';
 
 /** Значення форми: дата й час — окремі поля, бекенд же чекає один ISO-рядок. */
 export interface LessonFormValues {
@@ -164,13 +166,16 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                 <Input
                   {...field}
                   id="title"
+                  {...errorA11y('title', errors.title && touched.title)}
                   placeholder="Основи React"
                   className={`h-11 ${errors.title && touched.title ? 'border-destructive' : ''}`}
                 />
               )}
             </Field>
             {errors.title && touched.title && (
-              <p className="text-xs text-destructive">{errors.title}</p>
+              <p id="title-error" className="text-xs text-destructive">
+                {errors.title}
+              </p>
             )}
           </div>
 
@@ -181,13 +186,16 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                 <Input
                   {...field}
                   id="description"
+                  {...errorA11y('description', errors.description && touched.description)}
                   placeholder="Коротко про заняття"
                   className={`h-11 ${errors.description && touched.description ? 'border-destructive' : ''}`}
                 />
               )}
             </Field>
             {errors.description && touched.description && (
-              <p className="text-xs text-destructive">{errors.description}</p>
+              <p id="description-error" className="text-xs text-destructive">
+                {errors.description}
+              </p>
             )}
           </div>
 
@@ -201,7 +209,11 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                   setFieldTouched('groupId', true);
                 }}
               >
-                <SelectTrigger id="groupId" className="bg-white h-11 w-full">
+                <SelectTrigger
+                  id="groupId"
+                  {...errorA11y('groupId', errors.groupId && touched.groupId)}
+                  className="bg-white h-11 w-full"
+                >
                   <SelectValue placeholder="Оберіть групу" />
                 </SelectTrigger>
                 <SelectContent>
@@ -213,7 +225,9 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                 </SelectContent>
               </Select>
               {errors.groupId && touched.groupId && (
-                <p className="text-xs text-destructive">{errors.groupId}</p>
+                <p id="groupId-error" className="text-xs text-destructive">
+                  {errors.groupId}
+                </p>
               )}
             </div>
 
@@ -226,7 +240,11 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                   setFieldTouched('type', true);
                 }}
               >
-                <SelectTrigger id="type" className="bg-white h-11 w-full">
+                <SelectTrigger
+                  id="type"
+                  {...errorA11y('type', errors.type && touched.type)}
+                  className="bg-white h-11 w-full"
+                >
                   <SelectValue placeholder="Оберіть тип" />
                 </SelectTrigger>
                 <SelectContent>
@@ -238,7 +256,9 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                 </SelectContent>
               </Select>
               {errors.type && touched.type && (
-                <p className="text-xs text-destructive">{errors.type}</p>
+                <p id="type-error" className="text-xs text-destructive">
+                  {errors.type}
+                </p>
               )}
             </div>
           </div>
@@ -251,13 +271,16 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                   <Input
                     {...field}
                     id="date"
+                    {...errorA11y('date', errors.date && touched.date)}
                     type="date"
                     className={`h-11 ${errors.date && touched.date ? 'border-destructive' : ''}`}
                   />
                 )}
               </Field>
               {errors.date && touched.date && (
-                <p className="text-xs text-destructive">{errors.date}</p>
+                <p id="date-error" className="text-xs text-destructive">
+                  {errors.date}
+                </p>
               )}
             </div>
 
@@ -268,13 +291,16 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                   <Input
                     {...field}
                     id="time"
+                    {...errorA11y('time', errors.time && touched.time)}
                     type="time"
                     className={`h-11 ${errors.time && touched.time ? 'border-destructive' : ''}`}
                   />
                 )}
               </Field>
               {errors.time && touched.time && (
-                <p className="text-xs text-destructive">{errors.time}</p>
+                <p id="time-error" className="text-xs text-destructive">
+                  {errors.time}
+                </p>
               )}
             </div>
           </div>
@@ -286,13 +312,16 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                 <Input
                   {...field}
                   id="duration"
+                  {...errorA11y('duration', errors.duration && touched.duration)}
                   type="number"
                   className={`h-11 ${errors.duration && touched.duration ? 'border-destructive' : ''}`}
                 />
               )}
             </Field>
             {errors.duration && touched.duration && (
-              <p className="text-xs text-destructive">{errors.duration}</p>
+              <p id="duration-error" className="text-xs text-destructive">
+                {errors.duration}
+              </p>
             )}
           </div>
 
@@ -301,16 +330,23 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
               <Label htmlFor="homeworkDescription">Домашнє завдання</Label>
               <Field name="homeworkDescription">
                 {({ field }: FieldProps) => (
-                  <Input
+                  // Завдання — кілька речень із посиланнями, в один рядок input воно не вміщалось
+                  <Textarea
                     {...field}
                     id="homeworkDescription"
-                    placeholder="Необовʼязково"
-                    className={`h-11 ${errors.homeworkDescription && touched.homeworkDescription ? 'border-destructive' : ''}`}
+                    {...errorA11y(
+                      'homeworkDescription',
+                      errors.homeworkDescription && touched.homeworkDescription
+                    )}
+                    rows={3}
+                    placeholder="Необовʼязково: що зробити й де здати"
                   />
                 )}
               </Field>
               {errors.homeworkDescription && touched.homeworkDescription && (
-                <p className="text-xs text-destructive">{errors.homeworkDescription}</p>
+                <p id="homeworkDescription-error" className="text-xs text-destructive">
+                  {errors.homeworkDescription}
+                </p>
               )}
             </div>
 
@@ -321,15 +357,17 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                   <Input
                     {...field}
                     id="homeworkDue"
+                    {...errorA11y('homeworkDue', errors.homeworkDue && touched.homeworkDue)}
                     type="date"
                     min={values.date}
-                    aria-invalid={Boolean(errors.homeworkDue && touched.homeworkDue)}
                     className={`h-11 ${errors.homeworkDue && touched.homeworkDue ? 'border-destructive' : ''}`}
                   />
                 )}
               </Field>
               {errors.homeworkDue && touched.homeworkDue && (
-                <p className="text-xs text-destructive">{errors.homeworkDue}</p>
+                <p id="homeworkDue-error" className="text-xs text-destructive">
+                  {errors.homeworkDue}
+                </p>
               )}
             </div>
           </div>
@@ -344,7 +382,11 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                   setFieldTouched('teacherId', true);
                 }}
               >
-                <SelectTrigger id="teacherId" className="bg-white h-11 w-full">
+                <SelectTrigger
+                  id="teacherId"
+                  {...errorA11y('teacherId', errors.teacherId && touched.teacherId)}
+                  className="bg-white h-11 w-full"
+                >
                   <SelectValue placeholder="Оберіть викладача" />
                 </SelectTrigger>
                 <SelectContent>
@@ -356,7 +398,9 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
                 </SelectContent>
               </Select>
               {errors.teacherId && touched.teacherId && (
-                <p className="text-xs text-destructive">{errors.teacherId}</p>
+                <p id="teacherId-error" className="text-xs text-destructive">
+                  {errors.teacherId}
+                </p>
               )}
             </div>
           )}

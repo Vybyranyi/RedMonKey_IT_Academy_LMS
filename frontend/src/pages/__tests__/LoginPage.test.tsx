@@ -23,7 +23,7 @@ const renderLogin = (from?: string) =>
 
 const submit = async (password: string) => {
   const user = userEvent.setup();
-  await user.type(screen.getByPlaceholderText('admin@academy.com'), 'anna@academy.ua');
+  await user.type(screen.getByLabelText('Email'), 'anna@academy.ua');
   await user.type(screen.getByPlaceholderText('••••••••'), password);
   await user.click(screen.getByRole('button', { name: 'Увійти' }));
 };

@@ -48,7 +48,7 @@ export default function LoginPage() {
       {/* Header section (Logo and Title) */}
       <div className="z-10 text-center mb-8 pt-10">
         <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-[18px] relative overflow-hidden">
-          <img src={logo} alt="Logo" className="w-full h-full object-contain relative z-10" />
+          <img src={logo} alt="" className="w-full h-full object-contain relative z-10" />
         </div>
         <h1 className="text-2xl font-extrabold tracking-tight text-white mb-1 drop-shadow-sm">
           IT Academy LMS
