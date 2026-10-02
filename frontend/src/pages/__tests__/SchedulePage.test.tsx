@@ -2,8 +2,9 @@ import { LessonStatus, LessonType, UserRole } from '@redmonkey/shared';
 import type { IPopulatedLesson, IUser } from '@redmonkey/shared';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '../../store/authStore';
 import { callsTo, installApi } from '../../test/apiMock';
 import SchedulePage from '../SchedulePage';
@@ -44,6 +45,29 @@ beforeEach(() => {
   useAuthStore.getState().setAuth(admin, 'token');
 });
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+function LocationProbe() {
+  const { search } = useLocation();
+  return <output aria-label="URL">{search}</output>;
+}
+
+// Вид, дата й відкрите заняття живуть в URL — сторінці потрібен роутер
+const renderPage = (url = '/schedule') =>
+  render(
+    <MemoryRouter initialEntries={[url]}>
+      <SchedulePage />
+      <LocationProbe />
+    </MemoryRouter>
+  );
+
+const dayParam = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 describe('SchedulePage — редагування заняття', () => {
   it('з деталей відкриває форму з даними заняття і шле лише змінені поля', async () => {
     const adapter = installApi({
@@ -53,7 +77,7 @@ describe('SchedulePage — редагування заняття', () => {
       '/groups': () => [{ id: GROUP_ID, name: 'JS-1', teachers: [], students: [] }],
       'PATCH /lessons/lesson-1': (config) => ({ ...lesson, ...JSON.parse(config.data) }),
     });
-    render(<SchedulePage />);
+    renderPage();
 
     await userEvent.click(await screen.findByText('Вступ до JS'));
     await userEvent.click(await screen.findByRole('button', { name: 'Редагувати' }));
@@ -77,8 +101,75 @@ describe('SchedulePage — редагування заняття', () => {
   it('скасоване заняття в календарі підписане «скасовано»', async () => {
     installApi({ 'GET /lessons': () => [{ ...lesson, status: LessonStatus.CANCELLED }] });
 
-    render(<SchedulePage />);
+    renderPage();
 
     expect(await screen.findByText(/скасовано/)).toBeInTheDocument();
+  });
+});
+
+describe('SchedulePage — стан в URL', () => {
+  it('посилання з дашборду відкриває тиждень заняття з уже відкритими деталями', async () => {
+    const adapter = installApi({
+      'GET /lessons': () => [lesson],
+      '/users': () => [],
+      '/attendance': () => [],
+    });
+
+    renderPage(`/schedule?date=${dayParam(lesson.date)}&lesson=lesson-1`);
+
+    expect(await screen.findByRole('dialog', { name: 'Вступ до JS' })).toBeInTheDocument();
+    // Заняття знайшлось у завантаженому тижні — окремо його не дочитували
+    expect(callsTo(adapter, 'GET', '/lessons/lesson-1')).toHaveLength(0);
+  });
+
+  it('заняття поза видимим тижнем дочитує окремо', async () => {
+    installApi({
+      'GET /lessons': () => [],
+      'GET /lessons/lesson-1': () => lesson,
+      '/users': () => [],
+      '/attendance': () => [],
+    });
+
+    renderPage('/schedule?date=2020-01-06&lesson=lesson-1');
+
+    expect(await screen.findByRole('dialog', { name: 'Вступ до JS' })).toBeInTheDocument();
+  });
+
+  it('вид і закриття деталей оновлюють URL', async () => {
+    installApi({ 'GET /lessons': () => [lesson], '/users': () => [], '/attendance': () => [] });
+    renderPage(`/schedule?lesson=lesson-1`);
+    await screen.findByRole('dialog', { name: 'Вступ до JS' });
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.getByLabelText('URL')).toHaveTextContent(/^$/));
+
+    await userEvent.click(screen.getByRole('button', { name: 'Місяць' }));
+    expect(screen.getByLabelText('URL')).toHaveTextContent('?view=month');
+  });
+});
+
+describe('SchedulePage — телефон', () => {
+  // Сім колонок тижня на 375px не вміщались: календар гортався вбік
+  it('на вузькому екрані показує заняття списком за днями', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: query === '(max-width: 639px)',
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }))
+    );
+    installApi({ 'GET /lessons': () => [lesson], '/users': () => [], '/attendance': () => [] });
+
+    renderPage();
+
+    const item = await screen.findByRole('button', { name: /Вступ до JS/ });
+    expect(item).toHaveTextContent('12:00');
+    expect(item).toHaveTextContent('Лекція · JS-1');
+    expect(screen.getByText('сьогодні')).toBeInTheDocument();
+    expect(document.querySelector('.rbc-calendar')).toBeNull();
+
+    await userEvent.click(item);
+    expect(await screen.findByRole('dialog', { name: 'Вступ до JS' })).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { BookOpenCheck, Plus } from 'lucide-react';
@@ -18,6 +18,13 @@ import { useAuthStore } from '@/store/authStore';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { createTempId, removeById, replaceById, upsertById } from '@/lib/optimistic';
 import { pluralize } from '@/utils/stringUtils';
+import {
+  ALL_PERIODS,
+  defaultPeriod,
+  journalLessons,
+  journalMonths,
+  lessonsInPeriod,
+} from '@/lib/journalPeriods';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -37,6 +44,7 @@ import GradeJournal, {
   type SaveGradeHandler,
 } from '@/components/features/grades/GradeJournal';
 import StudentGrades from '@/components/features/grades/StudentGrades';
+import GradeLegend from '@/components/features/grades/GradeLegend';
 
 const ALL_TYPES = 'all';
 // Журнал викладача й адміна завжди показує один тип: на заняття в студента може бути
@@ -48,6 +56,8 @@ export default function GradesPage() {
 
   const [groups, setGroups] = useState<IPopulatedGroup[]>([]);
   const [groupId, setGroupId] = useState('');
+  // null — «автоматично»: поточний місяць, якщо в ньому є заняття, інакше весь курс
+  const [period, setPeriod] = useState<string | null>(null);
   // Студенту — усі свої оцінки списком (тип видно в рядку), решті — журнал одного типу
   const [type, setType] = useState<string>(() =>
     user?.role === UserRole.STUDENT ? ALL_TYPES : DEFAULT_JOURNAL_TYPE
@@ -268,6 +278,23 @@ export default function GradesPage() {
     }
   };
 
+  // Колонки журналу — проведені й заплановані заняття обраного місяця
+  const activeLessons = useMemo(() => journalLessons(lessons), [lessons]);
+  const months = useMemo(() => journalMonths(activeLessons), [activeLessons]);
+  const effectivePeriod =
+    period && (period === ALL_PERIODS || months.some((month) => month.key === period))
+      ? period
+      : defaultPeriod(months);
+  const visibleLessons = useMemo(
+    () => lessonsInPeriod(activeLessons, effectivePeriod),
+    [activeLessons, effectivePeriod]
+  );
+
+  const changeGroup = (next: string) => {
+    setGroupId(next);
+    setPeriod(null);
+  };
+
   if (!user) return null;
 
   if (!isStudent && groupsError) {
@@ -311,16 +338,25 @@ export default function GradesPage() {
           </Badge>
 
           {canEdit && (
-            <Button
-              className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white"
-              onClick={() => {
-                setBulkKey((key) => key + 1);
-                setIsBulkOpen(true);
-              }}
-              disabled={!groupId || lessons.length === 0}
+            // Неактивна кнопка не показує підказку сама (pointer-events: none) — її несе обгортка
+            <span
+              title={
+                groupId && activeLessons.length === 0
+                  ? 'Масово оцінки ставляться за заняття — у групи їх ще немає'
+                  : undefined
+              }
             >
-              <Plus className="h-4 w-4" /> Виставити масово
-            </Button>
+              <Button
+                className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white"
+                onClick={() => {
+                  setBulkKey((key) => key + 1);
+                  setIsBulkOpen(true);
+                }}
+                disabled={!groupId || activeLessons.length === 0}
+              >
+                <Plus className="h-4 w-4" /> Виставити масово
+              </Button>
+            </span>
           )}
         </div>
       )}
@@ -332,7 +368,7 @@ export default function GradesPage() {
           </Label>
         )}
         {!isStudent && (
-          <Select value={groupId} onValueChange={setGroupId}>
+          <Select value={groupId} onValueChange={changeGroup}>
             <SelectTrigger
               id="grades-group"
               className="w-full sm:w-64 h-11 bg-white border-slate-200"
@@ -365,7 +401,33 @@ export default function GradesPage() {
             ))}
           </SelectContent>
         </Select>
+
+        {!isStudent && months.length > 0 && (
+          <>
+            <Label htmlFor="grades-period" className="sr-only">
+              Період
+            </Label>
+            <Select value={effectivePeriod} onValueChange={setPeriod}>
+              <SelectTrigger
+                id="grades-period"
+                className="w-full sm:w-48 h-11 bg-white border-slate-200"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_PERIODS}>Увесь курс</SelectItem>
+                {months.map((month) => (
+                  <SelectItem key={month.key} value={month.key}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
       </div>
+
+      {!isStudent && !journalError && <GradeLegend />}
 
       {journalError ? (
         <ErrorState
@@ -378,7 +440,7 @@ export default function GradesPage() {
       ) : (
         <GradeJournal
           students={students}
-          lessons={lessons}
+          lessons={visibleLessons}
           grades={grades}
           isLoading={isLoading}
           canEdit={canEdit}
@@ -393,7 +455,7 @@ export default function GradesPage() {
         key={bulkKey}
         isOpen={isBulkOpen}
         onClose={() => setIsBulkOpen(false)}
-        lessons={lessons}
+        lessons={activeLessons}
         students={students}
         initialType={journalType}
         isSubmitting={isSubmitting}

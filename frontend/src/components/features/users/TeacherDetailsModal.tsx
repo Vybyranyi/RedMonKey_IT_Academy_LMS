@@ -36,7 +36,7 @@ export default function TeacherDetailsModal({
         <div className="max-h-[80vh] overflow-y-auto px-6 pb-6 scrollbar-hide">
           <div className="space-y-6">
             {/* Top Profile Card */}
-            <div className="bg-[#1A2645] rounded-2xl p-6 flex items-center gap-5 text-white shadow-sm mt-2">
+            <div className="bg-[#1A2645] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 text-white shadow-sm mt-2">
               <Avatar className="h-20 w-20 border-2 border-white/20">
                 <AvatarImage src={teacher.avatar || undefined} />
                 <AvatarFallback className="bg-[#0070F3] text-2xl font-bold text-white">
@@ -44,11 +44,11 @@ export default function TeacherDetailsModal({
                   {teacher.lastName[0]}
                 </AvatarFallback>
               </Avatar>
-              <div className="space-y-1.5 flex-1">
+              <div className="space-y-1.5 flex-1 min-w-0">
                 <h3 className="text-2xl font-bold tracking-tight">
                   {teacher.firstName} {teacher.lastName}
                 </h3>
-                <p className="text-slate-300 text-sm">{teacher.email}</p>
+                <p className="text-slate-300 text-sm break-all">{teacher.email}</p>
                 <div className="flex items-center gap-2 pt-1">
                   <Badge className="bg-white/10 text-slate-300 hover:bg-white/20 border-none px-3 font-semibold">
                     Викладач
@@ -61,19 +61,19 @@ export default function TeacherDetailsModal({
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-white rounded-xl p-4 flex flex-col items-center justify-center border border-slate-100 shadow-sm text-center">
                 <span className="text-2xl font-bold text-blue-600">{groups.length}</span>
-                <span className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-1">
+                <span className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">
                   Групи
                 </span>
               </div>
               <div className="bg-white rounded-xl p-4 flex flex-col items-center justify-center border border-slate-100 shadow-sm text-center">
                 <span className="text-2xl font-bold text-emerald-600">{studentsCount}</span>
-                <span className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-1">
+                <span className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">
                   Студенти
                 </span>
               </div>
               <div className="bg-white rounded-xl p-4 flex flex-col items-center justify-center border border-slate-100 shadow-sm text-center">
                 <span className="text-lg font-bold text-slate-700">{hireDate}</span>
-                <span className="text-[11px] text-slate-400 font-medium uppercase tracking-wider mt-1">
+                <span className="text-xs text-slate-500 font-medium uppercase tracking-wider mt-1">
                   Дата приєднання
                 </span>
               </div>
@@ -83,7 +83,7 @@ export default function TeacherDetailsModal({
             <div className="space-y-3">
               <h4 className="font-bold text-slate-800 text-lg">Групи</h4>
               {groups.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {groups.map((group) => (
                     <div
                       key={group.id}
@@ -95,7 +95,7 @@ export default function TeacherDetailsModal({
                 </div>
               ) : (
                 <div className="bg-white border border-slate-100 border-dashed rounded-xl p-6 text-center shadow-sm">
-                  <p className="text-slate-400 text-sm font-medium">
+                  <p className="text-slate-500 text-sm font-medium">
                     Викладач не закріплений за групами
                   </p>
                 </div>

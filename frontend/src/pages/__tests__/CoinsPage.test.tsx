@@ -137,14 +137,14 @@ describe('CoinsPage — оптимістичне нарахування', () => 
   /** Рядки рейтингу в порядку відображення: «позиція ім'я баланс» */
   const leaderboardRows = () =>
     within(screen.getByText('Рейтинг').closest('[data-slot=card]') as HTMLElement)
-      .getAllByRole('button', { name: 'Нарахувати' })
+      .getAllByRole('button', { name: /^Нарахувати: / })
       .map((button) => button.parentElement?.textContent?.replace('Нарахувати', '').trim());
 
   /** «Нарахувати» в рядку Анни → причина → кнопка з сумою й іменем (сума за замовчуванням 10) */
   const awardAnna = async () => {
     const user = userEvent.setup();
     await screen.findByText('Анна Коваленко');
-    await user.click(screen.getAllByRole('button', { name: 'Нарахувати' })[1]);
+    await user.click(screen.getByRole('button', { name: 'Нарахувати: Анна Коваленко' }));
     await user.type(await screen.findByLabelText('Причина'), 'Активність на занятті');
     await user.click(screen.getByRole('button', { name: 'Нарахувати 10 для Анна К.' }));
   };
@@ -247,7 +247,7 @@ describe('CoinsPage — списання', () => {
   const openDeductForm = async (amount: string) => {
     const user = userEvent.setup();
     await screen.findByText('Анна Коваленко');
-    await user.click(screen.getByRole('button', { name: 'Нарахувати' }));
+    await user.click(screen.getByRole('button', { name: 'Нарахувати: Анна Коваленко' }));
     const form = await screen.findByRole('dialog');
     await user.click(within(form).getByRole('button', { name: 'Списати' }));
     await user.clear(within(form).getByLabelText('Кількість монет'));
@@ -328,7 +328,7 @@ describe('CoinsPage — списання', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByText('Запізнення')).toBeInTheDocument();
     expect(toast.success).toHaveBeenCalledWith('Списано 5 монет: Анна Коваленко');
-    const row = screen.getByRole('button', { name: 'Нарахувати' }).parentElement!;
+    const row = screen.getByRole('button', { name: 'Нарахувати: Анна Коваленко' }).parentElement!;
     expect(row).toHaveTextContent('5');
     expect(row).not.toHaveTextContent('10');
   });

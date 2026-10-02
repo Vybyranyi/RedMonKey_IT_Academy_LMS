@@ -56,9 +56,7 @@ export default function UserProfileWidget({ isCollapsed }: UserProfileWidgetProp
             <p className="text-[13px] font-bold text-white truncate leading-tight mb-0.5">
               {fullName}
             </p>
-            <p className="text-[11px] font-medium text-slate-300 truncate">
-              {ROLE_LABELS[user.role]}
-            </p>
+            <p className="text-xs font-medium text-slate-300 truncate">{ROLE_LABELS[user.role]}</p>
           </div>
         )}
       </NavLink>

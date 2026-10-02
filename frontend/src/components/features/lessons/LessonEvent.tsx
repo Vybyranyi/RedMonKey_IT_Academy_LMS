@@ -25,7 +25,7 @@ export default function LessonEvent({ event }: LessonEventProps) {
           <span className="sr-only">, {LESSON_STATUS_META[status].label.toLowerCase()}</span>
         )}
       </p>
-      <p className="text-[11px] opacity-75 mt-0.5">
+      <p className="text-xs opacity-75 mt-0.5">
         {format(event.start, 'HH:mm')}
         {isCancelled && ' · скасовано'}
       </p>

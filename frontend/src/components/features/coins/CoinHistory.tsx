@@ -42,7 +42,7 @@ export default function CoinHistory({
         {isLoading && [1, 2, 3].map((n) => <Skeleton key={n} className="h-16 w-full rounded-xl" />)}
 
         {!isLoading && transactions.length === 0 && (
-          <p className="text-slate-400 text-sm font-medium text-center py-6 border border-dashed border-slate-200 rounded-xl">
+          <p className="text-slate-500 text-sm font-medium text-center py-6 border border-dashed border-slate-200 rounded-xl">
             Транзакцій ще немає
           </p>
         )}
@@ -71,7 +71,7 @@ export default function CoinHistory({
                   )}
                   {transaction.reason}
                 </p>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {transaction.isPending
                     ? 'Зберігається…'
                     : format(new Date(transaction.createdAt), 'd MMMM yyyy, HH:mm', {
