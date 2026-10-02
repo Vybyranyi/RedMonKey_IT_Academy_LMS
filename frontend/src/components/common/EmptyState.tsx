@@ -31,7 +31,7 @@ export default function EmptyState({
       </div>
       <p className="mt-4 text-base font-semibold text-slate-700">{title}</p>
       {description && (
-        <p className="mt-1 max-w-md text-sm font-medium text-slate-400">{description}</p>
+        <p className="mt-1 max-w-md text-sm font-medium text-slate-500">{description}</p>
       )}
       {children && <div className="mt-5 flex flex-wrap justify-center gap-3">{children}</div>}
     </div>

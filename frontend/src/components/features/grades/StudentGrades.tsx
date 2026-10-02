@@ -30,7 +30,7 @@ export default function StudentGrades({ grades, isLoading }: StudentGradesProps)
   if (grades.length === 0) {
     return (
       <div className="bg-white border border-dashed border-slate-200 rounded-xl p-8 text-center">
-        <p className="text-slate-400 text-sm font-medium">Оцінок ще немає</p>
+        <p className="text-slate-500 text-sm font-medium">Оцінок ще немає</p>
       </div>
     );
   }
@@ -56,7 +56,7 @@ export default function StudentGrades({ grades, isLoading }: StudentGradesProps)
                 {GRADE_TYPE_META[grade.type].label}
               </p>
               {grade.comment && (
-                <p className="text-xs text-slate-400 mt-1 truncate">{grade.comment}</p>
+                <p className="text-xs text-slate-500 mt-1 truncate">{grade.comment}</p>
               )}
             </div>
           </div>

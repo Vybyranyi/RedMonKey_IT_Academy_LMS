@@ -141,7 +141,7 @@ export default function GroupsPage() {
                 <Plus className="h-4 w-4" /> Нова група
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>Створення нової навчальної групи</DialogTitle>
               </DialogHeader>
@@ -190,7 +190,7 @@ export default function GroupsPage() {
       )}
 
       <Dialog open={!!editingGroup} onOpenChange={(open) => !open && setEditingGroup(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Редагування групи</DialogTitle>
           </DialogHeader>

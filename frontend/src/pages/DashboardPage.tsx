@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/authStore';
 import {
+  LessonStatus,
   UserRole,
   type ILeaderboardRow,
   type IPopulatedGroup,
@@ -109,8 +110,14 @@ export default function DashboardPage() {
   }, [userId, isAdmin, isTeacher, isStudent, loadAttempt]);
 
   const now = new Date();
-  const upcoming = weekLessons.filter((lesson) => new Date(lesson.date) >= now).slice(0, 5);
-  const todayLessons = weekLessons.filter((lesson) => isToday(new Date(lesson.date)));
+  // Скасовані заняття не «найближчі» й не «сьогоднішні» — їх у списках дашборду немає
+  const activeWeekLessons = weekLessons.filter(
+    (lesson) => lesson.status !== LessonStatus.CANCELLED
+  );
+  const upcoming = activeWeekLessons.filter((lesson) => new Date(lesson.date) >= now);
+  const todayLessons = activeWeekLessons.filter((lesson) => isToday(new Date(lesson.date)));
+  // Що вже показано окремою карткою чи списком «Сьогодні», нижче не повторюємо
+  const laterThisWeek = upcoming.filter((lesson) => !isToday(new Date(lesson.date))).slice(0, 5);
   const nextLesson = upcoming[0] ?? null;
 
   // GET /groups віддає всі активні групи академії без звуження за роллю,
@@ -119,8 +126,13 @@ export default function DashboardPage() {
     group.teachers.some((teacher) => teacher.id === user?.id)
   );
 
-  const handleLessonSelect = () => {
-    navigate('/schedule');
+  // Розклад відкривається на тижні заняття з уже відкритими деталями
+  const handleLessonSelect = (lesson: IPopulatedLesson) => {
+    const params = new URLSearchParams({
+      date: format(new Date(lesson.date), 'yyyy-MM-dd'),
+      lesson: lesson.id,
+    });
+    navigate(`/schedule?${params}`);
   };
 
   if (loadError) {
@@ -139,8 +151,8 @@ export default function DashboardPage() {
       {isAdmin && (
         <AdminDashboard
           stats={stats}
-          weekLessonsCount={weekLessons.length}
-          upcoming={upcoming}
+          weekLessonsCount={activeWeekLessons.length}
+          upcoming={upcoming.slice(0, 5)}
           leaderboard={leaderboard}
           isLoading={isLoading}
           onSelectLesson={handleLessonSelect}
@@ -150,7 +162,7 @@ export default function DashboardPage() {
       {isTeacher && (
         <TeacherDashboard
           todayLessons={todayLessons}
-          upcoming={upcoming}
+          upcoming={laterThisWeek}
           groups={myGroups}
           leaderboard={leaderboard}
           isLoading={isLoading}
@@ -161,7 +173,7 @@ export default function DashboardPage() {
       {isStudent && (
         <StudentDashboard
           nextLesson={nextLesson}
-          weekLessons={weekLessons}
+          laterLessons={upcoming.slice(1, 6)}
           stats={studentStats}
           leaderboard={leaderboard}
           studentId={user?.id}
@@ -185,7 +197,7 @@ interface AdminDashboardProps {
   upcoming: IPopulatedLesson[];
   leaderboard: ILeaderboardRow[];
   isLoading: boolean;
-  onSelectLesson: () => void;
+  onSelectLesson: (lesson: IPopulatedLesson) => void;
 }
 
 function AdminDashboard({
@@ -277,7 +289,7 @@ interface TeacherDashboardProps {
   groups: IPopulatedGroup[];
   leaderboard: ILeaderboardRow[];
   isLoading: boolean;
-  onSelectLesson: () => void;
+  onSelectLesson: (lesson: IPopulatedLesson) => void;
 }
 
 function TeacherDashboard({
@@ -299,9 +311,10 @@ function TeacherDashboard({
           onSelect={onSelectLesson}
         />
         <UpcomingLessons
-          title="Найближчі заняття"
+          title="Далі цього тижня"
           lessons={upcoming}
           isLoading={isLoading}
+          emptyText="Інших занять цього тижня немає"
           onSelect={onSelectLesson}
         />
         <CoinLeaderboard rows={leaderboard} isLoading={isLoading} />
@@ -316,7 +329,7 @@ function TeacherDashboard({
           {isLoading && [1, 2].map((n) => <Skeleton key={n} className="h-12 w-full rounded-xl" />)}
 
           {!isLoading && groups.length === 0 && (
-            <p className="text-slate-400 text-sm font-medium text-center py-4 border border-dashed border-slate-200 rounded-xl">
+            <p className="text-slate-500 text-sm font-medium text-center py-4 border border-dashed border-slate-200 rounded-xl">
               Ви не закріплені за жодною групою
             </p>
           )}
@@ -346,17 +359,18 @@ function TeacherDashboard({
 
 interface StudentDashboardProps {
   nextLesson: IPopulatedLesson | null;
-  weekLessons: IPopulatedLesson[];
+  /** Наступні після найближчого — найближче вже є окремою карткою */
+  laterLessons: IPopulatedLesson[];
   stats: IUserStats | null;
   leaderboard: ILeaderboardRow[];
   studentId?: string;
   isLoading: boolean;
-  onSelectLesson: () => void;
+  onSelectLesson: (lesson: IPopulatedLesson) => void;
 }
 
 function StudentDashboard({
   nextLesson,
-  weekLessons,
+  laterLessons,
   stats,
   leaderboard,
   studentId,
@@ -384,7 +398,7 @@ function StudentDashboard({
               <div className="border border-slate-100 rounded-xl p-4 bg-slate-50/50 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                       {nextLesson.group.name}
                     </span>
                     <h3 className="text-lg font-bold text-slate-900 mt-0.5">{nextLesson.title}</h3>
@@ -392,7 +406,7 @@ function StudentDashboard({
                   <Badge variant="secondary">{meta.label}</Badge>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-sm text-slate-600">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/60 text-sm text-slate-600">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-slate-400" />
                     <span>
@@ -402,15 +416,15 @@ function StudentDashboard({
                   <Button
                     size="sm"
                     className="bg-[#C10000] hover:bg-[#A00000] text-white"
-                    onClick={onSelectLesson}
+                    onClick={() => onSelectLesson(nextLesson)}
                   >
-                    Перейти до розкладу
+                    Деталі заняття
                   </Button>
                 </div>
               </div>
             ) : (
               <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center">
-                <p className="text-slate-400 text-sm font-medium">
+                <p className="text-slate-500 text-sm font-medium">
                   Найближчих занять не заплановано
                 </p>
               </div>
@@ -418,11 +432,11 @@ function StudentDashboard({
           </CardContent>
         </Card>
 
-        {/* Розклад на тиждень */}
         <UpcomingLessons
-          title="Найближчі заняття"
-          lessons={weekLessons}
+          title="Далі цього тижня"
+          lessons={laterLessons}
           isLoading={isLoading}
+          emptyText="Інших занять цього тижня немає"
           onSelect={onSelectLesson}
         />
       </div>

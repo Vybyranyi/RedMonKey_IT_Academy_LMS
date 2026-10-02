@@ -53,7 +53,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-extrabold tracking-tight text-white mb-1 drop-shadow-sm">
           IT Academy LMS
         </h1>
-        <p className="text-[#8B9DB4] text-sm font-medium">Платформа управління навчанням</p>
+        <p className="text-[#A9B8CA] text-sm font-medium">Платформа управління навчанням</p>
       </div>
 
       <Card className="z-10 w-full max-w-105 shadow-2xl border-0 rounded-[20px] p-2 bg-white">
@@ -75,7 +75,7 @@ export default function LoginPage() {
         </CardContent>
       </Card>
 
-      <div className="z-10 mt-12 mb-6 text-center text-xs font-medium text-[#7A8C9E]">
+      <div className="z-10 mt-12 mb-6 text-center text-xs font-medium text-[#A9B8CA]">
         © 2026 RedMonKey IT Academy
       </div>
     </div>

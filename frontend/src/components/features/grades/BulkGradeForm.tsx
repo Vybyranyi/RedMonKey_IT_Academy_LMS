@@ -136,7 +136,7 @@ export default function BulkGradeForm({
           <div className="space-y-2 pt-2">
             {students.length === 0 && (
               <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center">
-                <p className="text-slate-400 text-sm font-medium">У цій групі немає студентів</p>
+                <p className="text-slate-500 text-sm font-medium">У цій групі немає студентів</p>
               </div>
             )}
 
