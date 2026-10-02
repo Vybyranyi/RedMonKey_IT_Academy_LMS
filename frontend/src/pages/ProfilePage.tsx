@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Pencil, KeyRound } from 'lucide-react';
+import { Coins, Pencil, KeyRound } from 'lucide-react';
 import { UserRole, type IChangePasswordDto } from '@redmonkey/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProfileForm, { type ProfileFormValues } from '@/components/features/users/ProfileForm';
@@ -100,8 +100,8 @@ export default function ProfilePage() {
               {roleLabel[user.role]}
             </Badge>
             {user.role === UserRole.STUDENT && (
-              <Badge className="bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border-none px-3 font-semibold">
-                🪙 {user.redCoins} RedCoins
+              <Badge className="bg-amber-400/20 text-amber-200 hover:bg-amber-400/30 border-none px-3 font-semibold">
+                <Coins className="h-3.5 w-3.5" aria-hidden="true" /> {user.redCoins} RedCoins
               </Badge>
             )}
           </div>

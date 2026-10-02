@@ -25,8 +25,10 @@ export default function TeacherCard({
   const fullName = `${teacher.firstName} ${teacher.lastName}`;
 
   return (
-    <Card className="hover:shadow-md transition-all border border-slate-100 rounded-[20px] shadow-sm bg-white relative group">
-      <div className="absolute top-3 right-3 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity">
+    // Картка за еталоном DESIGN.md, як GroupCard. Дії видно завжди: на планшеті без миші
+    // кнопки, що з'являються лише на hover, не знайти
+    <Card className="relative border-t-2 border-t-slate-200 hover:shadow-md transition-shadow">
+      <div className="absolute top-3 right-3 flex gap-1">
         {onViewDetails && (
           <Button
             variant="ghost"

@@ -18,7 +18,7 @@ import {
 } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { CalendarDays, Plus } from 'lucide-react';
 import { LessonStatus, UserRole } from '@redmonkey/shared';
 import type { ILessonDto, IPopulatedLesson } from '@redmonkey/shared';
 import { apiCreateLesson, apiGetLessonById, apiGetLessons, apiUpdateLesson } from '@/api/lessons';
@@ -28,6 +28,7 @@ import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiErr
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import { replaceById } from '@/lib/optimistic';
 import { PHONE_QUERY, useMediaQuery } from '@/lib/useMediaQuery';
+import EmptyState from '@/components/common/EmptyState';
 import ErrorState from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -141,6 +142,9 @@ export default function SchedulePage() {
   // Скелетон показуємо, поки завантажений діапазон не збігся з видимим. Так
   // стан завантаження не вимагає setState прямо в тілі ефекту (react-hooks).
   const isLoading = loadedRangeKey !== rangeKey;
+  // Скелетон — лише до першої відповіді. Далі при гортанні тижнів календар лишається
+  // на місці приглушеним, а не змінюється сірим прямокутником на 700px
+  const isFirstLoad = loadedRangeKey === null;
 
   useEffect(() => {
     // Гортаємо тижні швидше, ніж відповідає сервер — запити проміжних
@@ -315,10 +319,21 @@ export default function SchedulePage() {
       <LessonTypeLegend />
 
       {!isLoading && !loadError && events.length === 0 && (
-        <p className="text-sm font-medium text-slate-500">
-          {view === 'week' ? 'На цьому тижні' : 'У цьому місяці'} занять немає
-          {canManage ? ' — додайте перше кнопкою «Додати заняття»' : ''}
-        </p>
+        <EmptyState
+          size="compact"
+          icon={CalendarDays}
+          title={`${view === 'week' ? 'На цьому тижні' : 'У цьому місяці'} занять немає`}
+          description={canManage ? undefined : "Розклад з'явиться, щойно викладач додасть заняття."}
+        >
+          {canManage && (
+            <Button
+              className="bg-[#C10000] hover:bg-[#A00000] text-white"
+              onClick={() => setIsCreateOpen(true)}
+            >
+              <Plus className="h-4 w-4" /> Додати заняття
+            </Button>
+          )}
+        </EmptyState>
       )}
 
       {loadError ? (
@@ -329,18 +344,26 @@ export default function SchedulePage() {
         />
       ) : isPhone ? (
         // На телефоні сім колонок тижня не вміщаються — ті самі заняття списком за днями
-        isLoading ? (
+        isFirstLoad ? (
           <div className="space-y-2" aria-busy="true" aria-label="Завантаження розкладу">
             {[1, 2, 3].map((n) => (
               <Skeleton key={n} className="h-16 w-full rounded-xl" />
             ))}
           </div>
         ) : (
-          <ScheduleAgenda lessons={lessons} onSelect={selectLesson} />
+          <div
+            aria-busy={isLoading}
+            className={`transition-opacity ${isLoading ? 'opacity-60' : ''}`}
+          >
+            <ScheduleAgenda lessons={lessons} onSelect={selectLesson} />
+          </div>
         )
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 p-2 sm:p-4 overflow-x-auto">
-          {isLoading ? (
+        <div
+          aria-busy={isLoading}
+          className={`bg-white rounded-xl border border-slate-200 p-2 sm:p-4 overflow-x-auto transition-opacity ${isLoading && !isFirstLoad ? 'opacity-60' : ''}`}
+        >
+          {isFirstLoad ? (
             <Skeleton className="h-[700px] w-full rounded-lg" />
           ) : (
             <div className="min-w-[640px]">

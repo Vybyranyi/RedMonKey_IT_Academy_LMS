@@ -6,7 +6,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '../../store/authStore';
-import { callsTo, installApi } from '../../test/apiMock';
+import { callsTo, deferred, installApi } from '../../test/apiMock';
 import SchedulePage from '../SchedulePage';
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
@@ -171,5 +171,38 @@ describe('SchedulePage — телефон', () => {
 
     await userEvent.click(item);
     expect(await screen.findByRole('dialog', { name: 'Вступ до JS' })).toBeInTheDocument();
+  });
+});
+
+describe('SchedulePage — порожній тиждень і гортання', () => {
+  it('порожній тиждень пропонує додати заняття', async () => {
+    installApi({ 'GET /lessons': () => [], '/groups': () => [], '/users': () => [] });
+    renderPage();
+
+    expect(await screen.findByText('На цьому тижні занять немає')).toBeInTheDocument();
+    const buttons = screen.getAllByRole('button', { name: 'Додати заняття' });
+    await userEvent.click(buttons[buttons.length - 1]);
+
+    expect(await screen.findByRole('dialog', { name: 'Нове заняття' })).toBeInTheDocument();
+  });
+
+  // Раніше кожен клік «Далі» міняв календар на сірий прямокутник 700px
+  it('при гортанні календар лишається на місці приглушеним, поки вантажиться новий тиждень', async () => {
+    let call = 0;
+    const next = deferred();
+    installApi({ 'GET /lessons': () => (call++ === 0 ? [lesson] : next.promise) });
+    renderPage();
+    await screen.findByText('Вступ до JS');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Наступний період' }));
+
+    const calendar = document.querySelector('.rbc-calendar');
+    expect(calendar).not.toBeNull();
+    expect(calendar!.closest('[aria-busy]')).toHaveAttribute('aria-busy', 'true');
+
+    next.resolve([]);
+    await waitFor(() =>
+      expect(calendar!.closest('[aria-busy]')).toHaveAttribute('aria-busy', 'false')
+    );
   });
 });

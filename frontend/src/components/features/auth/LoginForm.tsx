@@ -91,7 +91,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
 
           <Button
             type="submit"
-            className="w-full mt-2 bg-[#BA0000] hover:bg-[#A00000] text-white rounded-md h-11 text-base font-medium shadow-sm transition-colors"
+            className="w-full mt-2 bg-[#C10000] hover:bg-[#A00000] text-white rounded-md h-11 text-base font-medium shadow-sm transition-colors"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Вхід...' : 'Увійти'}

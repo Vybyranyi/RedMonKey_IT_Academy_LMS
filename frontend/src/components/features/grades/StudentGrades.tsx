@@ -5,6 +5,8 @@ import type { IPopulatedGrade } from '@redmonkey/shared';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GRADE_TYPE_META, getAverageColor, getGradeColor } from '@/lib/gradeColors';
+import EmptyState from '@/components/common/EmptyState';
+import { NotebookPen } from 'lucide-react';
 
 interface StudentGradesProps {
   grades: IPopulatedGrade[];
@@ -29,9 +31,11 @@ export default function StudentGrades({ grades, isLoading }: StudentGradesProps)
 
   if (grades.length === 0) {
     return (
-      <div className="bg-white border border-dashed border-slate-200 rounded-xl p-8 text-center">
-        <p className="text-slate-500 text-sm font-medium">Оцінок ще немає</p>
-      </div>
+      <EmptyState
+        icon={NotebookPen}
+        title="Оцінок ще немає"
+        description="Вони з'являться тут, щойно викладач виставить першу."
+      />
     );
   }
 

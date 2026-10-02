@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Calendar, BookOpen, MoreHorizontal, Pencil, Archive } from 'lucide-react';
+import { Calendar, MoreHorizontal, Pencil, Archive, UsersRound } from 'lucide-react';
 import type { IPopulatedGroup } from '@redmonkey/shared';
 import { UserAvatarGroup } from '@/components/ui/user-avatar-group';
 
@@ -42,7 +42,7 @@ export default function GroupCard({ group, onEdit, onDeactivate }: GroupCardProp
           </CardDescription>
         </div>
         <div className="p-3 bg-red-50 text-primary rounded-xl">
-          <BookOpen className="h-5 w-5" />
+          <UsersRound className="h-5 w-5" />
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-4 border-t border-slate-100">

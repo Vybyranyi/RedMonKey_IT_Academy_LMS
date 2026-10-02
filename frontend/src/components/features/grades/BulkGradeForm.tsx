@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { GRADE_TYPE_META } from '@/lib/gradeColors';
+import EmptyState from '@/components/common/EmptyState';
+import { Users } from 'lucide-react';
 
 interface BulkGradeFormProps {
   isOpen: boolean;
@@ -135,9 +137,7 @@ export default function BulkGradeForm({
 
           <div className="space-y-2 pt-2">
             {students.length === 0 && (
-              <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center">
-                <p className="text-slate-500 text-sm font-medium">У цій групі немає студентів</p>
-              </div>
+              <EmptyState size="compact" icon={Users} title="У цій групі немає студентів" />
             )}
 
             {students.map((student) => (
