@@ -67,3 +67,20 @@ describe('LessonForm — домашнє завдання', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
   });
 });
+
+describe('LessonForm — текст завдання', () => {
+  // Завдання з кількох речень раніше доводилось вписувати в однорядкове поле
+  it('домашнє завдання — багаторядкове поле, і переноси рядків доходять у запит', async () => {
+    const onSubmit = vi.fn();
+    render(<LessonForm initialValues={existing} onSubmit={onSubmit} isSubmitting={false} />);
+    const homework = screen.getByLabelText('Домашнє завдання');
+
+    expect(homework.tagName).toBe('TEXTAREA');
+    await userEvent.clear(homework);
+    await userEvent.type(homework, 'Задачі 1–5{Enter}Здати в Classroom');
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit.mock.calls[0][0].homeworkDescription).toBe('Задачі 1–5\nЗдати в Classroom');
+  });
+});

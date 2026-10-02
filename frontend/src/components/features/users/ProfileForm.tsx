@@ -6,6 +6,7 @@ import { getChangedFields } from '@/utils/formUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { errorA11y } from '@/utils/formA11y';
 /** Значення форми: усі поля присутні як рядки, порожній рядок = «очистити». */
 export interface ProfileFormValues {
   firstName: string;
@@ -37,6 +38,7 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
                   <Input
                     {...field}
                     id="firstName"
+                    {...errorA11y('firstName', errors.firstName && touched.firstName)}
                     className={
                       errors.firstName && touched.firstName ? 'border-destructive' : undefined
                     }
@@ -44,7 +46,9 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
                 )}
               </Field>
               {errors.firstName && touched.firstName && (
-                <p className="text-xs text-destructive">{errors.firstName}</p>
+                <p id="firstName-error" className="text-xs text-destructive">
+                  {errors.firstName}
+                </p>
               )}
             </div>
 
@@ -55,6 +59,7 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
                   <Input
                     {...field}
                     id="lastName"
+                    {...errorA11y('lastName', errors.lastName && touched.lastName)}
                     className={
                       errors.lastName && touched.lastName ? 'border-destructive' : undefined
                     }
@@ -62,7 +67,9 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
                 )}
               </Field>
               {errors.lastName && touched.lastName && (
-                <p className="text-xs text-destructive">{errors.lastName}</p>
+                <p id="lastName-error" className="text-xs text-destructive">
+                  {errors.lastName}
+                </p>
               )}
             </div>
           </div>
@@ -70,10 +77,19 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
           <div className="space-y-2">
             <Label htmlFor="phone">Телефон</Label>
             <Field name="phone">
-              {({ field }: FieldProps) => <Input {...field} id="phone" placeholder="+380..." />}
+              {({ field }: FieldProps) => (
+                <Input
+                  {...field}
+                  id="phone"
+                  {...errorA11y('phone', errors.phone && touched.phone)}
+                  placeholder="+380..."
+                />
+              )}
             </Field>
             {errors.phone && touched.phone && (
-              <p className="text-xs text-destructive">{errors.phone}</p>
+              <p id="phone-error" className="text-xs text-destructive">
+                {errors.phone}
+              </p>
             )}
           </div>
 
@@ -81,11 +97,18 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
             <Label htmlFor="avatar">Посилання на аватар</Label>
             <Field name="avatar">
               {({ field }: FieldProps) => (
-                <Input {...field} id="avatar" placeholder="https://..." />
+                <Input
+                  {...field}
+                  id="avatar"
+                  {...errorA11y('avatar', errors.avatar && touched.avatar)}
+                  placeholder="https://..."
+                />
               )}
             </Field>
             {errors.avatar && touched.avatar && (
-              <p className="text-xs text-destructive">{errors.avatar}</p>
+              <p id="avatar-error" className="text-xs text-destructive">
+                {errors.avatar}
+              </p>
             )}
           </div>
 

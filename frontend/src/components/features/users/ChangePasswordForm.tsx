@@ -3,6 +3,7 @@ import type { FieldProps } from 'formik';
 import { z } from 'zod';
 import { changePasswordSchema, type IChangePasswordDto } from '@redmonkey/shared';
 import { validateWithZod } from '@/utils/validation';
+import { errorA11y, errorId } from '@/utils/formA11y';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,13 +52,16 @@ export default function ChangePasswordForm({ onSubmit, isSubmitting }: ChangePas
                   <Input
                     {...field}
                     id={name}
+                    {...errorA11y(name, errors[name] && touched[name])}
                     type="password"
                     className={errors[name] && touched[name] ? 'border-destructive' : undefined}
                   />
                 )}
               </Field>
               {errors[name] && touched[name] && (
-                <p className="text-xs text-destructive">{errors[name]}</p>
+                <p id={errorId(name)} className="text-xs text-destructive">
+                  {errors[name]}
+                </p>
               )}
             </div>
           ))}

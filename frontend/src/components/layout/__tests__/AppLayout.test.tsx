@@ -111,6 +111,18 @@ describe('Sidebar — профіль і вихід', () => {
   });
 });
 
+describe('Sidebar — згортання', () => {
+  it('памʼятає вибір між перезавантаженнями', async () => {
+    const { unmount } = renderLayout('/');
+    await userEvent.click(screen.getByRole('button', { name: 'Згорнути меню' }));
+    unmount();
+
+    renderLayout('/');
+
+    expect(screen.getByRole('button', { name: 'Розгорнути меню' })).toBeInTheDocument();
+  });
+});
+
 describe('BottomNav', () => {
   it('має чотири розділи з ТЗ і меню «Ще»', () => {
     renderLayout('/');

@@ -19,6 +19,7 @@ import { apiGetGroups } from '@/api/groups';
 import { RefreshCw, Wand2 } from 'lucide-react';
 import { transliterate, generateRandomPassword } from '@/utils/stringUtils';
 import { toastApiError } from '@/utils/apiError';
+import { errorA11y } from '@/utils/formA11y';
 
 const passwordRules = z.string().min(6, 'Пароль має містити не менше 6 символів');
 
@@ -108,13 +109,16 @@ export default function UserForm({
                   <Input
                     {...field}
                     id="firstName"
+                    {...errorA11y('firstName', errors.firstName && touched.firstName)}
                     placeholder="Іван"
                     className={`h-11 ${errors.firstName && touched.firstName ? 'border-destructive' : ''}`}
                   />
                 )}
               </Field>
               {errors.firstName && touched.firstName && (
-                <p className="text-xs text-destructive mt-1">{errors.firstName as string}</p>
+                <p id="firstName-error" className="text-xs text-destructive mt-1">
+                  {errors.firstName as string}
+                </p>
               )}
             </div>
 
@@ -127,13 +131,16 @@ export default function UserForm({
                   <Input
                     {...field}
                     id="lastName"
+                    {...errorA11y('lastName', errors.lastName && touched.lastName)}
                     placeholder="Шевченко"
                     className={`h-11 ${errors.lastName && touched.lastName ? 'border-destructive' : ''}`}
                   />
                 )}
               </Field>
               {errors.lastName && touched.lastName && (
-                <p className="text-xs text-destructive mt-1">{errors.lastName as string}</p>
+                <p id="lastName-error" className="text-xs text-destructive mt-1">
+                  {errors.lastName as string}
+                </p>
               )}
             </div>
           </div>
@@ -148,6 +155,7 @@ export default function UserForm({
                   <Input
                     {...field}
                     id="email"
+                    {...errorA11y('email', errors.email && touched.email)}
                     type="email"
                     placeholder="ivan.shevchenko@academy.com"
                     className={`h-11 ${errors.email && touched.email ? 'border-destructive' : ''}`}
@@ -171,7 +179,9 @@ export default function UserForm({
               </Button>
             </div>
             {errors.email && touched.email && (
-              <p className="text-xs text-destructive mt-1">{errors.email as string}</p>
+              <p id="email-error" className="text-xs text-destructive mt-1">
+                {errors.email as string}
+              </p>
             )}
           </div>
 
@@ -186,6 +196,7 @@ export default function UserForm({
                     <Input
                       {...field}
                       id="password"
+                      {...errorA11y('password', errors.password && touched.password)}
                       type="text"
                       placeholder={isEdit ? 'Не змінювати' : 'Мінімум 6 символів'}
                       className={`h-11 ${errors.password && touched.password ? 'border-destructive' : ''}`}
@@ -206,7 +217,9 @@ export default function UserForm({
                 </Button>
               </div>
               {errors.password && touched.password && (
-                <p className="text-xs text-destructive mt-1">{errors.password as string}</p>
+                <p id="password-error" className="text-xs text-destructive mt-1">
+                  {errors.password as string}
+                </p>
               )}
             </div>
 

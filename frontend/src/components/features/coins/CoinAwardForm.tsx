@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { validateWithZod } from '@/utils/validation';
+import { errorA11y } from '@/utils/formA11y';
 import { COIN_CATEGORY_META } from '@/lib/coinCategories';
 
 interface CoinAwardFormProps {
@@ -100,9 +101,13 @@ export default function CoinAwardForm({
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="coin-student">Студент</Label>
+            <Label htmlFor="coin-student">Студент *</Label>
             <Select value={studentId} onValueChange={setStudentId}>
-              <SelectTrigger id="coin-student" className="bg-white h-11">
+              <SelectTrigger
+                id="coin-student"
+                {...errorA11y('coin-student', errors.studentId)}
+                className="bg-white h-11"
+              >
                 <SelectValue placeholder="Оберіть студента" />
               </SelectTrigger>
               <SelectContent>
@@ -119,7 +124,11 @@ export default function CoinAwardForm({
                 <span className="font-semibold text-slate-700">{selected.redCoins}</span> монет
               </p>
             )}
-            {errors.studentId && <p className="text-xs text-destructive">{errors.studentId}</p>}
+            {errors.studentId && (
+              <p id="coin-student-error" className="text-xs text-destructive">
+                {errors.studentId}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -146,9 +155,10 @@ export default function CoinAwardForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="coin-amount">Кількість монет</Label>
+            <Label htmlFor="coin-amount">Кількість монет *</Label>
             <Input
               id="coin-amount"
+              {...errorA11y('coin-amount', errors.amount)}
               type="number"
               min={1}
               max={COIN_AMOUNT_MAX}
@@ -169,13 +179,21 @@ export default function CoinAwardForm({
                 </Button>
               ))}
             </div>
-            {errors.amount && <p className="text-xs text-destructive">{errors.amount}</p>}
+            {errors.amount && (
+              <p id="coin-amount-error" className="text-xs text-destructive">
+                {errors.amount}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="coin-category">Категорія</Label>
+            <Label htmlFor="coin-category">Категорія *</Label>
             <Select value={category} onValueChange={(next) => setCategory(next as CoinCategory)}>
-              <SelectTrigger id="coin-category" className="bg-white h-11">
+              <SelectTrigger
+                id="coin-category"
+                {...errorA11y('coin-category', errors.category)}
+                className="bg-white h-11"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -186,18 +204,27 @@ export default function CoinAwardForm({
                 ))}
               </SelectContent>
             </Select>
-            {errors.category && <p className="text-xs text-destructive">{errors.category}</p>}
+            {errors.category && (
+              <p id="coin-category-error" className="text-xs text-destructive">
+                {errors.category}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="coin-reason">Причина</Label>
+            <Label htmlFor="coin-reason">Причина *</Label>
             <Input
               id="coin-reason"
+              {...errorA11y('coin-reason', errors.reason)}
               placeholder="Напр. «Відмінна відповідь на уроці»"
               value={reason}
               onChange={(event) => setReason(event.target.value)}
             />
-            {errors.reason && <p className="text-xs text-destructive">{errors.reason}</p>}
+            {errors.reason && (
+              <p id="coin-reason-error" className="text-xs text-destructive">
+                {errors.reason}
+              </p>
+            )}
           </div>
         </div>
 

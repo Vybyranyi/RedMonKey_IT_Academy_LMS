@@ -162,7 +162,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 
 **Токени = бренд.** У `:root` в `index.css` `--primary` = `#C10000`, `--primary-foreground` = білий, `--ring` = `#BA0000`, тож `bg-primary`/`text-primary`, дефолтні `<Button>`/`<Badge>` і фокус-кільця примітивів червоні. Брендова CTA-кнопка все одно пишеться явно — `bg-[#C10000] hover:bg-[#A00000] text-white`: дефолтний варіант на hover світлішає (`bg-primary/80`), а має темнішати. Змінюєш бренд — міняй і токени, і ці класи. Блок `.dark` — дефолт ShadCN, темної теми немає.
 
-**Input:** `h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000]`.
+**Input:** `h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000]`. Помилка поля — `<p id={errorId(name)}>` під полем і `{...errorA11y(name, error && touched)}` на самому полі (`utils/formA11y.ts`): так скрінрідер чує і «недійсне», і текст помилки. Багаторядковий текст — `Textarea` з `components/ui/`.
 
 **Стани:** loading → ShadCN `Skeleton` (не спінер) + кнопка disabled з текстом `"Збереження..."`; error форми → `text-xs text-destructive`; server error → `bg-red-50 text-red-600 border border-red-200`; сповіщення → `Sonner` toast через `toastApiError`; порожні списки — `EmptyState` з CTA, збій завантаження — `ErrorState` з «Спробувати знову» (обидва в `components/common/`), не голий екран.
 
