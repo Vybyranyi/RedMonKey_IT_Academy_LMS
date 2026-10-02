@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Eye, Pencil } from 'lucide-react';
+import { Eye, Pencil, UserX } from 'lucide-react';
 import type { IUser, IUserWithListStats } from '@redmonkey/shared';
 import { getAverageColor } from '@/lib/gradeColors';
 
@@ -17,6 +17,7 @@ interface StudentTableProps {
   students: IUserWithListStats[];
   onViewDetails: (id: string) => void;
   onEdit?: (student: IUser) => void;
+  onDeactivate?: (student: IUser) => void;
 }
 
 /** Підказка до «—»: даних ще немає чи їх не можна показувати. */
@@ -26,7 +27,12 @@ const emptyHint = (student: IUserWithListStats, value: number | null, noDataHint
   return student.stats === null ? 'Статистика доступна лише для студентів ваших груп' : noDataHint;
 };
 
-export default function StudentTable({ students, onViewDetails, onEdit }: StudentTableProps) {
+export default function StudentTable({
+  students,
+  onViewDetails,
+  onEdit,
+  onDeactivate,
+}: StudentTableProps) {
   return (
     <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
       <Table>
@@ -37,14 +43,13 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
             <TableHead>Середній бал</TableHead>
             <TableHead>RedCoins</TableHead>
             <TableHead>Відвідуваність</TableHead>
-            <TableHead>Статус</TableHead>
-            <TableHead className="w-[100px] text-center">Дія</TableHead>
+            <TableHead className="w-[120px] text-center">Дія</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {students.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-12 text-slate-400 font-medium">
+              <TableCell colSpan={6} className="text-center py-12 text-slate-400 font-medium">
                 Студентів не знайдено
               </TableCell>
             </TableRow>
@@ -125,17 +130,6 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        student.isActive
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-slate-100 text-slate-600'
-                      }
-                    >
-                      {student.isActive ? 'Активний' : 'Неактивний'}
-                    </Badge>
-                  </TableCell>
                   <TableCell className="text-center">
                     <div className="flex justify-center gap-1">
                       <Button
@@ -156,6 +150,17 @@ export default function StudentTable({ students, onViewDetails, onEdit }: Studen
                           aria-label="Редагувати студента"
                         >
                           <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {onDeactivate && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-slate-500 hover:bg-red-50 hover:text-[#C10000]"
+                          onClick={() => onDeactivate(student)}
+                          aria-label={`Деактивувати: ${student.firstName} ${student.lastName}`}
+                        >
+                          <UserX className="h-4 w-4" />
                         </Button>
                       )}
                     </div>

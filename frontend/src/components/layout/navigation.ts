@@ -7,7 +7,6 @@ import {
   CalendarDays,
   BookOpenCheck,
   CircleDollarSign,
-  Settings,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -56,5 +55,4 @@ export const navigationItems: NavItem[] = [
     roles: [UserRole.ADMIN, UserRole.TEACHER, UserRole.STUDENT],
     inBottomNav: true,
   },
-  { name: 'Налаштування', path: '/settings', icon: Settings, roles: [UserRole.ADMIN] },
 ];

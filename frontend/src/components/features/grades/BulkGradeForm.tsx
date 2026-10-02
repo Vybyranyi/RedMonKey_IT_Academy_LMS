@@ -21,6 +21,8 @@ interface BulkGradeFormProps {
   onClose: () => void;
   lessons: IPopulatedLesson[];
   students: IUser[];
+  /** Тип, обраний у журналі: масові оцінки мають з'явитися в тому ж виді */
+  initialType: GradeType;
   isSubmitting: boolean;
   onSubmit: (data: IBulkGradeDto) => void;
 }
@@ -30,13 +32,14 @@ export default function BulkGradeForm({
   onClose,
   lessons,
   students,
+  initialType,
   isSubmitting,
   onSubmit,
 }: BulkGradeFormProps) {
   // Стан ініціалізується один раз: батько ремонтує форму через key на кожне
   // відкриття, тож скидати її ефектом не треба
   const [lessonId, setLessonId] = useState(() => lessons[0]?.id ?? '');
-  const [type, setType] = useState<GradeType>(GradeType.CLASSWORK);
+  const [type, setType] = useState<GradeType>(initialType);
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
 

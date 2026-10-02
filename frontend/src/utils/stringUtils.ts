@@ -84,3 +84,13 @@ export const generateRandomPassword = (length: number = 10): string => {
   }
   return password;
 };
+
+const ukPlurals = new Intl.PluralRules('uk');
+
+/** Форма слова для числа: pluralize(1, ['група', 'групи', 'груп']) → «група», 5 → «груп». */
+export const pluralize = (count: number, [one, few, many]: [string, string, string]): string => {
+  const category = ukPlurals.select(count);
+  if (category === 'one') return one;
+  if (category === 'few') return few;
+  return many;
+};

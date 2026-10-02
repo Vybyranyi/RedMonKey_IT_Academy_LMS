@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 import { useAuthStore } from '@/store/authStore';
 import { UserRole } from '@redmonkey/shared';
 import type { IGroupDto, IPopulatedGroup } from '@redmonkey/shared';
-import { apiGetGroups, apiCreateGroup } from '@/api/groups';
+import { apiGetGroups, apiCreateGroup, apiUpdateGroup, apiDeleteGroup } from '@/api/groups';
+import { removeById, replaceById } from '@/lib/optimistic';
+import { pluralize } from '@/utils/stringUtils';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import EmptyState from '@/components/common/EmptyState';
 import ErrorState from '@/components/common/ErrorState';
 import GroupCard from '@/components/features/groups/GroupCard';
@@ -28,6 +32,9 @@ export default function GroupsPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<IPopulatedGroup | null>(null);
+  const [deactivatingGroup, setDeactivatingGroup] = useState<IPopulatedGroup | null>(null);
+  const [isDeactivating, setIsDeactivating] = useState(false);
 
   // «Спробувати знову» після помилки: ефект перечитує список. Після створення
   // групи список не перечитуємо — нова група додається з відповіді сервера
@@ -73,8 +80,35 @@ export default function GroupsPage() {
     }
   };
 
-  const handleViewDetails = (id: string) => {
-    console.log('Перегляд складу групи з ID:', id);
+  const handleUpdateGroup = async (values: IGroupDto) => {
+    if (!editingGroup) return;
+    setIsSubmitLoading(true);
+    try {
+      const updated = await apiUpdateGroup(editingGroup.id, values);
+      setEditingGroup(null);
+      setGroups((current) => replaceById(current, updated.id, updated));
+      toast.success(`Групу «${updated.name}» збережено`);
+    } catch (error) {
+      toastApiError(error, 'Не вдалося зберегти групу');
+    } finally {
+      setIsSubmitLoading(false);
+    }
+  };
+
+  // DELETE /groups/:id деактивує групу: GET /groups її більше не віддає
+  const handleDeactivateGroup = async () => {
+    if (!deactivatingGroup) return;
+    setIsDeactivating(true);
+    try {
+      await apiDeleteGroup(deactivatingGroup.id);
+      setGroups((current) => removeById(current, deactivatingGroup.id));
+      toast.success(`Групу «${deactivatingGroup.name}» деактивовано`);
+      setDeactivatingGroup(null);
+    } catch (error) {
+      toastApiError(error, 'Не вдалося деактивувати групу');
+    } finally {
+      setIsDeactivating(false);
+    }
   };
 
   const isAdmin = user?.role === UserRole.ADMIN;
@@ -96,7 +130,7 @@ export default function GroupsPage() {
           <Skeleton className="h-6 w-40" />
         ) : (
           <Badge variant="secondary">
-            {groups.filter((g) => g.isActive).length} активних · {groups.length} всього
+            {groups.length} {pluralize(groups.length, ['група', 'групи', 'груп'])}
           </Badge>
         )}
 
@@ -145,10 +179,55 @@ export default function GroupsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {groups.map((group) => (
-            <GroupCard key={group.id} group={group} onViewDetails={handleViewDetails} />
+            <GroupCard
+              key={group.id}
+              group={group}
+              onEdit={isAdmin ? setEditingGroup : undefined}
+              onDeactivate={isAdmin ? setDeactivatingGroup : undefined}
+            />
           ))}
         </div>
       )}
+
+      <Dialog open={!!editingGroup} onOpenChange={(open) => !open && setEditingGroup(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редагування групи</DialogTitle>
+          </DialogHeader>
+          {editingGroup && (
+            <GroupForm
+              initialValues={toFormValues(editingGroup)}
+              onSubmit={handleUpdateGroup}
+              isSubmitting={isSubmitLoading}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={!!deactivatingGroup}
+        onOpenChange={(open) => !open && setDeactivatingGroup(null)}
+        title="Деактивувати групу?"
+        description={
+          deactivatingGroup &&
+          `Група «${deactivatingGroup.name}» зникне зі списків, журналу й рейтингу. Розклад, оцінки та історія RedCoins її студентів лишаться в базі.`
+        }
+        confirmLabel="Деактивувати"
+        isPending={isDeactivating}
+        onConfirm={() => void handleDeactivateGroup()}
+      />
     </div>
   );
 }
+
+// <input type="date"> чекає YYYY-MM-DD, а API віддає ISO-момент
+const toDateInput = (value: IPopulatedGroup['startDate']) =>
+  value ? format(new Date(value), 'yyyy-MM-dd') : '';
+
+const toFormValues = (group: IPopulatedGroup): IGroupDto => ({
+  name: group.name,
+  description: group.description ?? '',
+  startDate: toDateInput(group.startDate),
+  endDate: toDateInput(group.endDate),
+  teachers: group.teachers.map((teacher) => teacher.id),
+});

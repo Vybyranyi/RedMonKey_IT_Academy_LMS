@@ -21,8 +21,10 @@ interface CoinAwardFormProps {
   students: IUser[];
   /** студент, якого обрали в рейтингу; порожній рядок — обирає користувач */
   initialStudentId?: string;
-  /** CoinsPage закриває форму одразу (оптимістичне оновлення), тож за замовчуванням false */
+  /** Нарахування CoinsPage проводить оптимістично, а списання чекає відповіді сервера */
   isSubmitting?: boolean;
+  /** Відмова сервера при списанні — показується тут же, а введені дані лишаються */
+  serverError?: string | null;
   onSubmit: (data: ICoinTransactionDto) => void;
 }
 
@@ -34,6 +36,7 @@ export default function CoinAwardForm({
   students,
   initialStudentId,
   isSubmitting = false,
+  serverError = null,
   onSubmit,
 }: CoinAwardFormProps) {
   // Стан ініціалізується один раз: батько монтує форму лише на час відкриття,
@@ -52,6 +55,14 @@ export default function CoinAwardForm({
     setCategory(next === 'deduct' ? CoinCategory.PENALTY : CoinCategory.ACHIEVEMENT);
   };
 
+  const selected = students.find((student) => student.id === studentId);
+  const parsedAmount = Number(amount);
+  const amountLabel = Number.isInteger(parsedAmount) && parsedAmount > 0 ? parsedAmount : '';
+  const submitLabel =
+    direction === 'deduct'
+      ? `Списати ${amountLabel}${selected ? ` у ${selected.firstName} ${selected.lastName[0]}.` : ''}`
+      : `Нарахувати ${amountLabel}${selected ? ` для ${selected.firstName} ${selected.lastName[0]}.` : ''}`;
+
   const handleSubmit = () => {
     const parsed = Number(amount);
     const payload = {
@@ -65,6 +76,15 @@ export default function CoinAwardForm({
     // Порожній студент дає з Zod повідомлення «studentId має бути UUID» —
     // технічний текст, який користувачу нічого не пояснює
     if (!studentId) nextErrors.studentId = 'Оберіть студента';
+    // Списати більше, ніж є, бекенд однаково не дасть — кажемо про це до запиту
+    if (
+      selected &&
+      direction === 'deduct' &&
+      !nextErrors.amount &&
+      Math.abs(payload.amount) > selected.redCoins
+    ) {
+      nextErrors.amount = `У студента лише ${selected.redCoins} монет`;
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -93,6 +113,12 @@ export default function CoinAwardForm({
                 ))}
               </SelectContent>
             </Select>
+            {selected && (
+              <p className="text-xs text-slate-500">
+                Баланс зараз:{' '}
+                <span className="font-semibold text-slate-700">{selected.redCoins}</span> монет
+              </p>
+            )}
             {errors.studentId && <p className="text-xs text-destructive">{errors.studentId}</p>}
           </div>
 
@@ -100,6 +126,7 @@ export default function CoinAwardForm({
             <Button
               type="button"
               variant={direction === 'award' ? 'default' : 'outline'}
+              aria-pressed={direction === 'award'}
               className={
                 direction === 'award' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''
               }
@@ -110,6 +137,7 @@ export default function CoinAwardForm({
             <Button
               type="button"
               variant={direction === 'deduct' ? 'default' : 'outline'}
+              aria-pressed={direction === 'deduct'}
               className={direction === 'deduct' ? 'bg-[#C10000] hover:bg-[#A00000] text-white' : ''}
               onClick={() => handleDirection('deduct')}
             >
@@ -173,13 +201,21 @@ export default function CoinAwardForm({
           </div>
         </div>
 
-        <div className="border-t border-slate-100 px-6 py-4">
+        <div className="border-t border-slate-100 px-6 py-4 space-y-3">
+          {serverError && (
+            <p
+              role="alert"
+              className="p-3 bg-red-50 text-red-600 text-sm font-medium rounded-lg border border-red-200"
+            >
+              {serverError}
+            </p>
+          )}
           <Button
             className="w-full h-11 bg-[#C10000] hover:bg-[#A00000] text-white"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Збереження...' : 'Підтвердити'}
+            {isSubmitting ? 'Збереження...' : submitLabel}
           </Button>
         </div>
       </SheetContent>

@@ -16,9 +16,9 @@ import {
 import { uk } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Plus } from 'lucide-react';
-import { UserRole } from '@redmonkey/shared';
+import { LessonStatus, UserRole } from '@redmonkey/shared';
 import type { ILessonDto, IPopulatedLesson } from '@redmonkey/shared';
-import { apiCreateLesson, apiGetLessons } from '@/api/lessons';
+import { apiCreateLesson, apiGetLessons, apiUpdateLesson } from '@/api/lessons';
 import { useAuthStore } from '@/store/authStore';
 import { calendarHours } from '@/lib/calendarHours';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
@@ -30,7 +30,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Skeleton } from '@/components/ui/skeleton';
 import LessonDetailsModal from '@/components/features/lessons/LessonDetailsModal';
 import LessonEvent from '@/components/features/lessons/LessonEvent';
-import LessonForm from '@/components/features/lessons/LessonForm';
+import LessonForm, { type LessonFormValues } from '@/components/features/lessons/LessonForm';
 import LessonTypeLegend from '@/components/features/lessons/LessonTypeLegend';
 import ScheduleToolbar from '@/components/features/lessons/ScheduleToolbar';
 import type { ScheduleView } from '@/components/features/lessons/ScheduleToolbar';
@@ -57,6 +57,25 @@ const CALENDAR_VIEWS: View[] = ['week', 'month'];
 
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
+// Форма працює з місцевими датою й часом окремо — як і при створенні
+const toFormValues = (lesson: IPopulatedLesson): LessonFormValues => {
+  const start = new Date(lesson.date);
+  return {
+    title: lesson.title,
+    description: lesson.description ?? '',
+    groupId: lesson.groupId,
+    type: lesson.type,
+    date: format(start, 'yyyy-MM-dd'),
+    time: format(start, 'HH:mm'),
+    duration: lesson.duration,
+    teacherId: lesson.teacherId,
+    homeworkDescription: lesson.homeworkDescription ?? '',
+    homeworkDue: lesson.homeworkDueDate
+      ? format(new Date(lesson.homeworkDueDate), 'yyyy-MM-dd')
+      : '',
+  };
+};
+
 export default function SchedulePage() {
   const { user } = useAuthStore();
   const canManage = user?.role === UserRole.ADMIN || user?.role === UserRole.TEACHER;
@@ -68,6 +87,7 @@ export default function SchedulePage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<IPopulatedLesson | null>(null);
+  const [editingLesson, setEditingLesson] = useState<IPopulatedLesson | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // «Спробувати знову» після помилки завантаження — ефект перечитує той самий діапазон
@@ -167,9 +187,45 @@ export default function SchedulePage() {
     }
   };
 
-  // Заняття стало проведеним: міняємо один запис, а не перечитуємо весь календар
+  // Заняття проведене, скасоване чи змінене: міняємо один запис, а не перечитуємо календар
   const handleLessonUpdated = (lesson: IPopulatedLesson) => {
     setLessons((current) => replaceById(current, lesson.id, lesson));
+  };
+
+  // Деталі закриваються, щоб поверх календаря була одна модалка — форма
+  const openEdit = (lesson: IPopulatedLesson) => {
+    setSelectedLesson(null);
+    setEditingLesson(lesson);
+  };
+
+  const handleUpdateLesson = async (values: ILessonDto | Partial<ILessonDto>) => {
+    if (!editingLesson) return;
+    // Форма в режимі редагування віддає лише змінені поля; бекенд порожній PATCH відхиляє
+    if (Object.keys(values).length === 0) {
+      setEditingLesson(null);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const updated = await apiUpdateLesson(editingLesson.id, values);
+      setEditingLesson(null);
+      toast.success('Заняття збережено');
+
+      // Перенесене за межі видимого тижня/місяця зникає з календаря
+      const start = new Date(updated.date);
+      setLessons((current) =>
+        start >= range.from && start <= range.to
+          ? replaceById(current, updated.id, updated).sort(
+              (a, b) => +new Date(a.date) - +new Date(b.date)
+            )
+          : current.filter((lesson) => lesson.id !== updated.id)
+      );
+    } catch (error) {
+      toastApiError(error, 'Не вдалося зберегти заняття');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -231,8 +287,8 @@ export default function SchedulePage() {
                 eventPropGetter={(event) => ({
                   // Вибране заняття підсвічуємо, поки відкрита модалка деталей
                   className: `${LESSON_TYPE_META[event.resource.type].event}${
-                    selectedLesson?.id === event.resource.id ? ' ring-2 ring-[#BA0000]' : ''
-                  }`,
+                    event.resource.status === LessonStatus.CANCELLED ? ' opacity-50' : ''
+                  }${selectedLesson?.id === event.resource.id ? ' ring-2 ring-[#BA0000]' : ''}`,
                 })}
                 components={{ event: LessonEvent }}
                 onSelectEvent={(event) => setSelectedLesson(event.resource)}
@@ -255,7 +311,23 @@ export default function SchedulePage() {
         isOpen={Boolean(selectedLesson)}
         onClose={() => setSelectedLesson(null)}
         onLessonUpdated={handleLessonUpdated}
+        onEdit={openEdit}
       />
+
+      <Dialog open={!!editingLesson} onOpenChange={(open) => !open && setEditingLesson(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редагування заняття</DialogTitle>
+          </DialogHeader>
+          {editingLesson && (
+            <LessonForm
+              initialValues={toFormValues(editingLesson)}
+              onSubmit={handleUpdateLesson}
+              isSubmitting={isSubmitting}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent>

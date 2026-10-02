@@ -27,6 +27,7 @@ describe('GradeJournal — оцінки з клавіатури', () => {
         grades={[]}
         isLoading={false}
         canEdit
+        typeLabel="Класна робота"
         onSaveGrade={onSaveGrade}
         onDeleteGrade={vi.fn()}
       />
