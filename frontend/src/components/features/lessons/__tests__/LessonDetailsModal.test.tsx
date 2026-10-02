@@ -227,3 +227,37 @@ describe('LessonDetailsModal — керування заняттям', () => {
     expect(screen.queryByRole('button', { name: 'Редагувати' })).not.toBeInTheDocument();
   });
 });
+
+describe('LessonDetailsModal — нотатки', () => {
+  // Раніше під кожним студентом стояло порожнє поле нотатки — на групу з двадцяти це ховало статуси
+  it('поле нотатки з’являється на вимогу, а збережена нотатка видна одразу', async () => {
+    installApi({
+      '/users': () => students,
+      '/attendance': () => [
+        { studentId: 'student-2', status: AttendanceStatus.LATE, note: 'Електричка' },
+      ],
+    });
+    renderModal();
+    await screen.findByRole('group', { name: 'Статус: Анна Коваленко' });
+
+    expect(screen.queryByLabelText('Нотатка для Анна Коваленко')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Нотатка для Богдан Мельник')).toHaveValue('Електричка');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Додати нотатку: Анна Коваленко' }));
+
+    expect(screen.getByLabelText('Нотатка для Анна Коваленко')).toHaveFocus();
+  });
+
+  it('у режимі читання нотатка — текстом', async () => {
+    installApi({
+      '/users': () => students,
+      '/attendance': () => [
+        { studentId: 'student-2', status: AttendanceStatus.LATE, note: 'Електричка' },
+      ],
+    });
+    renderModal({ lesson: { ...lesson, status: LessonStatus.CANCELLED } });
+
+    expect(await screen.findByText('Нотатка: Електричка')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+});

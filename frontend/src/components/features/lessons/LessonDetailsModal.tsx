@@ -225,7 +225,9 @@ export default function LessonDetailsModal({
                 Домашнє завдання
               </h3>
               {lesson.homeworkDescription && (
-                <p className="mt-2 text-sm text-slate-700">{lesson.homeworkDescription}</p>
+                <p className="mt-2 text-sm text-slate-700 whitespace-pre-line">
+                  {lesson.homeworkDescription}
+                </p>
               )}
               {lesson.homeworkDueDate && (
                 <p className="mt-1 text-xs font-medium text-slate-500">

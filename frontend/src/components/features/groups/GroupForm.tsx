@@ -11,6 +11,7 @@ import { apiGetUsers } from '@/api/users';
 import { GROUP_END_BEFORE_START_MESSAGE, UserRole } from '@redmonkey/shared';
 import type { IUser } from '@redmonkey/shared';
 import { toastApiError } from '@/utils/apiError';
+import { errorA11y } from '@/utils/formA11y';
 
 const groupSchema = z
   .object({
@@ -75,13 +76,16 @@ export default function GroupForm({
                 <Input
                   {...field}
                   id="name"
+                  {...errorA11y('name', errors.name && touched.name)}
                   placeholder="напр. JS-2026-A"
                   className={errors.name && touched.name ? 'border-destructive' : ''}
                 />
               )}
             </Field>
             {errors.name && touched.name && (
-              <p className="text-xs text-destructive">{errors.name}</p>
+              <p id="name-error" className="text-xs text-destructive">
+                {errors.name}
+              </p>
             )}
           </div>
 
@@ -109,14 +113,16 @@ export default function GroupForm({
                   <Input
                     {...field}
                     id="endDate"
+                    {...errorA11y('endDate', errors.endDate && touched.endDate)}
                     type="date"
-                    aria-invalid={Boolean(errors.endDate && touched.endDate)}
                     className={errors.endDate && touched.endDate ? 'border-destructive' : ''}
                   />
                 )}
               </Field>
               {errors.endDate && touched.endDate && (
-                <p className="text-xs text-destructive">{errors.endDate}</p>
+                <p id="endDate-error" className="text-xs text-destructive">
+                  {errors.endDate}
+                </p>
               )}
             </div>
           </div>

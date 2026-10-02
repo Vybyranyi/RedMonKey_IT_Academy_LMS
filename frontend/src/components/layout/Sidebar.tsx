@@ -10,9 +10,36 @@ import UserProfileWidget from './UserProfileWidget';
 const isTabletWidth = () =>
   typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 1023px)').matches;
 
+// Вибір користувача переживає перезавантаження. localStorage може бути недоступний
+// (приватне вікно, заблоковані дані сайту) — тоді просто працюємо без памʼяті
+const COLLAPSED_KEY = 'sidebarCollapsed';
+
+const readCollapsed = () => {
+  try {
+    const saved = localStorage.getItem(COLLAPSED_KEY);
+    if (saved !== null) return saved === '1';
+  } catch {
+    // немає доступу — падаємо на ширину екрана
+  }
+  return isTabletWidth();
+};
+
+const saveCollapsed = (value: boolean) => {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, value ? '1' : '0');
+  } catch {
+    // не збереглось — наступного разу стартуємо за шириною екрана
+  }
+};
+
 export default function Sidebar() {
   const { user } = useAuthStore();
-  const [isCollapsed, setIsCollapsed] = useState(isTabletWidth);
+  const [isCollapsed, setIsCollapsed] = useState(readCollapsed);
+
+  const toggleCollapsed = () => {
+    setIsCollapsed(!isCollapsed);
+    saveCollapsed(!isCollapsed);
+  };
 
   if (!user) return null;
 
@@ -21,7 +48,7 @@ export default function Sidebar() {
   return (
     <aside
       // На мобайлі замість sidebar — BottomNav
-      className={`focus-on-dark ${isCollapsed ? 'w-20' : 'w-65'} bg-[#29425D] text-slate-100 h-dvh hidden md:flex flex-col shadow-xl z-20 shrink-0 transition-all duration-300 ease-in-out`}
+      className={`focus-on-dark ${isCollapsed ? 'w-20' : 'w-65'} bg-[#29425D] text-slate-100 h-dvh hidden md:flex flex-col shadow-xl z-20 shrink-0 transition-[width] duration-300 ease-in-out`}
     >
       {/* Logo Section */}
       <div
@@ -30,7 +57,11 @@ export default function Sidebar() {
         <div
           className={`flex shrink-0 items-center justify-center rounded-[10px] shadow-sm overflow-hidden relative ${isCollapsed ? 'h-10 w-10' : 'h-11 w-11'}`}
         >
-          <img src={logo} alt="Logo" className="w-full h-full object-cover relative z-10" />
+          <img
+            src={logo}
+            alt={isCollapsed ? 'IT Academy LMS' : ''}
+            className="w-full h-full object-cover relative z-10"
+          />
         </div>
         {!isCollapsed && (
           <div className="flex flex-col mt-1 overflow-hidden whitespace-nowrap">
@@ -74,7 +105,7 @@ export default function Sidebar() {
       <div className={`p-4 mt-auto ${isCollapsed ? 'px-2' : ''}`}>
         <button
           type="button"
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={toggleCollapsed}
           aria-label={isCollapsed ? 'Розгорнути меню' : 'Згорнути меню'}
           aria-expanded={!isCollapsed}
           className={`flex items-center gap-2 text-[12px] font-semibold text-[#A9B8CA] hover:text-white transition-colors w-full mb-4 ${isCollapsed ? 'justify-center' : 'justify-end px-2'}`}

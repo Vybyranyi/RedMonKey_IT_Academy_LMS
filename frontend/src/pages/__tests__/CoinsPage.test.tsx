@@ -145,7 +145,7 @@ describe('CoinsPage — оптимістичне нарахування', () => 
     const user = userEvent.setup();
     await screen.findByText('Анна Коваленко');
     await user.click(screen.getByRole('button', { name: 'Нарахувати: Анна Коваленко' }));
-    await user.type(await screen.findByLabelText('Причина'), 'Активність на занятті');
+    await user.type(await screen.findByLabelText('Причина *'), 'Активність на занятті');
     await user.click(screen.getByRole('button', { name: 'Нарахувати 10 для Анна К.' }));
   };
 
@@ -250,9 +250,9 @@ describe('CoinsPage — списання', () => {
     await user.click(screen.getByRole('button', { name: 'Нарахувати: Анна Коваленко' }));
     const form = await screen.findByRole('dialog');
     await user.click(within(form).getByRole('button', { name: 'Списати' }));
-    await user.clear(within(form).getByLabelText('Кількість монет'));
-    await user.type(within(form).getByLabelText('Кількість монет'), amount);
-    await user.type(within(form).getByLabelText('Причина'), 'Запізнення');
+    await user.clear(within(form).getByLabelText('Кількість монет *'));
+    await user.type(within(form).getByLabelText('Кількість монет *'), amount);
+    await user.type(within(form).getByLabelText('Причина *'), 'Запізнення');
     return { user, form };
   };
 
@@ -302,7 +302,7 @@ describe('CoinsPage — списання', () => {
     expect(await within(form).findByRole('alert')).toHaveTextContent(
       'Недостатньо монет на балансі студента (зараз 3)'
     );
-    expect(within(form).getByLabelText('Причина')).toHaveValue('Запізнення');
+    expect(within(form).getByLabelText('Причина *')).toHaveValue('Запізнення');
     expect(toast.error).not.toHaveBeenCalled();
   });
 

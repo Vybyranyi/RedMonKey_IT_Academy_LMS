@@ -60,3 +60,20 @@ describe('UserForm — пароль', () => {
     expect(onSubmit.mock.calls[0]?.[0]).not.toHaveProperty('password');
   });
 });
+
+describe('UserForm — доступність помилок', () => {
+  it('кожне поле з помилкою має aria-invalid і опис з текстом помилки', async () => {
+    render(<UserForm onSubmit={vi.fn()} isSubmitting={false} hideRoleSelect />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Зберегти' }));
+
+    const firstName = screen.getByLabelText("Ім'я *");
+    await waitFor(() => expect(firstName).toHaveAttribute('aria-invalid', 'true'));
+    expect(firstName).toHaveAccessibleDescription("Ім'я має містити не менше 2 символів");
+    expect(screen.getByLabelText('Пароль *')).toHaveAccessibleDescription(
+      'Вкажіть пароль або згенеруйте його'
+    );
+    // Поле без помилки не позначене
+    expect(screen.getByLabelText('Телефон')).not.toHaveAttribute('aria-invalid');
+  });
+});
