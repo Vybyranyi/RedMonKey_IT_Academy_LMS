@@ -1,4 +1,4 @@
-import { BookOpenText, CalendarDays, Clock3, UserRound } from 'lucide-react';
+import { BookOpenText, CalendarDays, Clock3, Pencil, UserRound, UsersRound } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
@@ -20,28 +20,37 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiCompleteLesson, apiGetAttendance, apiSaveBulkAttendance } from '@/api/attendance';
+import { apiCancelLesson } from '@/api/lessons';
 import { apiGetUsers } from '@/api/users';
+import { ATTENDANCE_STATUS_META } from '@/lib/attendanceStatuses';
 import { LESSON_STATUS_META } from '@/lib/lessonStatuses';
 import { LESSON_TYPE_META } from '@/lib/lessonTypes';
 import { useAuthStore } from '@/store/authStore';
 import { getApiErrorMessage, isSilentError, toastApiError } from '@/utils/apiError';
 import { toast } from 'sonner';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import ErrorState from '@/components/common/ErrorState';
+import { pluralize } from '@/utils/stringUtils';
 import AttendanceList from './AttendanceList';
 
 interface LessonDetailsModalProps {
   lesson: IPopulatedLesson | null;
   isOpen: boolean;
   onClose: () => void;
-  /** Заняття стало проведеним — сторінка оновлює саме його, без перезапиту розкладу */
+  /** Заняття проведене чи скасоване — сторінка оновлює саме його, без перезапиту розкладу */
   onLessonUpdated: (lesson: IPopulatedLesson) => void;
+  /** Редагування відкриває сторінка: форма заняття живе там само, де й створення */
+  onEdit?: (lesson: IPopulatedLesson) => void;
 }
+
+type ConfirmAction = 'complete' | 'cancel' | null;
 
 export default function LessonDetailsModal({
   lesson,
   isOpen,
   onClose,
   onLessonUpdated,
+  onEdit,
 }: LessonDetailsModalProps) {
   const { user } = useAuthStore();
   const [students, setStudents] = useState<IUser[]>([]);
@@ -51,6 +60,7 @@ export default function LessonDetailsModal({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
 
   useEffect(() => {
     if (!isOpen || !lesson) return;
@@ -69,12 +79,14 @@ export default function LessonDetailsModal({
 
         if (signal.aborted) return;
 
-        // Хто вже відмічений — бере збережений статус, решта дефолтом present
+        // Статус беремо лише зі збереженої явки. Раніше всі невідмічені стартували
+        // «Присутніми», і проведення заняття мовчки записувало присутність тим,
+        // кого викладач не перевіряв
         const initial: Record<string, AttendanceStatus> = {};
         const initialNotes: Record<string, string> = {};
         groupStudents.forEach((student) => {
           const record = saved.find((item) => item.studentId === student.id);
-          initial[student.id] = record?.status ?? AttendanceStatus.PRESENT;
+          if (record) initial[student.id] = record.status;
           initialNotes[student.id] = record?.note ?? '';
         });
         setStudents(groupStudents);
@@ -109,15 +121,32 @@ export default function LessonDetailsModal({
   const canManage =
     user?.role === UserRole.ADMIN ||
     (user?.role === UserRole.TEACHER && user.id === lesson.teacherId);
+  const isScheduled = lesson.status === LessonStatus.SCHEDULED;
+  const isCancelled = lesson.status === LessonStatus.CANCELLED;
+  // Скасоване заняття лишається в історії як є: явки й кнопок для нього немає
+  const canEditAttendance = canManage && !isCancelled;
   const typeMeta = LESSON_TYPE_META[lesson.type];
   const statusMeta = LESSON_STATUS_META[lesson.status];
-  const canComplete =
-    lesson.status !== LessonStatus.COMPLETED && lesson.status !== LessonStatus.CANCELLED;
+
   const records = Object.entries(attendance).map(([studentId, status]) => ({
     studentId,
     status,
     note: notes[studentId] ?? '',
   }));
+  const unmarkedCount = students.length - records.length;
+  const countOf = (status: AttendanceStatus) =>
+    records.filter((record) => record.status === status).length;
+  const isBusy = isSaving || isLoading || Boolean(loadError);
+
+  const markAllPresent = () => {
+    setAttendance((current) => {
+      const next = { ...current };
+      students.forEach((student) => {
+        next[student.id] ??= AttendanceStatus.PRESENT;
+      });
+      return next;
+    });
+  };
 
   const saveAttendance = async (complete: boolean) => {
     setIsSaving(true);
@@ -129,9 +158,26 @@ export default function LessonDetailsModal({
         await apiSaveBulkAttendance({ lessonId: lesson.id, records });
       }
       toast.success(complete ? 'Заняття позначено проведеним' : 'Явку збережено');
+      setConfirmAction(null);
       onClose();
     } catch (error) {
       toastApiError(error, 'Не вдалося зберегти дані заняття');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // DELETE /lessons/:id не видаляє заняття, а переводить у «Скасовано»: оцінки й
+  // явка лишаються, а календар показує його перекресленим
+  const cancelLesson = async () => {
+    setIsSaving(true);
+    try {
+      onLessonUpdated(await apiCancelLesson(lesson.id));
+      toast.success('Заняття скасовано');
+      setConfirmAction(null);
+      onClose();
+    } catch (error) {
+      toastApiError(error, 'Не вдалося скасувати заняття');
     } finally {
       setIsSaving(false);
     }
@@ -162,7 +208,7 @@ export default function LessonDetailsModal({
                 {lesson.duration} хв
               </span>
               <span className="flex items-center gap-2">
-                <UserRound className="h-4 w-4" />
+                <UsersRound className="h-4 w-4" />
                 Група: {lesson.group.name}
               </span>
               <span className="flex items-center gap-2">
@@ -179,7 +225,9 @@ export default function LessonDetailsModal({
                 Домашнє завдання
               </h3>
               {lesson.homeworkDescription && (
-                <p className="mt-2 text-sm text-slate-700">{lesson.homeworkDescription}</p>
+                <p className="mt-2 text-sm text-slate-700 whitespace-pre-line">
+                  {lesson.homeworkDescription}
+                </p>
               )}
               {lesson.homeworkDueDate && (
                 <p className="mt-1 text-xs font-medium text-slate-500">
@@ -192,9 +240,19 @@ export default function LessonDetailsModal({
             </div>
           )}
 
-          <div className="mt-6 mb-4 flex items-center justify-between">
+          <div className="mt-6 mb-4 flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-lg font-bold text-slate-900">Відвідуваність</h3>
-            <span className="text-sm text-slate-500">{students.length} студентів</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-500">
+                {students.length} {pluralize(students.length, ['студент', 'студенти', 'студентів'])}
+                {canEditAttendance && unmarkedCount > 0 && ` · не відмічено ${unmarkedCount}`}
+              </span>
+              {canEditAttendance && unmarkedCount > 0 && !isBusy && (
+                <Button variant="outline" size="sm" className="h-8" onClick={markAllPresent}>
+                  Всі присутні
+                </Button>
+              )}
+            </div>
           </div>
           {isLoading ? (
             <div className="space-y-3" aria-label="Завантаження">
@@ -216,31 +274,93 @@ export default function LessonDetailsModal({
               onChange={handleStatusChange}
               notes={notes}
               onNoteChange={handleNoteChange}
-              readOnly={!canManage || isSaving}
+              readOnly={!canEditAttendance || isSaving}
             />
           )}
         </div>
 
-        {canManage && (
-          <DialogFooter className="bg-white px-6 pb-6">
-            <Button
-              variant="outline"
-              disabled={isSaving || isLoading || Boolean(loadError)}
-              onClick={() => void saveAttendance(false)}
-            >
-              {isSaving ? 'Збереження...' : 'Зберегти явку'}
-            </Button>
-            {canComplete && (
-              <Button
-                className="bg-[#C10000] hover:bg-[#A00000] text-white"
-                disabled={isSaving || isLoading || Boolean(loadError)}
-                onClick={() => void saveAttendance(true)}
-              >
-                {isSaving ? 'Збереження...' : 'Позначити проведеним'}
-              </Button>
+        {canManage && !isCancelled && (
+          <DialogFooter className="bg-white px-6 pb-6 sm:justify-between">
+            {isScheduled ? (
+              <div className="flex flex-col-reverse gap-2 sm:flex-row">
+                <Button
+                  variant="ghost"
+                  className="text-slate-600 hover:bg-red-50 hover:text-[#C10000]"
+                  disabled={isSaving}
+                  onClick={() => setConfirmAction('cancel')}
+                >
+                  Скасувати заняття
+                </Button>
+                {onEdit && (
+                  <Button variant="outline" disabled={isSaving} onClick={() => onEdit(lesson)}>
+                    <Pencil className="h-4 w-4" /> Редагувати
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <span />
             )}
+
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              <Button
+                variant="outline"
+                disabled={isBusy || records.length === 0}
+                onClick={() => void saveAttendance(false)}
+              >
+                {isSaving && confirmAction === null ? 'Збереження...' : 'Зберегти явку'}
+              </Button>
+              {isScheduled && (
+                <Button
+                  className="bg-[#C10000] hover:bg-[#A00000] text-white"
+                  // Провести можна, лише коли відмічено кожного: інакше в історії
+                  // заняття лишились би студенти без жодної позначки
+                  disabled={isBusy || unmarkedCount > 0}
+                  title={
+                    unmarkedCount > 0
+                      ? 'Спершу відмітьте всіх студентів або натисніть «Всі присутні»'
+                      : undefined
+                  }
+                  onClick={() => setConfirmAction('complete')}
+                >
+                  Позначити проведеним
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         )}
+
+        <ConfirmDialog
+          open={confirmAction === 'complete'}
+          onOpenChange={(open) => !open && setConfirmAction(null)}
+          title="Позначити заняття проведеним?"
+          description={`«${lesson.title}», ${format(new Date(lesson.date), 'd MMMM, HH:mm', { locale: uk })}. Статус заняття зміниться на «Проведено», його вже не можна буде редагувати чи скасувати.`}
+          confirmLabel="Позначити проведеним"
+          isPending={isSaving}
+          onConfirm={() => void saveAttendance(true)}
+        >
+          <ul className="grid grid-cols-2 gap-2 text-sm" aria-label="Підсумок явки">
+            {Object.values(AttendanceStatus).map((status) => (
+              <li
+                key={status}
+                className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2"
+              >
+                <span className="text-slate-600">{ATTENDANCE_STATUS_META[status].label}</span>
+                <span className="font-bold text-slate-900">{countOf(status)}</span>
+              </li>
+            ))}
+          </ul>
+        </ConfirmDialog>
+
+        <ConfirmDialog
+          open={confirmAction === 'cancel'}
+          onOpenChange={(open) => !open && setConfirmAction(null)}
+          title="Скасувати заняття?"
+          description={`«${lesson.title}» для групи ${lesson.group.name} лишиться в розкладі зі статусом «Скасовано». Провести чи редагувати його після цього не вийде.`}
+          confirmLabel="Скасувати заняття"
+          cancelLabel="Не скасовувати"
+          isPending={isSaving}
+          onConfirm={() => void cancelLesson()}
+        />
       </DialogContent>
     </Dialog>
   );

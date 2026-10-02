@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { CircleDollarSign, Plus } from 'lucide-react';
+import { Coins, Plus } from 'lucide-react';
 import { UserRole } from '@redmonkey/shared';
 import type {
   ICoinTransactionDto,
@@ -62,6 +62,8 @@ export default function CoinsPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [awardStudentId, setAwardStudentId] = useState('');
+  const [isDeducting, setIsDeducting] = useState(false);
+  const [deductError, setDeductError] = useState<string | null>(null);
   const [groupsAttempt, setGroupsAttempt] = useState(0);
   const [loadAttempt, setLoadAttempt] = useState(0);
   // Лічильник завантажень історії з нуля: сторінка, що догрузилась після
@@ -164,6 +166,7 @@ export default function CoinsPage() {
 
   const openForm = (studentId: string) => {
     setAwardStudentId(studentId);
+    setDeductError(null);
     setIsFormOpen(true);
   };
 
@@ -198,12 +201,39 @@ export default function CoinsPage() {
     );
   };
 
-  // Оптимістично: форма закривається одразу, транзакція стає першою в історії,
-  // баланс у рейтингу змінюється — запит іде у фоні. Помилка (наприклад,
-  // «Недостатньо монет») відкочує рівно цю операцію
+  // Списання не оптимістичне: «Недостатньо монет» — звичайна відповідь сервера, і
+  // помилка має лишитися у формі разом із введеною причиною, а не в toast над закритою формою
+  const handleDeduct = async (data: ICoinTransactionDto, student: IUser) => {
+    setIsDeducting(true);
+    setDeductError(null);
+    try {
+      const transaction = await apiCreateCoinTransaction(data);
+      setTransactions((current) => [transaction, ...current]);
+      applyBalanceChange(data.studentId, data.amount);
+      setIsFormOpen(false);
+      toast.success(
+        `Списано ${Math.abs(transaction.amount)} монет: ${student.firstName} ${student.lastName}`
+      );
+    } catch (error) {
+      if (!isSilentError(error)) {
+        setDeductError(getApiErrorMessage(error, 'Не вдалося списати монети'));
+      }
+    } finally {
+      setIsDeducting(false);
+    }
+  };
+
   const handleSubmit = async (data: ICoinTransactionDto) => {
     const student = students.find((item) => item.id === data.studentId);
     if (!user || !student) return;
+    if (data.amount < 0) {
+      await handleDeduct(data, student);
+      return;
+    }
+
+    // Нарахування — оптимістично: форма закривається одразу, транзакція стає першою
+    // в історії, баланс у рейтингу змінюється — запит іде у фоні. Помилка відкочує
+    // рівно цю операцію
 
     const pending: HistoryItem = {
       ...data,
@@ -224,9 +254,7 @@ export default function CoinsPage() {
       // Курсор пагінації лишається дійсним: підвантажені сторінки не скидаються
       setTransactions((current) => replaceById(current, pending.id, transaction));
       toast.success(
-        transaction.amount > 0
-          ? `Нараховано ${transaction.amount} монет: ${student.firstName} ${student.lastName}`
-          : `Списано ${Math.abs(transaction.amount)} монет: ${student.firstName} ${student.lastName}`
+        `Нараховано ${transaction.amount} монет: ${student.firstName} ${student.lastName}`
       );
     } catch (error) {
       setTransactions((current) => removeById(current, pending.id));
@@ -252,13 +280,13 @@ export default function CoinsPage() {
   if (!isStudent && !isGroupsLoading && groups.length === 0) {
     return isTeacher ? (
       <EmptyState
-        icon={CircleDollarSign}
+        icon={Coins}
         title="Ви ще не закріплені за жодною групою"
         description="Нараховувати монети можна студентам груп, які ви ведете."
       />
     ) : (
       <EmptyState
-        icon={CircleDollarSign}
+        icon={Coins}
         title="Груп ще немає"
         description="Рейтинг і нарахування ведуться в межах групи — спершу створіть її."
       >
@@ -352,9 +380,11 @@ export default function CoinsPage() {
       {canAward && isFormOpen && (
         <CoinAwardForm
           isOpen
-          onClose={() => setIsFormOpen(false)}
+          onClose={() => !isDeducting && setIsFormOpen(false)}
           students={students}
           initialStudentId={awardStudentId}
+          isSubmitting={isDeducting}
+          serverError={deductError}
           onSubmit={handleSubmit}
         />
       )}

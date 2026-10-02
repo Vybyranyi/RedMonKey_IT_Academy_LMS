@@ -1,4 +1,5 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
+import { StickyNote } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { ATTENDANCE_STATUS_META } from '@/lib/attendanceStatuses';
 
 interface AttendanceListProps {
   students: IUser[];
-  /** studentId → статус */
+  /** studentId → статус; кого немає в обʼєкті, того ще не відмітили */
   value: Record<string, AttendanceStatus>;
   /** Має бути стабільним (useCallback) — інакше memo рядків не спрацює */
   onChange: (studentId: string, status: AttendanceStatus) => void;
@@ -37,7 +38,7 @@ export default function AttendanceList({
         <AttendanceRow
           key={student.id}
           student={student}
-          status={value[student.id] ?? AttendanceStatus.PRESENT}
+          status={value[student.id]}
           note={notes[student.id] ?? ''}
           readOnly={readOnly}
           onChange={onChange}
@@ -50,7 +51,7 @@ export default function AttendanceList({
 
 interface AttendanceRowProps {
   student: IUser;
-  status: AttendanceStatus;
+  status: AttendanceStatus | undefined;
   note: string;
   readOnly: boolean;
   onChange: (studentId: string, status: AttendanceStatus) => void;
@@ -67,6 +68,11 @@ const AttendanceRow = memo(function AttendanceRow({
   onChange,
   onNoteChange,
 }: AttendanceRowProps) {
+  // Поле нотатки — лише на вимогу: двадцять порожніх полів у групі ховали самі статуси
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
+  const fullName = `${student.firstName} ${student.lastName}`;
+  const showNoteInput = !readOnly && (isNoteOpen || note !== '');
+
   return (
     <div className="bg-white border border-slate-100 rounded-xl p-3 space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
@@ -84,8 +90,10 @@ const AttendanceRow = memo(function AttendanceRow({
         </div>
 
         {readOnly ? (
-          <Badge className={`self-start sm:self-auto ${ATTENDANCE_STATUS_META[status].badge}`}>
-            {ATTENDANCE_STATUS_META[status].label}
+          <Badge
+            className={`self-start sm:self-auto ${status ? ATTENDANCE_STATUS_META[status].badge : 'bg-slate-100 text-slate-600 border-slate-200'}`}
+          >
+            {status ? ATTENDANCE_STATUS_META[status].label : 'Не відмічено'}
           </Badge>
         ) : (
           <div
@@ -97,6 +105,7 @@ const AttendanceRow = memo(function AttendanceRow({
               <button
                 key={key}
                 type="button"
+                data-attendance-status
                 aria-pressed={status === key}
                 onClick={() => onChange(student.id, key as AttendanceStatus)}
                 className={`px-3 h-8 rounded-md text-xs font-semibold border transition-colors ${
@@ -108,20 +117,35 @@ const AttendanceRow = memo(function AttendanceRow({
                 {meta.label}
               </button>
             ))}
+            {!showNoteInput && (
+              <button
+                type="button"
+                data-attendance-status
+                onClick={() => setIsNoteOpen(true)}
+                aria-label={`Додати нотатку: ${fullName}`}
+                title="Додати нотатку"
+                className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+              >
+                <StickyNote className="h-4 w-4" aria-hidden="true" />
+              </button>
+            )}
           </div>
         )}
       </div>
 
       {/* Нотатка живе в рядку студента: інакше довелось би зіставляти
           два паралельні списки очима */}
-      <Input
-        aria-label={`Нотатка для ${student.firstName} ${student.lastName}`}
-        value={note}
-        disabled={readOnly}
-        onChange={(event) => onNoteChange(student.id, event.target.value)}
-        placeholder="Нотатка (необов'язково)"
-        className="h-9"
-      />
+      {showNoteInput && (
+        <Input
+          aria-label={`Нотатка для ${fullName}`}
+          value={note}
+          autoFocus={isNoteOpen && note === ''}
+          onChange={(event) => onNoteChange(student.id, event.target.value)}
+          placeholder="Нотатка (необов'язково)"
+          className="h-9"
+        />
+      )}
+      {readOnly && note && <p className="text-xs text-slate-600">Нотатка: {note}</p>}
     </div>
   );
 });

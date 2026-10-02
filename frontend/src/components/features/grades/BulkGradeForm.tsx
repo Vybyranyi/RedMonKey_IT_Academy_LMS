@@ -15,12 +15,16 @@ import {
 } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { GRADE_TYPE_META } from '@/lib/gradeColors';
+import EmptyState from '@/components/common/EmptyState';
+import { Users } from 'lucide-react';
 
 interface BulkGradeFormProps {
   isOpen: boolean;
   onClose: () => void;
   lessons: IPopulatedLesson[];
   students: IUser[];
+  /** Тип, обраний у журналі: масові оцінки мають з'явитися в тому ж виді */
+  initialType: GradeType;
   isSubmitting: boolean;
   onSubmit: (data: IBulkGradeDto) => void;
 }
@@ -30,18 +34,30 @@ export default function BulkGradeForm({
   onClose,
   lessons,
   students,
+  initialType,
   isSubmitting,
   onSubmit,
 }: BulkGradeFormProps) {
   // Стан ініціалізується один раз: батько ремонтує форму через key на кожне
   // відкриття, тож скидати її ефектом не треба
   const [lessonId, setLessonId] = useState(() => lessons[0]?.id ?? '');
-  const [type, setType] = useState<GradeType>(GradeType.CLASSWORK);
+  const [type, setType] = useState<GradeType>(initialType);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [fillValue, setFillValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Кому саме поставлено недійсну оцінку — щоб підсвітити рядок, а не шукати його очима
+  const [invalidIds, setInvalidIds] = useState<string[]>([]);
 
   const fillAll = (value: string) => {
+    setFillValue(value);
     setValues(Object.fromEntries(students.map((student) => [student.id, value])));
+  };
+
+  const clearAll = () => {
+    setFillValue('');
+    setValues({});
+    setInvalidIds([]);
+    setError(null);
   };
 
   const handleSubmit = () => {
@@ -60,11 +76,12 @@ export default function BulkGradeForm({
       return;
     }
 
-    const invalid = grades.find(
+    const invalid = grades.filter(
       (grade) =>
         !Number.isInteger(grade.value) || grade.value < GRADE_MIN || grade.value > GRADE_MAX
     );
-    if (invalid) {
+    setInvalidIds(invalid.map((grade) => grade.studentId));
+    if (invalid.length > 0) {
       setError(`Оцінка має бути цілим числом від ${GRADE_MIN} до ${GRADE_MAX}`);
       return;
     }
@@ -122,9 +139,10 @@ export default function BulkGradeForm({
                 min={GRADE_MIN}
                 max={GRADE_MAX}
                 placeholder={`${GRADE_MIN}–${GRADE_MAX}`}
+                value={fillValue}
                 onChange={(event) => fillAll(event.target.value)}
               />
-              <Button variant="outline" onClick={() => setValues({})} disabled={isSubmitting}>
+              <Button variant="outline" onClick={clearAll} disabled={isSubmitting}>
                 Очистити
               </Button>
             </div>
@@ -132,9 +150,7 @@ export default function BulkGradeForm({
 
           <div className="space-y-2 pt-2">
             {students.length === 0 && (
-              <div className="border border-dashed border-slate-200 rounded-xl p-6 text-center">
-                <p className="text-slate-400 text-sm font-medium">У цій групі немає студентів</p>
-              </div>
+              <EmptyState size="compact" icon={Users} title="У цій групі немає студентів" />
             )}
 
             {students.map((student) => (
@@ -151,6 +167,7 @@ export default function BulkGradeForm({
                   max={GRADE_MAX}
                   className="w-20 shrink-0"
                   aria-label={`Оцінка для ${student.firstName} ${student.lastName}`}
+                  aria-invalid={invalidIds.includes(student.id) || undefined}
                   value={values[student.id] ?? ''}
                   onChange={(event) =>
                     setValues((current) => ({ ...current, [student.id]: event.target.value }))
@@ -159,11 +176,15 @@ export default function BulkGradeForm({
               </div>
             ))}
           </div>
-
-          {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
 
-        <div className="border-t border-slate-100 px-6 py-4">
+        {/* Помилка — біля кнопки, а не під довгим списком, де її не видно без прокрутки */}
+        <div className="border-t border-slate-100 px-6 py-4 space-y-2">
+          {error && (
+            <p role="alert" className="text-xs text-destructive">
+              {error}
+            </p>
+          )}
           <Button
             className="w-full h-11 bg-[#C10000] hover:bg-[#A00000] text-white"
             onClick={handleSubmit}

@@ -21,7 +21,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 const tabClass = (isActive: boolean) =>
-  `flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold transition-colors ${
+  `flex flex-col items-center justify-center gap-1 py-2 text-xs font-semibold transition-colors ${
     isActive ? 'text-white' : 'text-slate-300 hover:text-white'
   }`;
 
@@ -124,7 +124,7 @@ export default function BottomNav() {
                 <p className="text-sm font-bold text-white truncate">
                   {user.firstName} {user.lastName}
                 </p>
-                <p className="text-xs font-medium text-[#8B9DB4]">{ROLE_LABELS[user.role]}</p>
+                <p className="text-xs font-medium text-[#A9B8CA]">{ROLE_LABELS[user.role]}</p>
               </div>
             </NavLink>
 

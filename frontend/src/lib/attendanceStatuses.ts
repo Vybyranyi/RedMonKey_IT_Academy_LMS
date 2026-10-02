@@ -19,8 +19,8 @@ export const ATTENDANCE_STATUS_META: Record<AttendanceStatus, AttendanceStatusMe
   },
   [AttendanceStatus.ABSENT]: {
     label: 'Відсутній',
-    active: 'bg-[#C10000] text-white border-[#C10000]',
-    badge: 'bg-red-50 text-red-700 border-red-200',
+    active: 'bg-rose-600 text-white border-rose-600',
+    badge: 'bg-rose-50 text-rose-700 border-rose-200',
   },
   [AttendanceStatus.EXCUSED]: {
     label: 'Поважна причина',

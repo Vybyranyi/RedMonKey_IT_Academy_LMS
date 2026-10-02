@@ -137,16 +137,16 @@ describe('CoinsPage — оптимістичне нарахування', () => 
   /** Рядки рейтингу в порядку відображення: «позиція ім'я баланс» */
   const leaderboardRows = () =>
     within(screen.getByText('Рейтинг').closest('[data-slot=card]') as HTMLElement)
-      .getAllByRole('button', { name: 'Нарахувати' })
+      .getAllByRole('button', { name: /^Нарахувати: / })
       .map((button) => button.parentElement?.textContent?.replace('Нарахувати', '').trim());
 
-  /** «Нарахувати» в рядку Анни → причина → «Підтвердити» (сума за замовчуванням 10) */
+  /** «Нарахувати» в рядку Анни → причина → кнопка з сумою й іменем (сума за замовчуванням 10) */
   const awardAnna = async () => {
     const user = userEvent.setup();
     await screen.findByText('Анна Коваленко');
-    await user.click(screen.getAllByRole('button', { name: 'Нарахувати' })[1]);
-    await user.type(await screen.findByLabelText('Причина'), 'Активність на занятті');
-    await user.click(screen.getByRole('button', { name: 'Підтвердити' }));
+    await user.click(screen.getByRole('button', { name: 'Нарахувати: Анна Коваленко' }));
+    await user.type(await screen.findByLabelText('Причина *'), 'Активність на занятті');
+    await user.click(screen.getByRole('button', { name: 'Нарахувати 10 для Анна К.' }));
   };
 
   beforeEach(() => {
@@ -210,5 +210,126 @@ describe('CoinsPage — оптимістичне нарахування', () => 
     );
     expect(screen.queryByText('Активність на занятті')).not.toBeInTheDocument();
     expect(leaderboardRows()).toEqual(['1БМБогдан МельникJS-115', '2АКАнна КоваленкоJS-110']);
+  });
+});
+
+describe('CoinsPage — списання', () => {
+  const ANNA_ID = '11111111-1111-4111-8111-111111111111';
+  const admin = {
+    id: 'admin-1',
+    role: UserRole.ADMIN,
+    firstName: 'Ірина',
+    lastName: 'Адміненко',
+  } as IUser;
+  const students = [
+    { id: ANNA_ID, firstName: 'Анна', lastName: 'Коваленко', redCoins: 10, role: UserRole.STUDENT },
+  ] as IUser[];
+  const leaderboard: ILeaderboardRow[] = [
+    {
+      position: 1,
+      studentId: ANNA_ID,
+      firstName: 'Анна',
+      lastName: 'Коваленко',
+      groupName: 'JS-1',
+      redCoins: 10,
+    },
+  ];
+
+  const setupApi = (createTransaction: Parameters<typeof installApi>[0][string]) =>
+    installApi({
+      '/groups': () => [{ id: 'group-1', name: 'JS-1', teachers: [], students: [] }],
+      '/users': () => students,
+      '/coins/leaderboard': () => leaderboard,
+      'GET /coins/transactions': () => ({ items: [], nextCursor: null }),
+      'POST /coins/transactions': createTransaction,
+    });
+
+  const openDeductForm = async (amount: string) => {
+    const user = userEvent.setup();
+    await screen.findByText('Анна Коваленко');
+    await user.click(screen.getByRole('button', { name: 'Нарахувати: Анна Коваленко' }));
+    const form = await screen.findByRole('dialog');
+    await user.click(within(form).getByRole('button', { name: 'Списати' }));
+    await user.clear(within(form).getByLabelText('Кількість монет *'));
+    await user.type(within(form).getByLabelText('Кількість монет *'), amount);
+    await user.type(within(form).getByLabelText('Причина *'), 'Запізнення');
+    return { user, form };
+  };
+
+  beforeEach(() => {
+    vi.mocked(toast.error).mockClear();
+    vi.mocked(toast.success).mockClear();
+    useAuthStore.getState().setAuth(admin, 'token');
+  });
+
+  it('показує баланс студента і не шле запит, якщо списують більше, ніж є', async () => {
+    const adapter = setupApi(() => ({}));
+    render(
+      <MemoryRouter>
+        <CoinsPage />
+      </MemoryRouter>
+    );
+
+    const { user, form } = await openDeductForm('25');
+    expect(within(form).getByText(/Баланс зараз:/)).toHaveTextContent('Баланс зараз: 10 монет');
+    await user.click(within(form).getByRole('button', { name: 'Списати 25 у Анна К.' }));
+
+    expect(within(form).getByText('У студента лише 10 монет')).toBeInTheDocument();
+    expect(callsTo(adapter, 'POST', '/coins/transactions')).toHaveLength(0);
+  });
+
+  // Раніше форма закривалась одразу, а відмова сервера губила введену причину
+  it('чекає відповіді сервера і показує відмову у формі, зберігаючи введене', async () => {
+    const post = deferred();
+    setupApi(() => post.promise);
+    render(
+      <MemoryRouter>
+        <CoinsPage />
+      </MemoryRouter>
+    );
+
+    const { user, form } = await openDeductForm('5');
+    await user.click(within(form).getByRole('button', { name: 'Списати 5 у Анна К.' }));
+
+    // Поки сервер думає — форма відкрита, кнопка заблокована, історія без змін
+    expect(within(form).getByRole('button', { name: 'Збереження...' })).toBeDisabled();
+    expect(screen.queryByText('Запізнення', { selector: 'p' })).not.toBeInTheDocument();
+
+    post.reject(
+      httpError({ headers: {} } as never, 400, 'Недостатньо монет на балансі студента (зараз 3)')
+    );
+
+    expect(await within(form).findByRole('alert')).toHaveTextContent(
+      'Недостатньо монет на балансі студента (зараз 3)'
+    );
+    expect(within(form).getByLabelText('Причина *')).toHaveValue('Запізнення');
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it('після успіху закриває форму, дописує транзакцію і зменшує баланс', async () => {
+    setupApi(() => ({
+      id: 'tx-1',
+      amount: -5,
+      reason: 'Запізнення',
+      category: CoinCategory.PENALTY,
+      createdAt: '2026-09-01T10:00:00.000Z',
+      student: { id: ANNA_ID, firstName: 'Анна', lastName: 'Коваленко' },
+      issuer: { id: 'admin-1', firstName: 'Ірина', lastName: 'Адміненко' },
+    }));
+    render(
+      <MemoryRouter>
+        <CoinsPage />
+      </MemoryRouter>
+    );
+
+    const { user, form } = await openDeductForm('5');
+    await user.click(within(form).getByRole('button', { name: 'Списати 5 у Анна К.' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByText('Запізнення')).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith('Списано 5 монет: Анна Коваленко');
+    const row = screen.getByRole('button', { name: 'Нарахувати: Анна Коваленко' }).parentElement!;
+    expect(row).toHaveTextContent('5');
+    expect(row).not.toHaveTextContent('10');
   });
 });

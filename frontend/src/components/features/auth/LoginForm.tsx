@@ -4,7 +4,8 @@ import type { FieldProps } from 'formik';
 import { loginSchema, validateWithZod } from '@/utils/validation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { errorA11y } from '@/utils/formA11y';
 
 export interface LoginFormValues {
   email: string;
@@ -37,13 +38,14 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
               {({ field }: FieldProps) => (
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-4 w-4 text-slate-400" />
+                    <Mail className="h-4 w-4 text-slate-400" aria-hidden="true" />
                   </div>
                   <Input
                     {...field}
                     id="email"
+                    {...errorA11y('email', errors.email && touched.email)}
                     type="email"
-                    placeholder="admin@academy.com"
+                    placeholder="name@academy.com"
                     className={`pl-10 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] text-sm ${
                       errors.email && touched.email ? 'border-destructive' : ''
                     }`}
@@ -52,7 +54,9 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
               )}
             </Field>
             {errors.email && touched.email && (
-              <p className="text-xs text-destructive">{errors.email}</p>
+              <p id="email-error" className="text-xs text-destructive">
+                {errors.email}
+              </p>
             )}
           </div>
 
@@ -62,36 +66,44 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
             </label>
             <Field name="password">
               {({ field }: FieldProps) => (
+                // Перемикач видимості — праворуч, як очікують за звичкою: ліворуч, де він
+                // стояв, зазвичай декоративна іконка поля, а не кнопка
                 <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                  </div>
+                  <Input
+                    {...field}
+                    id="password"
+                    {...errorA11y('password', errors.password && touched.password)}
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    className={`pl-10 pr-11 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] tracking-widest placeholder:tracking-widest text-sm ${
+                      errors.password && touched.password ? 'border-destructive' : ''
+                    }`}
+                  />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? 'Сховати пароль' : 'Показати пароль'}
                     aria-pressed={showPassword}
-                    className="absolute inset-y-0 left-0 pl-3 flex items-center rounded-md text-slate-400 hover:text-slate-600"
+                    className="absolute inset-y-0 right-0 w-11 flex items-center justify-center rounded-md text-slate-500 hover:text-slate-700"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
-                  <Input
-                    {...field}
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    className={`pl-10 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] tracking-widest placeholder:tracking-widest text-sm ${
-                      errors.password && touched.password ? 'border-destructive' : ''
-                    }`}
-                  />
                 </div>
               )}
             </Field>
             {errors.password && touched.password && (
-              <p className="text-xs text-destructive">{errors.password}</p>
+              <p id="password-error" className="text-xs text-destructive">
+                {errors.password}
+              </p>
             )}
           </div>
 
           <Button
             type="submit"
-            className="w-full mt-2 bg-[#BA0000] hover:bg-[#A00000] text-white rounded-md h-11 text-base font-medium shadow-sm transition-colors"
+            className="w-full mt-2 bg-[#C10000] hover:bg-[#A00000] text-white rounded-md h-11 text-base font-medium shadow-sm transition-colors"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Вхід...' : 'Увійти'}

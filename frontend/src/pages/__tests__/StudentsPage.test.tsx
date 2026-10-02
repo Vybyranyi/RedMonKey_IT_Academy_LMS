@@ -3,9 +3,11 @@ import type { IUser } from '@redmonkey/shared';
 import type { InternalAxiosRequestConfig } from 'axios';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+import { toast } from 'sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAuthStore } from '../../store/authStore';
-import { deferred, installApi } from '../../test/apiMock';
+import { callsTo, deferred, installApi } from '../../test/apiMock';
 import StudentsPage from '../StudentsPage';
 
 vi.mock('sonner', () => ({ toast: { error: vi.fn(), success: vi.fn(), warning: vi.fn() } }));
@@ -29,6 +31,14 @@ beforeEach(() => {
   useAuthStore.getState().setAuth(admin, 'token');
 });
 
+// Фільтр групи живе в URL, тож сторінці потрібен роутер
+const renderPage = (url = '/students') =>
+  render(
+    <MemoryRouter initialEntries={[url]}>
+      <StudentsPage />
+    </MemoryRouter>
+  );
+
 describe('StudentsPage — пошук', () => {
   // Раніше кожна літера давала окремий запит: «Анна» — чотири запити за секунду
   it('швидкий набір дає один запит із повним рядком', async () => {
@@ -40,7 +50,7 @@ describe('StudentsPage — пошук', () => {
         return [anna];
       },
     });
-    render(<StudentsPage />);
+    renderPage();
     await screen.findByText('Анна Коваленко');
 
     await userEvent.type(screen.getByPlaceholderText('Пошук за іменем або email...'), 'Анна ');
@@ -60,7 +70,7 @@ describe('StudentsPage — пошук', () => {
         return requests.length === 1 ? [anna] : deferred().promise;
       },
     });
-    render(<StudentsPage />);
+    renderPage();
     await screen.findByText('Анна Коваленко');
     const input = screen.getByPlaceholderText('Пошук за іменем або email...');
 
@@ -81,7 +91,7 @@ describe('StudentsPage — пошук', () => {
       '/groups': () => [],
       '/users': (config) => (config.params.q ? [] : [anna]),
     });
-    render(<StudentsPage />);
+    renderPage();
     await screen.findByText('Анна Коваленко');
 
     await userEvent.type(screen.getByPlaceholderText('Пошук за іменем або email...'), 'Зоряна');
@@ -93,7 +103,7 @@ describe('StudentsPage — пошук', () => {
   it('без жодного студента показує заклик додати першого', async () => {
     installApi({ '/groups': () => [], '/users': () => [] });
 
-    render(<StudentsPage />);
+    renderPage();
 
     expect(await screen.findByText('Студентів ще немає')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Додати студента' })).toHaveLength(2);
@@ -111,7 +121,7 @@ describe('StudentsPage — бал і відвідуваність', () => {
       },
     });
 
-    render(<StudentsPage />);
+    renderPage();
 
     expect(await screen.findByText('10.5')).toBeInTheDocument();
     expect(screen.getByText('95%')).toBeInTheDocument();
@@ -125,7 +135,7 @@ describe('StudentsPage — бал і відвідуваність', () => {
       'GET /users': () => [],
       'POST /users': () => ({ ...anna, id: 'student-2', firstName: 'Богдан' }),
     });
-    render(<StudentsPage />);
+    renderPage();
     await screen.findByText('Студентів ще немає');
 
     await userEvent.click(screen.getAllByRole('button', { name: 'Додати студента' })[0]!);
@@ -138,5 +148,65 @@ describe('StudentsPage — бал і відвідуваність', () => {
     const row = (await screen.findByText('Богдан Коваленко')).closest('tr')!;
     expect(within(row).getByTitle('Оцінок ще немає')).toHaveTextContent('—');
     expect(within(row).getByTitle('Відміток явки ще немає')).toHaveTextContent('—');
+  });
+});
+
+describe('StudentsPage — склад групи з картки групи', () => {
+  // «Переглянути склад» на картці групи веде сюди з ?groupId=
+  it('бере фільтр групи з URL і одразу просить лише студентів цієї групи', async () => {
+    const requests: InternalAxiosRequestConfig[] = [];
+    installApi({
+      '/groups': () => [{ id: 'group-1', name: 'JS-1', teachers: [], students: [] }],
+      '/users': (config) => {
+        requests.push(config);
+        return [anna];
+      },
+    });
+
+    renderPage('/students?groupId=group-1');
+
+    await screen.findByText('Анна Коваленко');
+    expect(requests).toHaveLength(1);
+    expect(requests[0].params.groupId).toBe('group-1');
+    expect(await screen.findByRole('combobox', { name: 'Група' })).toHaveTextContent('JS-1');
+  });
+});
+
+describe('StudentsPage — деактивація', () => {
+  it('після підтвердження деактивує студента і прибирає його з таблиці', async () => {
+    const adapter = installApi({
+      '/groups': () => [],
+      'GET /users': () => [anna],
+      'DELETE /users/student-1': () => ({ message: 'ok' }),
+    });
+    renderPage();
+    await screen.findByText('Анна Коваленко');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Деактивувати: Анна Коваленко' }));
+    const dialog = await screen.findByRole('alertdialog');
+    // Без підтвердження запиту немає
+    expect(callsTo(adapter, 'DELETE', '/users/student-1')).toHaveLength(0);
+    expect(dialog).toHaveTextContent('Анна Коваленко більше не зможе увійти');
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Деактивувати' }));
+
+    await waitFor(() => expect(screen.queryByText('Анна Коваленко')).not.toBeInTheDocument());
+    expect(callsTo(adapter, 'DELETE', '/users/student-1')).toHaveLength(1);
+    expect(toast.success).toHaveBeenCalledWith('Студента Анна Коваленко деактивовано');
+  });
+
+  it('«Скасувати» в діалозі нічого не змінює', async () => {
+    const adapter = installApi({ '/groups': () => [], 'GET /users': () => [anna] });
+    renderPage();
+    await screen.findByText('Анна Коваленко');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Деактивувати: Анна Коваленко' }));
+    await userEvent.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Скасувати' })
+    );
+
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(screen.getByText('Анна Коваленко')).toBeInTheDocument();
+    expect(callsTo(adapter, 'DELETE', '/users/student-1')).toHaveLength(0);
   });
 });

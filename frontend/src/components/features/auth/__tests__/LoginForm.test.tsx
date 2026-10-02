@@ -61,3 +61,36 @@ describe('LoginForm', () => {
     expect(password).toHaveAttribute('type', 'text');
   });
 });
+
+describe('LoginForm — доступність', () => {
+  // Раніше помилку було видно лише червоною рамкою: скрінрідер її не озвучував
+  it('поле з помилкою позначене aria-invalid і пов’язане з текстом помилки', async () => {
+    const { user } = renderForm();
+
+    await user.type(screen.getByLabelText('Email'), 'not-an-email');
+    await user.click(submit());
+
+    const email = screen.getByLabelText('Email');
+    await waitFor(() => expect(email).toHaveAttribute('aria-invalid', 'true'));
+    expect(email).toHaveAccessibleDescription('Некоректний формат email');
+  });
+
+  it('кнопка «Показати пароль» — праворуч від поля і перемикає видимість', async () => {
+    const { user } = renderForm();
+    const password = screen.getByLabelText('Пароль');
+    const toggle = screen.getByRole('button', { name: 'Показати пароль' });
+
+    // Кнопка йде в DOM після поля — і в порядку Tab, і візуально праворуч
+    expect(
+      password.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    await user.click(toggle);
+
+    expect(password).toHaveAttribute('type', 'text');
+    expect(screen.getByRole('button', { name: 'Сховати пароль' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+  });
+});

@@ -1,4 +1,4 @@
-import { GradeType, UserRole } from '@redmonkey/shared';
+import { GradeType, LessonStatus, UserRole } from '@redmonkey/shared';
 import type { IPopulatedGrade, IUser } from '@redmonkey/shared';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -175,5 +175,145 @@ describe('GradesPage — порожні стани', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Спробувати знову' }));
 
     expect(await screen.findByRole('button', { name: /виставити оцінку/ })).toBeInTheDocument();
+  });
+});
+
+describe('GradesPage — журнал одного типу', () => {
+  // На заняття в студента може бути по оцінці кожного типу, а клітинка вміщає одну:
+  // у режимі «Усі типи» журнал показував випадкову з них
+  it('викладач і адмін бачать журнал «Класної роботи», і нова оцінка отримує саме цей тип', async () => {
+    const adapter = installApi({
+      '/groups': () => [group],
+      '/users': () => [student],
+      '/lessons': () => [lesson],
+      'GET /grades': () => [],
+      'POST /grades': () => savedGrade,
+    });
+    renderPage();
+
+    expect(await screen.findByText('Класна робота · 1 студент')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Тип оцінок' })).toHaveTextContent('Класна робота');
+    await waitFor(() =>
+      expect(callsTo(adapter, 'GET', '/grades')[0]?.params).toMatchObject({
+        groupId: 'group-1',
+        type: GradeType.CLASSWORK,
+      })
+    );
+
+    await enterGrade('9');
+
+    await waitFor(() => expect(callsTo(adapter, 'POST', '/grades')).toHaveLength(1));
+    expect(JSON.parse(callsTo(adapter, 'POST', '/grades')[0].data).type).toBe(GradeType.CLASSWORK);
+    // Середнє рахується лише з цього типу — і підписано відповідно
+    expect(screen.getByRole('columnheader', { name: /Середнє/ })).toHaveTextContent(
+      'Класна робота'
+    );
+  });
+
+  it('студент за замовчуванням бачить усі свої оцінки', async () => {
+    useAuthStore.getState().setAuth(student, 'token');
+    const adapter = installApi({ 'GET /grades': () => [] });
+    renderPage();
+
+    expect(await screen.findByRole('combobox', { name: 'Тип оцінок' })).toHaveTextContent(
+      'Усі типи'
+    );
+    await waitFor(() => expect(callsTo(adapter, 'GET', '/grades')).toHaveLength(1));
+    expect(callsTo(adapter, 'GET', '/grades')[0].params.type).toBeUndefined();
+  });
+});
+
+describe('GradesPage — видалення оцінки', () => {
+  // DELETE /grades/:id дозволений лише адміну: викладач раніше бачив кошик і ловив 403
+  it('викладач не бачить кнопки видалення', async () => {
+    useAuthStore.getState().setAuth(teacher, 'token');
+    installApi({
+      '/groups': () => [{ ...group, teachers: [{ id: 'teacher-1' }] }],
+      '/users': () => [student],
+      '/lessons': () => [lesson],
+      'GET /grades': () => [savedGrade],
+    });
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: /оцінка 9$/ }));
+
+    expect(await screen.findByRole('button', { name: 'Зберегти' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Видалити оцінку' })).not.toBeInTheDocument();
+  });
+
+  it('після видалення toast пропонує «Скасувати», і воно повертає ту саму оцінку', async () => {
+    vi.mocked(toast.success).mockClear();
+    const adapter = installApi({
+      '/groups': () => [group],
+      '/users': () => [student],
+      '/lessons': () => [lesson],
+      'GET /grades': () => [{ ...savedGrade, comment: 'Добре' }],
+      'DELETE /grades/grade-1': () => ({ message: 'ok' }),
+      'POST /grades': () => ({ ...savedGrade, id: 'grade-2', comment: 'Добре' }),
+    });
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: /оцінка 9$/ }));
+    await user.click(await screen.findByRole('button', { name: 'Видалити оцінку' }));
+
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        'Оцінку 9 видалено',
+        expect.objectContaining({ action: expect.objectContaining({ label: 'Скасувати' }) })
+      )
+    );
+    expect(screen.getByRole('button', { name: /виставити оцінку/ })).toBeInTheDocument();
+
+    const [, options] = vi.mocked(toast.success).mock.calls[0] as [
+      string,
+      { action: { onClick: () => void } },
+    ];
+    options.action.onClick();
+
+    expect(await screen.findByRole('button', { name: /оцінка 9$/ })).toBeInTheDocument();
+    const [restore] = callsTo(adapter, 'POST', '/grades');
+    expect(JSON.parse(restore.data)).toEqual({
+      studentId: 'student-1',
+      lessonId: 'lesson-1',
+      value: 9,
+      comment: 'Добре',
+      type: GradeType.CLASSWORK,
+    });
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Оцінку відновлено'));
+  });
+});
+
+describe('GradesPage — колонки журналу', () => {
+  it('скасоване заняття не стає колонкою, а легенда пояснює кольори', async () => {
+    installApi({
+      '/groups': () => [group],
+      '/users': () => [student],
+      '/lessons': () => [
+        lesson,
+        { ...lesson, id: 'lesson-2', title: 'Скасоване', status: LessonStatus.CANCELLED },
+      ],
+      'GET /grades': () => [],
+    });
+    renderPage();
+
+    expect(await screen.findByRole('columnheader', { name: /Вступ/ })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: /Скасоване/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Кольори оцінок' })).toHaveTextContent('10–12');
+  });
+
+  it('фільтр періоду пропонує місяці із заняттями', async () => {
+    installApi({
+      '/groups': () => [group],
+      '/users': () => [student],
+      '/lessons': () => [lesson],
+      'GET /grades': () => [],
+    });
+    renderPage();
+
+    // Заняття у вересні 2026, а в поточному місяці занять немає — за замовчуванням увесь курс
+    const period = await screen.findByRole('combobox', { name: 'Період' });
+    expect(period).toHaveTextContent('Увесь курс');
   });
 });

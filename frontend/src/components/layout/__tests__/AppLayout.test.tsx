@@ -22,6 +22,7 @@ const renderLayout = (path: string) =>
           <Route path="/grades" element={<Boom />} />
           <Route path="/schedule" element={<p>Вміст розкладу</p>} />
           <Route path="/students" element={<p>Вміст студентів</p>} />
+          <Route path="/profile" element={<p>Вміст профілю</p>} />
           <Route path="*" element={<p>Такої сторінки немає</p>} />
         </Route>
       </Routes>
@@ -80,6 +81,48 @@ describe('назва вкладки браузера', () => {
   });
 });
 
+describe('Sidebar — профіль і вихід', () => {
+  // Раніше віджет профілю був div з onClick: з клавіатури до /profile не дістатись
+  it('профіль — посилання, яке відкривається з клавіатури', async () => {
+    renderLayout('/');
+    const profile = screen.getByRole('link', { name: /Анна Коваленко/ });
+    expect(profile).toHaveAttribute('href', '/profile');
+
+    profile.focus();
+    await userEvent.keyboard('{Enter}');
+
+    expect(screen.getByText('Вміст профілю')).toBeInTheDocument();
+  });
+
+  it('кнопка «Вийти» — окрема, не всередині посилання профілю', () => {
+    renderLayout('/');
+    const logout = screen.getByRole('button', { name: 'Вийти' });
+
+    expect(logout.closest('a')).toBeNull();
+  });
+
+  it('заглушки «Налаштування» немає в меню, а викладач на /settings бачить 403-заголовок', () => {
+    renderLayout('/');
+    expect(screen.queryByRole('link', { name: /Налаштування/ })).not.toBeInTheDocument();
+
+    signIn(UserRole.TEACHER);
+    renderLayout('/settings');
+    expect(document.title).toBe('Доступ заборонено · IT Academy LMS');
+  });
+});
+
+describe('Sidebar — згортання', () => {
+  it('памʼятає вибір між перезавантаженнями', async () => {
+    const { unmount } = renderLayout('/');
+    await userEvent.click(screen.getByRole('button', { name: 'Згорнути меню' }));
+    unmount();
+
+    renderLayout('/');
+
+    expect(screen.getByRole('button', { name: 'Розгорнути меню' })).toBeInTheDocument();
+  });
+});
+
 describe('BottomNav', () => {
   it('має чотири розділи з ТЗ і меню «Ще»', () => {
     renderLayout('/');
@@ -103,7 +146,7 @@ describe('BottomNav', () => {
       within(menu)
         .getAllByRole('link')
         .map((link) => link.textContent)
-    ).toEqual(['АКАнна КоваленкоАдміністратор', 'Студенти', 'Викладачі', 'Групи', 'Налаштування']);
+    ).toEqual(['АКАнна КоваленкоАдміністратор', 'Студенти', 'Викладачі', 'Групи']);
     expect(within(menu).getByRole('button', { name: 'Вийти' })).toBeInTheDocument();
   });
 

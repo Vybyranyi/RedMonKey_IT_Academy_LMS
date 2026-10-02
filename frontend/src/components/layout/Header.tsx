@@ -70,7 +70,10 @@ const getPageMeta = (rawPath: string, user: IUser | null): PageMeta => {
     case '/profile':
       return { title: 'Мій профіль', subtitle: 'Перегляд та редагування власних даних' };
     case '/settings':
-      return { title: 'Налаштування', subtitle: 'Системні налаштування платформи' };
+      // Заглушки немає в меню, тож роль перевіряємо тут, а не через navigationItems
+      return user?.role === UserRole.ADMIN
+        ? { title: 'Налаштування', subtitle: 'Системні налаштування платформи' }
+        : FORBIDDEN_META;
     default:
       return NOT_FOUND_META;
   }
@@ -84,16 +87,11 @@ export default function Header() {
   useDocumentTitle(tabTitle ?? title);
 
   return (
-    <header className="px-4 pt-6 pb-5 md:px-8 md:pt-10 md:pb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-      <div className="min-w-0">
-        <h1 className="text-2xl md:text-[28px] leading-tight font-extrabold text-[#1A2645] tracking-tight">
-          {title}
-        </h1>
-        {subtitle && <p className="text-[14px] font-medium text-slate-500 mt-1">{subtitle}</p>}
-      </div>
-      <div id="header-actions" className="flex items-center gap-3">
-        {/* Placeholder for page-specific actions (e.g. Buttons) that can be injected via React Portal by individual pages */}
-      </div>
+    <header className="px-4 pt-6 pb-5 md:px-8 md:pt-10 md:pb-6">
+      <h1 className="text-2xl md:text-[28px] leading-tight font-extrabold text-[#1A2645] tracking-tight">
+        {title}
+      </h1>
+      {subtitle && <p className="text-[14px] font-medium text-slate-500 mt-1">{subtitle}</p>}
     </header>
   );
 }
