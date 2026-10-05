@@ -70,7 +70,7 @@ export default function CoinHistory({
                   )}
                   {transaction.reason}
                 </p>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-sm text-slate-600 mt-0.5">
                   {transaction.isPending
                     ? 'Зберігається…'
                     : format(new Date(transaction.createdAt), 'd MMMM yyyy, HH:mm', {

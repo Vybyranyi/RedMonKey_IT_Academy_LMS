@@ -107,7 +107,7 @@ export default function StudentActivity({ studentId }: StudentActivityProps) {
                   <p className="text-sm font-medium text-slate-700 truncate">
                     {grade.lesson.title}
                   </p>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-sm text-slate-600 mt-0.5">
                     {format(new Date(grade.lesson.date), 'd MMM yyyy', { locale: uk })} ·{' '}
                     {GRADE_TYPE_META[grade.type].label}
                   </p>
@@ -137,7 +137,7 @@ export default function StudentActivity({ studentId }: StudentActivityProps) {
               >
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-700 truncate">{transaction.reason}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-sm text-slate-600 mt-0.5">
                     {transaction.issuer.firstName} {transaction.issuer.lastName} ·{' '}
                     {format(new Date(transaction.createdAt), 'd MMMM yyyy', { locale: uk })}
                   </p>

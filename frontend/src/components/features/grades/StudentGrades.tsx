@@ -55,12 +55,12 @@ export default function StudentGrades({ grades, isLoading }: StudentGradesProps)
 
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-slate-800 truncate">{grade.lesson.title}</p>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-sm text-slate-600 mt-0.5">
                 {format(new Date(grade.lesson.date), 'd MMMM yyyy', { locale: uk })} ·{' '}
                 {GRADE_TYPE_META[grade.type].label}
               </p>
               {grade.comment && (
-                <p className="text-xs text-slate-500 mt-1 truncate">{grade.comment}</p>
+                <p className="text-sm text-slate-600 mt-1 truncate">{grade.comment}</p>
               )}
             </div>
           </div>

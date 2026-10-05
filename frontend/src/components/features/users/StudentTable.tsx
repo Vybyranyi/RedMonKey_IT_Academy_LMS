@@ -149,7 +149,7 @@ function StudentIdentity({ student }: { student: IUserWithListStats }) {
         <span className="font-semibold text-slate-800 truncate">
           {student.firstName} {student.lastName}
         </span>
-        <span className="text-xs text-slate-500 truncate">{student.email}</span>
+        <span className="text-sm text-slate-600 truncate">{student.email}</span>
       </div>
     </div>
   );

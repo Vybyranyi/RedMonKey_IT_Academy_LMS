@@ -48,7 +48,7 @@ export default function UpcomingLessons({
                 <span className={`h-10 w-1.5 rounded-sm shrink-0 ${meta.dot}`} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-800 truncate">{lesson.title}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-sm text-slate-600 mt-0.5">
                     {format(new Date(lesson.date), 'd MMM, HH:mm', { locale: uk })} ·{' '}
                     {lesson.group.name}
                   </p>

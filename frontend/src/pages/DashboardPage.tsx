@@ -345,7 +345,7 @@ function TeacherDashboard({
                 <div className="min-w-0">
                   <p className="font-semibold text-slate-800 text-sm truncate">{group.name}</p>
                   {group.description && (
-                    <p className="text-xs text-slate-500 truncate">{group.description}</p>
+                    <p className="text-sm text-slate-600 truncate">{group.description}</p>
                   )}
                 </div>
                 <Badge variant="outline" className="shrink-0">

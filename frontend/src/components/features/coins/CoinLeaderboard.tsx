@@ -75,7 +75,7 @@ export default function CoinLeaderboard({
                 <p className="text-sm font-semibold text-slate-800 truncate">
                   {row.firstName} {row.lastName}
                 </p>
-                <p className="text-xs text-slate-500 truncate">{row.groupName ?? 'Без групи'}</p>
+                <p className="text-sm text-slate-600 truncate">{row.groupName ?? 'Без групи'}</p>
               </div>
 
               <span className="flex shrink-0 items-center gap-1.5 text-sm font-bold text-slate-900">
