@@ -69,11 +69,6 @@ const getPageMeta = (rawPath: string, user: IUser | null): PageMeta => {
       return { title: 'RedCoins', subtitle: 'Внутрішня гейміфікована валюта академії' };
     case '/profile':
       return { title: 'Мій профіль', subtitle: 'Перегляд та редагування власних даних' };
-    case '/settings':
-      // Заглушки немає в меню, тож роль перевіряємо тут, а не через navigationItems
-      return user?.role === UserRole.ADMIN
-        ? { title: 'Налаштування', subtitle: 'Системні налаштування платформи' }
-        : FORBIDDEN_META;
     default:
       return NOT_FOUND_META;
   }

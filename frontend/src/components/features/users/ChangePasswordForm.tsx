@@ -54,6 +54,7 @@ export default function ChangePasswordForm({ onSubmit, isSubmitting }: ChangePas
                     id={name}
                     {...errorA11y(name, errors[name] && touched[name])}
                     type="password"
+                    autoComplete={name === 'currentPassword' ? 'current-password' : 'new-password'}
                     className={errors[name] && touched[name] ? 'border-destructive' : undefined}
                   />
                 )}

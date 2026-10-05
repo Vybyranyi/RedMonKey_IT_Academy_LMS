@@ -45,6 +45,8 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
                     id="email"
                     {...errorA11y('email', errors.email && touched.email)}
                     type="email"
+                    inputMode="email"
+                    autoComplete="username"
                     placeholder="name@academy.com"
                     className={`pl-10 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] text-sm ${
                       errors.email && touched.email ? 'border-destructive' : ''
@@ -77,6 +79,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
                     id="password"
                     {...errorA11y('password', errors.password && touched.password)}
                     type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
                     placeholder="••••••••"
                     className={`pl-10 pr-11 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] tracking-widest placeholder:tracking-widest text-sm ${
                       errors.password && touched.password ? 'border-destructive' : ''

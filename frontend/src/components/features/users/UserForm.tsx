@@ -157,6 +157,8 @@ export default function UserForm({
                     id="email"
                     {...errorA11y('email', errors.email && touched.email)}
                     type="email"
+                    inputMode="email"
+                    autoComplete="off"
                     placeholder="ivan.shevchenko@academy.com"
                     className={`h-11 ${errors.email && touched.email ? 'border-destructive' : ''}`}
                   />
@@ -198,6 +200,7 @@ export default function UserForm({
                       id="password"
                       {...errorA11y('password', errors.password && touched.password)}
                       type="text"
+                      autoComplete="new-password"
                       placeholder={isEdit ? 'Не змінювати' : 'Мінімум 6 символів'}
                       className={`h-11 ${errors.password && touched.password ? 'border-destructive' : ''}`}
                     />

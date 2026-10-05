@@ -101,13 +101,13 @@ describe('Sidebar — профіль і вихід', () => {
     expect(logout.closest('a')).toBeNull();
   });
 
-  it('заглушки «Налаштування» немає в меню, а викладач на /settings бачить 403-заголовок', () => {
+  it('розділу «Налаштування» немає ні в меню, ні як маршрут: /settings — 404', () => {
     renderLayout('/');
     expect(screen.queryByRole('link', { name: /Налаштування/ })).not.toBeInTheDocument();
 
-    signIn(UserRole.TEACHER);
+    signIn(UserRole.ADMIN);
     renderLayout('/settings');
-    expect(document.title).toBe('Доступ заборонено · IT Academy LMS');
+    expect(document.title).toBe('Сторінку не знайдено · IT Academy LMS');
   });
 });
 
