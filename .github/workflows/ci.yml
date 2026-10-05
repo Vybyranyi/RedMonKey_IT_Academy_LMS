@@ -39,6 +39,12 @@ jobs:
       - name: Lint (shared, backend, frontend)
         run: npm run lint
 
+      # Лише попередження (continue-on-error): вразливість у транзитивній залежності
+      # без виправлення не має блокувати PR, але в логах її видно
+      - name: Audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
       # Тести не ходять у БД: Prisma Client уже згенеровано на кроці build,
       # репозиторії в тестах підмінені моками.
       - name: Test (shared → backend → frontend)
