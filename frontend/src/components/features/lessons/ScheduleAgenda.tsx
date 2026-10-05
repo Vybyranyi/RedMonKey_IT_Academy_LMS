@@ -62,7 +62,7 @@ export default function ScheduleAgenda({ lessons, onSelect }: ScheduleAgendaProp
                           )}
                           <span className="truncate">{lesson.title}</span>
                         </span>
-                        <span className="block truncate text-xs text-slate-500">
+                        <span className="block truncate text-sm text-slate-600">
                           {meta.label} · {lesson.group.name}
                           {isCancelled && ' · скасовано'}
                         </span>

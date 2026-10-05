@@ -230,7 +230,7 @@ export default function LessonDetailsModal({
                 </p>
               )}
               {lesson.homeworkDueDate && (
-                <p className="mt-1 text-xs font-medium text-slate-500">
+                <p className="mt-1 text-sm font-medium text-slate-600">
                   Здати до{' '}
                   {format(new Date(lesson.homeworkDueDate), 'd MMMM', {
                     locale: uk,

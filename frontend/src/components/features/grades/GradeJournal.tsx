@@ -203,9 +203,10 @@ const GradeJournalRow = memo(function GradeJournalRow({
   onSaveGrade,
   onDeleteGrade,
 }: GradeJournalRowProps) {
+  // Липкі клітинки непрозорі (під ними проїжджає вміст), тож підсвіт рядка їм дає group-hover
   return (
-    <TableRow className="hover:bg-slate-50/50">
-      <TableCell className="sticky left-0 bg-white z-10">
+    <TableRow className="group hover:bg-slate-50/50">
+      <TableCell className="sticky left-0 z-10 bg-white group-hover:bg-slate-50">
         <div className="flex items-center gap-3 min-w-0">
           <Avatar className="h-8 w-8">
             <AvatarImage src={student.avatar || undefined} />
@@ -237,7 +238,7 @@ const GradeJournalRow = memo(function GradeJournalRow({
         );
       })}
 
-      <TableCell className="sticky right-0 z-10 bg-white text-center shadow-[-1px_0_0_#e2e8f0]">
+      <TableCell className="sticky right-0 z-10 bg-white text-center shadow-[-1px_0_0_#e2e8f0] group-hover:bg-slate-50">
         <span
           className={`inline-flex h-9 min-w-[48px] items-center justify-center rounded-md border px-2 text-sm font-bold ${getAverageColor(average)}`}
         >
