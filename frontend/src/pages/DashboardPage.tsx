@@ -211,10 +211,10 @@ function AdminDashboard({
   return (
     <div className="space-y-6">
       {/* Картки статистики */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl w-full" />
+            <Skeleton key={i} className="h-28 rounded-xl w-full" />
           ))
         ) : (
           <>
@@ -249,31 +249,43 @@ function AdminDashboard({
             <CardTitle className="text-lg font-bold text-slate-800">Швидкі дії</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button variant="outline" asChild className="w-full justify-between">
+            <Button
+              variant="outline"
+              asChild
+              className="h-auto min-h-8 w-full justify-between whitespace-normal py-1.5 text-left"
+            >
               <Link to="/students">
-                <span className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-slate-500" />
+                <span className="flex min-w-0 items-center gap-2">
+                  <Users className="h-4 w-4 shrink-0 text-slate-500" />
                   Управління студентами
                 </span>
-                <ArrowRight className="h-4 w-4 text-slate-400" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
               </Link>
             </Button>
-            <Button variant="outline" asChild className="w-full justify-between">
+            <Button
+              variant="outline"
+              asChild
+              className="h-auto min-h-8 w-full justify-between whitespace-normal py-1.5 text-left"
+            >
               <Link to="/groups">
-                <span className="flex items-center gap-2">
-                  <UsersRound className="h-4 w-4 text-slate-500" />
+                <span className="flex min-w-0 items-center gap-2">
+                  <UsersRound className="h-4 w-4 shrink-0 text-slate-500" />
                   Список груп
                 </span>
-                <ArrowRight className="h-4 w-4 text-slate-400" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
               </Link>
             </Button>
-            <Button variant="outline" asChild className="w-full justify-between">
+            <Button
+              variant="outline"
+              asChild
+              className="h-auto min-h-8 w-full justify-between whitespace-normal py-1.5 text-left"
+            >
               <Link to="/schedule">
-                <span className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-slate-500" />
+                <span className="flex min-w-0 items-center gap-2">
+                  <Calendar className="h-4 w-4 shrink-0 text-slate-500" />
                   Розклад занять
                 </span>
-                <ArrowRight className="h-4 w-4 text-slate-400" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
               </Link>
             </Button>
           </CardContent>

@@ -169,6 +169,7 @@ export default function UserForm({
                 variant="outline"
                 className="h-11 w-11 px-0 shrink-0"
                 title="Згенерувати email автоматично"
+                aria-label="Згенерувати email автоматично"
                 onClick={() => {
                   if (values.firstName && values.lastName) {
                     const generatedEmail = `${transliterate(values.firstName)}.${transliterate(values.lastName)}@academy.com`;
@@ -177,7 +178,6 @@ export default function UserForm({
                 }}
               >
                 <RefreshCw className="h-4 w-4 text-slate-500" />
-                <span className="sr-only">Генерувати Email</span>
               </Button>
             </div>
             {errors.email && touched.email && (
@@ -211,12 +211,12 @@ export default function UserForm({
                   variant="outline"
                   className="h-11 w-11 px-0 shrink-0"
                   title="Згенерувати надійний пароль"
+                  aria-label="Згенерувати надійний пароль"
                   onClick={() => {
                     setFieldValue('password', generateRandomPassword());
                   }}
                 >
                   <Wand2 className="h-4 w-4 text-slate-500" />
-                  <span className="sr-only">Генерувати Пароль</span>
                 </Button>
               </div>
               {errors.password && touched.password && (

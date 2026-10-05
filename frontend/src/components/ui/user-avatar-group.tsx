@@ -36,7 +36,7 @@ export function UserAvatarGroup({
             +{users.length - maxCount}
           </div>
         )}
-        {users.length === 0 && <span className="text-xs text-slate-400 pl-2">{emptyMessage}</span>}
+        {users.length === 0 && <span className="text-xs text-slate-500 pl-2">{emptyMessage}</span>}
       </div>
       {showCount && (
         <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">

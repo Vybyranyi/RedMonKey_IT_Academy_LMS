@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, type MouseEvent } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,11 +17,27 @@ function PageSkeleton() {
   );
 }
 
+const MAIN_ID = 'main-content';
+
+// Звичайне якірне посилання дописало б #main-content в адресу — фокусуємо вручну
+const skipToContent = (event: MouseEvent<HTMLAnchorElement>) => {
+  event.preventDefault();
+  document.getElementById(MAIN_ID)?.focus();
+};
+
 export default function AppLayout() {
   const { pathname } = useLocation();
 
   return (
     <div className="flex bg-page min-h-dvh font-sans">
+      {/* Перший елемент для Tab: клавіатурний користувач оминає весь Sidebar */}
+      <a
+        href={`#${MAIN_ID}`}
+        onClick={skipToContent}
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-brand focus:shadow-lg"
+      >
+        Перейти до змісту
+      </a>
       <Sidebar />
       {/* min-w-0: інакше широка таблиця розтягує flex-колонку і з'являється горизонтальний скрол усієї сторінки */}
       <div className="flex-1 min-w-0 flex flex-col h-dvh overflow-hidden">
@@ -29,7 +45,7 @@ export default function AppLayout() {
           <div className="max-w-[1400px] mx-auto">
             <Header />
             {/* pb-28 на мобайлі — місце під Bottom Nav, щоб вона не перекривала кінець сторінки */}
-            <main className="px-4 pb-28 md:px-8 md:pb-10">
+            <main id={MAIN_ID} tabIndex={-1} className="outline-none px-4 pb-28 md:px-8 md:pb-10">
               {/* Впала одна сторінка — Sidebar і навігація лишаються робочими.
                   key скидає помилку при переході на інший маршрут */}
               <ErrorBoundary

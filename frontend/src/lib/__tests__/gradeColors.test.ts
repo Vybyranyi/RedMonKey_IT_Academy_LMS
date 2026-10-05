@@ -36,6 +36,14 @@ describe('getAverageColor', () => {
   });
 });
 
+describe('getAverageColor — немає оцінок', () => {
+  // slate-400 на slate-100 давав контраст 2.3:1 — «—» у колонці «Середнє» не читалось
+  it('текст «—» не світліший за slate-600', () => {
+    expect(getAverageColor(null)).toContain('text-slate-600');
+    expect(getAverageColor(null)).not.toContain('text-slate-400');
+  });
+});
+
 describe('GRADE_TYPE_META', () => {
   it('має підпис для кожного типу оцінки', () => {
     Object.values(GradeType).forEach((type) => {

@@ -77,6 +77,7 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav
+        aria-label="Бічне меню"
         className={`flex-1 space-y-1.5 overflow-y-auto py-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent ${isCollapsed ? 'px-2' : 'px-3'}`}
       >
         {filteredItems.map((item) => {

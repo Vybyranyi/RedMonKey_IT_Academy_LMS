@@ -22,5 +22,5 @@ export const getGradeColor = (value: number): string => {
 /** average === null означає «оцінок ще немає» — це не те саме, що нуль. */
 export const getAverageColor = (average: number | null): string =>
   average === null
-    ? 'bg-slate-100 text-slate-400 border-slate-200'
+    ? 'bg-slate-100 text-slate-600 border-slate-200'
     : getGradeColor(Math.round(average));
