@@ -12,3 +12,6 @@ frontend/src/components/ui
 
 #agents ignore
 .agents/
+
+frontend/playwright-report
+frontend/test-results

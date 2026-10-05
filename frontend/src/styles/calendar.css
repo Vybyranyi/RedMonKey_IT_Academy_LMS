@@ -30,7 +30,7 @@
     border-bottom: 1px solid var(--border);
     padding: 12px 0;
     font-weight: 500;
-    color: var(--muted-foreground);
+    color: var(--color-slate-600);
     font-size: 13px;
     text-transform: capitalize;
   }
@@ -41,7 +41,7 @@
     border-color: var(--border);
   }
   .rbc-time-slot .rbc-label {
-    color: var(--muted-foreground);
+    color: var(--color-slate-600);
     font-size: 12px;
   }
   .rbc-today {
