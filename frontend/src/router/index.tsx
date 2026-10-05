@@ -3,15 +3,17 @@ import AppLayout from '../components/layout/AppLayout';
 import ProtectedRoute from '../components/features/auth/ProtectedRoute';
 import LoginPage from '../pages/LoginPage';
 import { UserRole } from '@redmonkey/shared';
-import GroupsPage from '@/pages/GroupsPage';
-import DashboardPage from '@/pages/DashboardPage';
-import StudentsPage from '@/pages/StudentsPage';
-import TeachersPage from '@/pages/TeachersPage';
-import SchedulePage from '@/pages/SchedulePage';
-import GradesPage from '@/pages/GradesPage';
-import CoinsPage from '@/pages/CoinsPage';
-import ProfilePage from '@/pages/ProfilePage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import { lazyPage } from '@/lib/lazyPage';
+
+const GroupsPage = lazyPage(() => import('@/pages/GroupsPage'));
+const DashboardPage = lazyPage(() => import('@/pages/DashboardPage'));
+const StudentsPage = lazyPage(() => import('@/pages/StudentsPage'));
+const TeachersPage = lazyPage(() => import('@/pages/TeachersPage'));
+const SchedulePage = lazyPage(() => import('@/pages/SchedulePage'));
+const GradesPage = lazyPage(() => import('@/pages/GradesPage'));
+const CoinsPage = lazyPage(() => import('@/pages/CoinsPage'));
+const ProfilePage = lazyPage(() => import('@/pages/ProfilePage'));
 
 export default function AppRouter() {
   return (
