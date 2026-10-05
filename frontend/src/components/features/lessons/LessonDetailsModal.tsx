@@ -191,7 +191,7 @@ export default function LessonDetailsModal({
         </DialogHeader>
 
         <div className="max-h-[70vh] overflow-y-auto px-6 pb-6">
-          <div className="bg-[#1A2645] rounded-2xl p-6 text-white shadow-sm mt-2">
+          <div className="bg-title rounded-2xl p-6 text-white shadow-sm mt-2">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className={`${typeMeta.event} border-0 font-semibold`}>{typeMeta.label}</Badge>
               <Badge className={`${statusMeta.badge} font-semibold`}>{statusMeta.label}</Badge>
@@ -221,7 +221,7 @@ export default function LessonDetailsModal({
           {(lesson.homeworkDescription || lesson.homeworkDueDate) && (
             <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
               <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-                <BookOpenText className="h-4 w-4 text-[#C10000]" aria-hidden="true" />
+                <BookOpenText className="h-4 w-4 text-brand" aria-hidden="true" />
                 Домашнє завдання
               </h3>
               {lesson.homeworkDescription && (
@@ -285,7 +285,7 @@ export default function LessonDetailsModal({
               <div className="flex flex-col-reverse gap-2 sm:flex-row">
                 <Button
                   variant="ghost"
-                  className="text-slate-600 hover:bg-red-50 hover:text-[#C10000]"
+                  className="text-slate-600 hover:bg-red-50 hover:text-brand"
                   disabled={isSaving}
                   onClick={() => setConfirmAction('cancel')}
                 >
@@ -311,7 +311,8 @@ export default function LessonDetailsModal({
               </Button>
               {isScheduled && (
                 <Button
-                  className="bg-[#C10000] hover:bg-[#A00000] text-white"
+                  variant="brand"
+
                   // Провести можна, лише коли відмічено кожного: інакше в історії
                   // заняття лишились би студенти без жодної позначки
                   disabled={isBusy || unmarkedCount > 0}

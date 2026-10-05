@@ -40,10 +40,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#29425D] relative overflow-hidden px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-sidebar-bg relative overflow-hidden px-4">
       {/* Abstract Background Shapes */}
       <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#3D335A] opacity-90 pointer-events-none mix-blend-multiply blur-xl"></div>
-      <div className="absolute bottom-[-15%] left-[-10%] w-[45vw] h-[45vw] rounded-full bg-[#1A3150] opacity-80 pointer-events-none mix-blend-multiply blur-xl"></div>
+      <div className="absolute bottom-[-15%] left-[-10%] w-[45vw] h-[45vw] rounded-full bg-sidebar-bg-hover opacity-80 pointer-events-none mix-blend-multiply blur-xl"></div>
 
       {/* Header section (Logo and Title) */}
       <div className="z-10 text-center mb-8 pt-10">
@@ -53,7 +53,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-extrabold tracking-tight text-white mb-1 drop-shadow-sm">
           IT Academy LMS
         </h1>
-        <p className="text-[#A9B8CA] text-sm font-medium">Платформа управління навчанням</p>
+        <p className="text-sidebar-muted text-sm font-medium">Платформа управління навчанням</p>
       </div>
 
       <Card className="z-10 w-full max-w-105 shadow-2xl border-0 rounded-[20px] p-2 bg-white">
@@ -75,7 +75,7 @@ export default function LoginPage() {
         </CardContent>
       </Card>
 
-      <div className="z-10 mt-12 mb-6 text-center text-xs font-medium text-[#A9B8CA]">
+      <div className="z-10 mt-12 mb-6 text-center text-xs font-medium text-sidebar-muted">
         © 2026 RedMonKey IT Academy
       </div>
     </div>

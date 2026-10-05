@@ -29,10 +29,10 @@ export default function ScheduleAgenda({ lessons, onSelect }: ScheduleAgendaProp
         const day = new Date(dayLessons[0].date);
         return (
           <section key={key} aria-label={format(day, 'EEEE, d MMMM', { locale: uk })}>
-            <h3 className="mb-2 text-sm font-bold text-[#1A2645]">
+            <h3 className="mb-2 text-sm font-bold text-title">
               {capitalize(format(day, 'EEEE, d MMMM', { locale: uk }))}
               {isToday(day) && (
-                <span className="ml-2 text-xs font-semibold text-[#C10000]">сьогодні</span>
+                <span className="ml-2 text-xs font-semibold text-brand">сьогодні</span>
               )}
             </h3>
             <ul className="space-y-2">

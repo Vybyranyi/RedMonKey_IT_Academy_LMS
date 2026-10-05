@@ -37,8 +37,8 @@ export default function ErrorState({
       <div className="p-3 bg-red-50 text-primary rounded-xl">
         <Icon className="h-6 w-6" />
       </div>
-      {code && <p className="mt-4 text-sm font-bold tracking-[0.2em] text-[#C10000]">{code}</p>}
-      <h3 className={cn('text-xl font-bold text-[#1A2645]', code ? 'mt-1' : 'mt-4')}>{title}</h3>
+      {code && <p className="mt-4 text-sm font-bold tracking-[0.2em] text-brand">{code}</p>}
+      <h3 className={cn('text-xl font-bold text-title', code ? 'mt-1' : 'mt-4')}>{title}</h3>
       {description && (
         <p className="mt-2 max-w-md text-sm font-medium text-slate-500">{description}</p>
       )}
@@ -46,10 +46,7 @@ export default function ErrorState({
       {(onRetry || children) && (
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           {onRetry && (
-            <Button
-              className="h-10 px-4 bg-[#C10000] hover:bg-[#A00000] text-white"
-              onClick={onRetry}
-            >
+            <Button variant="brand" className="h-10 px-4" onClick={onRetry}>
               <RotateCw className="h-4 w-4" /> Спробувати знову
             </Button>
           )}

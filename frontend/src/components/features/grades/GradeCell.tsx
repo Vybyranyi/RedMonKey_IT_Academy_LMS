@@ -189,7 +189,8 @@ export default function GradeCell({
 
         <div className="flex items-center gap-2">
           <Button
-            className="flex-1 bg-[#C10000] hover:bg-[#A00000] text-white"
+            variant="brand"
+            className="flex-1"
             onClick={() => handleSave()}
             disabled={isSaving}
           >

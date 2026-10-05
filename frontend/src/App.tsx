@@ -43,7 +43,7 @@ function App() {
   let content = <AppRouter />;
   if (isRestoringSession) {
     content = initError ? (
-      <div className="min-h-dvh flex items-center justify-center bg-[#F8F9FA] p-4">
+      <div className="min-h-dvh flex items-center justify-center bg-page p-4">
         <ErrorState
           icon={WifiOff}
           title="Не вдалося відкрити LMS"
@@ -68,14 +68,15 @@ function App() {
           сторінку входу. Помилку окремої сторінки ловить внутрішній boundary в AppLayout */}
       <ErrorBoundary
         fallback={() => (
-          <div className="min-h-dvh flex items-center justify-center bg-[#F8F9FA] p-4">
+          <div className="min-h-dvh flex items-center justify-center bg-page p-4">
             <ErrorState
               title="Щось пішло не так"
               description="Інтерфейс зіткнувся з неочікуваною помилкою. Оновіть сторінку — дані на сервері не постраждали."
               className="w-full max-w-lg"
             >
               <Button
-                className="h-10 px-4 bg-[#C10000] hover:bg-[#A00000] text-white"
+                variant="brand"
+                className="h-10 px-4"
                 onClick={() => window.location.reload()}
               >
                 <RotateCw className="h-4 w-4" /> Оновити сторінку

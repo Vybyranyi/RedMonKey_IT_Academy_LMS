@@ -255,7 +255,8 @@ export default function StudentsPage() {
         >
           {isAdmin && (
             <Button
-              className="bg-[#C10000] hover:bg-[#A00000] text-white"
+              variant="brand"
+
               onClick={() => setIsCreateOpen(true)}
             >
               <Plus className="h-4 w-4" /> Додати студента
@@ -291,7 +292,10 @@ export default function StudentsPage() {
         {isAdmin && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#C10000] hover:bg-[#A00000] text-white rounded-md h-11 font-medium shadow-sm flex items-center gap-2">
+              <Button
+                variant="brand"
+                className="rounded-md h-11 font-medium shadow-sm flex items-center gap-2"
+              >
                 <Plus className="h-4 w-4" /> Додати студента
               </Button>
             </DialogTrigger>

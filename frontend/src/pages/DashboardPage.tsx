@@ -416,8 +416,9 @@ function StudentDashboard({
                     </span>
                   </div>
                   <Button
+                    variant="brand"
                     size="sm"
-                    className="bg-[#C10000] hover:bg-[#A00000] text-white"
+
                     onClick={() => onSelectLesson(nextLesson)}
                   >
                     Деталі заняття

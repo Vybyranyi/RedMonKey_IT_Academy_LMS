@@ -151,11 +151,7 @@ export default function GroupForm({
             </div>
           </div>
 
-          <Button
-            type="submit"
-            className="w-full bg-[#C10000] hover:bg-[#A00000] text-white"
-            disabled={isSubmitting}
-          >
+          <Button variant="brand" type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Збереження...' : 'Зберегти'}
           </Button>
         </Form>

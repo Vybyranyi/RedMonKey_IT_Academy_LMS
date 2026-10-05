@@ -40,10 +40,10 @@ export default function StudentDetailsModal({
         <div className="max-h-[80vh] overflow-y-auto px-6 pt-8 pb-6 scrollbar-hide">
           <div className="space-y-6">
             {/* Top Profile Card */}
-            <div className="bg-[#1A2645] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 text-white shadow-sm mt-2">
+            <div className="bg-title rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5 text-white shadow-sm mt-2">
               <Avatar className="h-20 w-20 border-2 border-white/20">
                 <AvatarImage src={student.avatar || undefined} />
-                <AvatarFallback className="bg-[#0070F3] text-2xl font-bold text-white">
+                <AvatarFallback className="bg-avatar text-2xl font-bold text-white">
                   {student.firstName[0]}
                   {student.lastName[0]}
                 </AvatarFallback>

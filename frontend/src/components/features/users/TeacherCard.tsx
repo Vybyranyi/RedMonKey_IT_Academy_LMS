@@ -55,7 +55,7 @@ export default function TeacherCard({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 bg-white/80 hover:bg-red-50 text-slate-500 hover:text-[#C10000] shadow-sm"
+            className="h-8 w-8 bg-white/80 hover:bg-red-50 text-slate-500 hover:text-brand shadow-sm"
             onClick={() => onDeactivate(teacher)}
             aria-label={`Деактивувати: ${fullName}`}
           >
@@ -67,12 +67,12 @@ export default function TeacherCard({
       <CardHeader className="flex flex-col items-center pb-2 pt-8 text-center">
         <Avatar className="h-20 w-20 shadow-sm border-0">
           <AvatarImage src={teacher.avatar || undefined} />
-          <AvatarFallback className="bg-[#0070F3] text-2xl font-bold text-white">
+          <AvatarFallback className="bg-avatar text-2xl font-bold text-white">
             {teacher.firstName[0]}
             {teacher.lastName[0]}
           </AvatarFallback>
         </Avatar>
-        <CardTitle className="text-[18px] font-bold text-[#1A2645] mt-4 tracking-tight">
+        <CardTitle className="text-[18px] font-bold text-title mt-4 tracking-tight">
           {fullName}
         </CardTitle>
         <CardDescription className="text-sm font-medium text-slate-500 mt-1 break-all">

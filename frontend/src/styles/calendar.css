@@ -16,7 +16,7 @@
     overflow: hidden;
   }
   .rbc-event:focus {
-    outline: 2px solid #ba0000;
+    outline: 2px solid var(--ring);
     outline-offset: 1px;
   }
   .rbc-event-label {
@@ -27,10 +27,10 @@
     font-family: inherit;
   }
   .rbc-header {
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--border);
     padding: 12px 0;
     font-weight: 500;
-    color: #64748b;
+    color: var(--muted-foreground);
     font-size: 13px;
     text-transform: capitalize;
   }
@@ -38,20 +38,20 @@
   .rbc-time-header-content,
   .rbc-month-view,
   .rbc-time-view {
-    border-color: #e2e8f0;
+    border-color: var(--border);
   }
   .rbc-time-slot .rbc-label {
-    color: #64748b;
+    color: var(--muted-foreground);
     font-size: 12px;
   }
   .rbc-today {
-    background-color: #f8f9fa;
+    background-color: var(--page);
   }
   .rbc-off-range-bg {
-    background-color: #f8f9fa;
+    background-color: var(--page);
   }
   .rbc-current-time-indicator {
-    background-color: #c10000;
+    background-color: var(--brand);
     height: 2px;
   }
 }

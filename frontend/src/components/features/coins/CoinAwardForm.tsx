@@ -147,7 +147,7 @@ export default function CoinAwardForm({
               type="button"
               variant={direction === 'deduct' ? 'default' : 'outline'}
               aria-pressed={direction === 'deduct'}
-              className={direction === 'deduct' ? 'bg-[#C10000] hover:bg-[#A00000] text-white' : ''}
+              className={direction === 'deduct' ? 'bg-brand hover:bg-brand-hover text-white' : ''}
               onClick={() => handleDirection('deduct')}
             >
               Списати
@@ -238,7 +238,8 @@ export default function CoinAwardForm({
             </p>
           )}
           <Button
-            className="w-full h-11 bg-[#C10000] hover:bg-[#A00000] text-white"
+            variant="brand"
+            className="w-full h-11"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >

@@ -50,7 +50,7 @@ export default function CoinLeaderboard({
               key={row.studentId}
               className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
                 row.studentId === highlightStudentId
-                  ? 'border-[#C10000]/30 bg-red-50/50'
+                  ? 'border-brand/30 bg-red-50/50'
                   : 'border-slate-100 bg-slate-50/50'
               }`}
             >
@@ -65,7 +65,7 @@ export default function CoinLeaderboard({
                   src={row.avatar ?? undefined}
                   alt={`${row.firstName} ${row.lastName}`}
                 />
-                <AvatarFallback className="bg-[#0070F3] text-white text-xs font-semibold">
+                <AvatarFallback className="bg-avatar text-white text-xs font-semibold">
                   {row.firstName.charAt(0)}
                   {row.lastName.charAt(0)}
                 </AvatarFallback>

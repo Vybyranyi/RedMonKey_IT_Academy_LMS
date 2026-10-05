@@ -320,7 +320,7 @@ export default function GradesPage() {
         title="Груп ще немає"
         description="Журнал ведеться для навчальної групи — спершу створіть її."
       >
-        <Button className="bg-[#C10000] hover:bg-[#A00000] text-white" asChild>
+        <Button variant="brand" asChild>
           <Link to="/groups">Перейти до груп</Link>
         </Button>
       </EmptyState>
@@ -347,7 +347,8 @@ export default function GradesPage() {
               }
             >
               <Button
-                className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white"
+                variant="brand"
+                className="flex items-center gap-2"
                 onClick={() => {
                   setBulkKey((key) => key + 1);
                   setIsBulkOpen(true);

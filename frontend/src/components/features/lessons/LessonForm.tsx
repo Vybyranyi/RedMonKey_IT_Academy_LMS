@@ -407,8 +407,9 @@ export default function LessonForm({ initialValues, onSubmit, isSubmitting }: Le
 
           <div className="pt-2">
             <Button
+              variant="brand"
               type="submit"
-              className="w-full h-12 text-base font-medium bg-[#C10000] hover:bg-[#A00000] text-white transition-colors"
+              className="w-full h-12 text-base font-medium transition-colors"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Збереження...' : 'Зберегти'}

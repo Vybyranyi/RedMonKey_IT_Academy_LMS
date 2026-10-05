@@ -15,7 +15,7 @@ export default function ForbiddenPage() {
       title="Цей розділ вам недоступний"
       description="Ваша роль не має прав на перегляд цієї сторінки. Якщо вважаєте це помилкою — зверніться до адміністратора академії."
     >
-      <Button className="h-10 px-4 bg-[#C10000] hover:bg-[#A00000] text-white" asChild>
+      <Button variant="brand" className="h-10 px-4" asChild>
         <Link to="/">На головну</Link>
       </Button>
     </ErrorState>

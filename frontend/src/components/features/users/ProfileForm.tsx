@@ -112,11 +112,7 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
             )}
           </div>
 
-          <Button
-            type="submit"
-            className="w-full h-11 bg-[#C10000] hover:bg-[#A00000] text-white"
-            disabled={isSubmitting}
-          >
+          <Button variant="brand" type="submit" className="w-full h-11" disabled={isSubmitting}>
             {isSubmitting ? 'Збереження...' : 'Зберегти зміни'}
           </Button>
         </Form>

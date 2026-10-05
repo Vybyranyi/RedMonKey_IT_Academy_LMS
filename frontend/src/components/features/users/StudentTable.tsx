@@ -140,7 +140,7 @@ function StudentIdentity({ student }: { student: IUserWithListStats }) {
     <div className="flex items-center gap-3 min-w-0">
       <Avatar className="h-9 w-9 shrink-0">
         <AvatarImage src={student.avatar || undefined} />
-        <AvatarFallback className="bg-[#0070F3] text-xs font-bold text-white">
+        <AvatarFallback className="bg-avatar text-xs font-bold text-white">
           {student.firstName[0]}
           {student.lastName[0]}
         </AvatarFallback>
@@ -244,7 +244,7 @@ function RowActions({ student, onViewDetails, onEdit, onDeactivate }: RowProps) 
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-slate-500 hover:bg-red-50 hover:text-[#C10000]"
+          className="h-8 w-8 text-slate-500 hover:bg-red-50 hover:text-brand"
           onClick={() => onDeactivate(student)}
           aria-label={`Деактивувати: ${fullName}`}
         >
