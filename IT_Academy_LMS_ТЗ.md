@@ -397,7 +397,7 @@ frontend/src/
 │
 ├── pages/                      # по сторінці на маршрут
 │   ├── LoginPage · DashboardPage (контент за роллю) · StudentsPage · TeachersPage · GroupsPage
-│   ├── SchedulePage · GradesPage · CoinsPage · ProfilePage · SettingsPage (заглушка)
+│   ├── SchedulePage · GradesPage · CoinsPage · ProfilePage
 │   └── NotFoundPage · ForbiddenPage
 │
 ├── lib/                        # optimistic.ts (точкові оновлення стану), leaderboard.ts, кольори й підписи

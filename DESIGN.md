@@ -41,22 +41,22 @@
 
 | Назва | HEX | Tailwind клас | Де використовується |
 |-------|-----|---------------|---------------------|
-| **Brand Red** | `#C10000` | `bg-[#C10000]`, токен `primary` | Активний пункт навігації, primary CTA, іконка на плашці картки |
-| **Brand Red Hover** | `#A00000` / `#BA0000` | `hover:bg-[#A00000]` | Hover-стан кнопки |
-| **Brand Red Focus** | `#BA0000/20` | `focus-visible:ring-[#BA0000]/20`, токен `ring` | Ring фокусу на інпутах і кнопках |
+| **Brand Red** | `#C10000` | `bg-brand`, токен `--brand` (і `primary`) | Активний пункт навігації, primary CTA, іконка на плашці картки |
+| **Brand Red Hover** | `#A00000` / `#BA0000` | `hover:bg-brand-hover`, токен `--brand-hover` | Hover-стан кнопки |
+| **Brand Red Focus** | `#BA0000/20` | `focus-visible:ring-ring/20`, токен `ring` | Ring фокусу на інпутах і кнопках |
 | **Red Icon BG** | `#FEF2F2` (`red-50`) | `bg-red-50` | Фон під іконку в картці |
 
 **Токени ShadCN** (`:root` у `frontend/src/index.css`) узгоджені з палітрою: `--primary` = `#C10000`, `--primary-foreground` = білий, `--ring` = `#BA0000`. Тож `bg-primary` / `text-primary` / `accent-primary`, дефолтні `<Button>` і `<Badge>` та фокус-кільця примітивів — брендові.
 
-Брендову CTA-кнопку все одно пиши явним класом `bg-[#C10000] hover:bg-[#A00000] text-white` (так зроблено в усіх кнопках застосунку): дефолтний варіант `<Button>` на hover світлішає (`hover:bg-primary/80`), а за палітрою кнопка має темнішати до `#A00000`. Змінюється бренд — міняй і токени, і ці класи.
+Брендову CTA-кнопку пиши як `<Button variant="brand">`: дефолтний варіант на hover світлішає (`hover:bg-primary/80`), а `brand` темнішає до `--brand-hover`. Кольори — семантичні токени в `:root` (`--brand`, `--brand-hover`, `--sidebar-bg`, `--sidebar-bg-hover`, `--sidebar-bg-deep`, `--sidebar-muted`, `--title`, `--page`, `--avatar`) і утиліти на них (`bg-brand`, `bg-sidebar-bg`, `text-title`, `bg-page`, `bg-avatar`). Hex у класах (`bg-brand`) не пишемо: змінюється бренд — міняється одне значення токена.
 
-Блок `.dark` в `index.css` лишився дефолтним ShadCN: темної теми в застосунку немає, клас `.dark` ніде не вмикається.
+Темної теми в застосунку немає: блок `.dark` і `next-themes` прибрано, Sonner зафіксований на світлій темі (`custom-variant dark` лишився лише для `dark:`-класів ShadCN-примітивів).
 
 ### Sidebar / Auth-screen palette
 
 | Назва | HEX | Tailwind клас | Де використовується |
 |-------|-----|---------------|---------------------|
-| **Sidebar BG** | `#29425D` | `bg-[#29425D]` | Sidebar, Login page background |
+| **Sidebar BG** | `#29425D` | `bg-sidebar-bg` | Sidebar, Login page background |
 | **Sidebar Dark** | `#1A3150` | `bg-[#1A3150]` | Hover-стан nav item, UserProfileWidget BG |
 | **Sidebar Deeper** | `#152744` | `bg-[#152744]` | Hover на UserProfileWidget |
 | **Login Blob 1** | `#3D335A` | `bg-[#3D335A]` | Декоративна куля вгорі-праворуч на Login |
@@ -106,6 +106,8 @@
 --font-sans: 'Geist Variable', sans-serif;
 --font-heading: var(--font-sans);
 ```
+
+**Розмір змістовного тексту.** `text-xs` (12px) — лише для другорядного: бейджі, мітки часу, лічильники, uppercase-підписи, підказки. Те, що несе зміст (опис групи, email у списку, другий рядок транзакції чи заняття), — `text-sm` і `text-slate-600`. На сірому фоні `#F8F9FA` `text-slate-400` для тексту не вживаємо (лише для декоративних іконок).
 
 ### Ієрархія
 
@@ -225,7 +227,7 @@
 │  CRM Platform    │
 ├──────────────────┤  ← h-px bg-slate-700/50 mx-4
 │  🏠 Dashboard    │  ← rounded-[12px] px-4 py-3 gap-3.5
-│  👥 Студенти     │     active: bg-[#C10000] text-white shadow-md
+│  👥 Студенти     │     active: bg-brand text-white shadow-md
 │  👨‍🏫 Викладачі   │     inactive: text-slate-300 hover:bg-[#1A3150]
 │  ...             │
 │  flex-1 space-y-1.5 overflow-y-auto px-3
@@ -238,7 +240,7 @@
 
 ### Nav items
 
-- **Активний:** `bg-[#C10000] text-white shadow-md rounded-[12px]`
+- **Активний:** `bg-brand text-white shadow-md rounded-[12px]`
 - **Неактивний:** `text-slate-300 hover:bg-[#1A3150] hover:text-white rounded-[12px]`
 - **Іконка:** `h-4.5 w-4.5 strokeWidth={2.5}`
 - **Текст:** `text-[14px] font-semibold truncate`
@@ -250,7 +252,7 @@
 - Avatar ring: `ring-2 ring-[#29425D]`
 - Avatar fallback BG: `#0070F3` (ініціали)
 - Logout кнопка: з'являється при `group-hover` (opacity transition)
-- У collapsed: logout – абсолютна кнопка `bg-[#C10000] rounded-full` у top-right
+- У collapsed: logout – абсолютна кнопка `bg-brand rounded-full` у top-right
 
 ---
 
@@ -284,7 +286,6 @@ Header сам визначає заголовок і підзаголовок з
 | `/grades` | Журнал оцінок |
 | `/coins` | RedCoins |
 | `/profile` | Мій профіль |
-| `/settings` | Налаштування |
 | невідомий шлях | Сторінку не знайдено |
 | роль не пускає | Доступ заборонено |
 
@@ -294,7 +295,7 @@ Header сам визначає заголовок і підзаголовок з
 
 ### 10.1 LoginPage
 
-**Фон:** `bg-[#29425D]` — той самий колір, що у Sidebar, утворює єдину брендову атмосферу.
+**Фон:** `bg-sidebar-bg` — той самий колір, що у Sidebar, утворює єдину брендову атмосферу.
 
 ```
 ┌────────────────────────────────────────┐
@@ -355,7 +356,7 @@ Header сам визначає заголовок і підзаголовок з
 
 **CTA кнопка (admin only)** — брендовий колір явним класом, як у решти CTA (див. розділ 2):
 ```tsx
-<Button className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white">
+<Button className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-white">
   <Plus className="h-4 w-4" /> Нова група
 </Button>
 ```
@@ -409,10 +410,10 @@ Header сам визначає заголовок і підзаголовок з
 
 ```tsx
 // Primary — для головних дій
-<Button className="bg-[#BA0000] hover:bg-[#A00000] text-white rounded-md h-11 font-medium shadow-sm">
+<Button className="bg-[#BA0000] hover:bg-brand-hover text-white rounded-md h-11 font-medium shadow-sm">
 
 // З іконкою — «Додати студента», «Нова група»
-<Button className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white">
+<Button className="flex items-center gap-2 bg-brand hover:bg-brand-hover text-white">
   <Plus className="h-4 w-4" /> Текст
 </Button>
 
@@ -420,7 +421,7 @@ Header сам визначає заголовок і підзаголовок з
 <Button variant="ghost" size="sm" className="text-slate-600 hover:text-slate-900 font-semibold">
 ```
 
-- Кожна червона кнопка — з явним `bg-[#C10000] hover:bg-[#A00000] text-white`, навіть якщо це дефолтний `<Button>`: без класу вона теж червона (токен `--primary`), але на hover світлішає замість темнішати
+- Кожна червона кнопка — `<Button variant="brand">`: дефолтний варіант теж червоний (токен `--primary`), але на hover світлішає замість темнішати
 - Друга дія поруч із головною («Зберегти явку» біля «Позначити проведеним», видалення оцінки біля «Зберегти» в журналі) — `variant="outline"`, щоб у рядку була одна червона кнопка
 - Фокус з клавіатури у всіх варіантів — червоне кільце з токена `--ring` (`#BA0000`)
 
@@ -565,7 +566,7 @@ Header сам визначає заголовок і підзаголовок з
 
 - Desktop (`lg`+): sidebar видимий, стартує розгорнутим `w-65`, можна згорнути до `w-20`
 - Планшет (`md`–`lg`): стартує згорнутим `w-20`, щоб не забирати третину ширини
-- Mobile (`< md`): `BottomNav` унизу — `bg-[#29425D]`, 4 розділи з ТЗ (Головна / Розклад / Оцінки / Монети) + «Ще» (Sheet знизу, `rounded-t-[20px]`: профіль, решта розділів ролі, «Вийти»). Активний пункт — іконка на червоній плашці `bg-[#C10000] rounded-[12px]`. Під нижню панель у `main` зарезервовано `pb-28`
+- Mobile (`< md`): `BottomNav` унизу — `bg-sidebar-bg`, 4 розділи з ТЗ (Головна / Розклад / Оцінки / Монети) + «Ще» (Sheet знизу, `rounded-t-[20px]`: профіль, решта розділів ролі, «Вийти»). Активний пункт — іконка на червоній плашці `bg-brand rounded-[12px]`. Під нижню панель у `main` зарезервовано `pb-28`
 
 ### Мобайл: що не має ламатися
 
