@@ -1,10 +1,21 @@
+import { Suspense } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import ErrorState from '@/components/common/ErrorState';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import BottomNav from './BottomNav';
+
+function PageSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="Завантаження сторінки">
+      <Skeleton className="h-8 w-40" />
+      <Skeleton className="h-72 w-full rounded-xl" />
+    </div>
+  );
+}
 
 export default function AppLayout() {
   const { pathname } = useLocation();
@@ -35,7 +46,10 @@ export default function AppLayout() {
                   </ErrorState>
                 )}
               >
-                <Outlet />
+                {/* Сторінки довантажуються окремими чанками (lazyPage) */}
+                <Suspense fallback={<PageSkeleton />}>
+                  <Outlet />
+                </Suspense>
               </ErrorBoundary>
             </main>
           </div>

@@ -59,7 +59,7 @@ describe('updateAccessToken', () => {
 });
 
 describe('відновлення сесії', () => {
-  it('піднімає isAuthenticated із прапорця, але токена в пам\'яті ще немає', async () => {
+  it("піднімає isAuthenticated із прапорця, але токена в пам'яті ще немає", async () => {
     localStorage.setItem('hasSession', '1');
     vi.resetModules();
 
