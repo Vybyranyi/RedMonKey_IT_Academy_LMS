@@ -42,7 +42,7 @@ export default function ConfirmDialog({
     <AlertDialog open={open} onOpenChange={(next) => !isPending && onOpenChange(next)}>
       <AlertDialogContent className="rounded-[20px] p-6 gap-5 sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-lg font-bold text-[#1A2645]">{title}</AlertDialogTitle>
+          <AlertDialogTitle className="text-lg font-bold text-title">{title}</AlertDialogTitle>
           <AlertDialogDescription className="text-sm text-slate-600">
             {description}
           </AlertDialogDescription>
@@ -55,7 +55,7 @@ export default function ConfirmDialog({
             {cancelLabel}
           </AlertDialogCancel>
           <AlertDialogAction
-            className="h-10 px-4 bg-[#C10000] hover:bg-[#A00000] text-white"
+            className="h-10 px-4 bg-brand hover:bg-brand-hover text-white"
             disabled={isPending}
             onClick={(event) => {
               // Radix закриває діалог на клік — а закрити його має сторінка, коли запит пройде

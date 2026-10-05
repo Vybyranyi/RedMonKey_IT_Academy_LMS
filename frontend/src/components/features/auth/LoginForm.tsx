@@ -48,7 +48,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
                     inputMode="email"
                     autoComplete="username"
                     placeholder="name@academy.com"
-                    className={`pl-10 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] text-sm ${
+                    className={`pl-10 h-11 border-slate-200 rounded-md focus-visible:ring-ring/20 focus-visible:border-ring text-sm ${
                       errors.email && touched.email ? 'border-destructive' : ''
                     }`}
                   />
@@ -81,7 +81,7 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    className={`pl-10 pr-11 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] tracking-widest placeholder:tracking-widest text-sm ${
+                    className={`pl-10 pr-11 h-11 border-slate-200 rounded-md focus-visible:ring-ring/20 focus-visible:border-ring tracking-widest placeholder:tracking-widest text-sm ${
                       errors.password && touched.password ? 'border-destructive' : ''
                     }`}
                   />
@@ -105,8 +105,9 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
           </div>
 
           <Button
+            variant="brand"
             type="submit"
-            className="w-full mt-2 bg-[#C10000] hover:bg-[#A00000] text-white rounded-md h-11 text-base font-medium shadow-sm transition-colors"
+            className="w-full mt-2 rounded-md h-11 text-base font-medium shadow-sm transition-colors"
             disabled={isSubmitting}
           >
             {isSubmitting ? 'Вхід...' : 'Увійти'}

@@ -79,7 +79,7 @@ const AttendanceRow = memo(function AttendanceRow({
         <div className="flex items-center gap-3 min-w-0">
           <Avatar className="h-9 w-9">
             <AvatarImage src={student.avatar || undefined} />
-            <AvatarFallback className="bg-[#0070F3] text-white text-xs font-bold">
+            <AvatarFallback className="bg-avatar text-white text-xs font-bold">
               {student.firstName[0]}
               {student.lastName[0]}
             </AvatarFallback>

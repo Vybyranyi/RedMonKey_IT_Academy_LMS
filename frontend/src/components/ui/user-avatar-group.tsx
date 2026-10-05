@@ -11,13 +11,13 @@ interface UserAvatarGroupProps {
   className?: string;
 }
 
-export function UserAvatarGroup({ 
-  users, 
-  maxCount = 5, 
+export function UserAvatarGroup({
+  users,
+  maxCount = 5,
   emptyMessage = 'Користувачів немає',
   showCount = true,
   countLabel = 'ос.',
-  className = ''
+  className = '',
 }: UserAvatarGroupProps) {
   return (
     <div className={`flex items-center justify-between ${className}`}>
@@ -36,14 +36,14 @@ export function UserAvatarGroup({
             +{users.length - maxCount}
           </div>
         )}
-        {users.length === 0 && (
-          <span className="text-xs text-slate-400 pl-2">{emptyMessage}</span>
-        )}
+        {users.length === 0 && <span className="text-xs text-slate-400 pl-2">{emptyMessage}</span>}
       </div>
       {showCount && (
         <div className="flex items-center gap-1 text-xs text-slate-500 font-medium">
           <Users className="h-4 w-4" />
-          <span>{users.length} {countLabel}</span>
+          <span>
+            {users.length} {countLabel}
+          </span>
         </div>
       )}
     </div>

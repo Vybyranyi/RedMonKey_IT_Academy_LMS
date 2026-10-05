@@ -83,7 +83,7 @@ export default function Header() {
 
   return (
     <header className="px-4 pt-6 pb-5 md:px-8 md:pt-10 md:pb-6">
-      <h1 className="text-2xl md:text-[28px] leading-tight font-extrabold text-[#1A2645] tracking-tight">
+      <h1 className="text-2xl md:text-[28px] leading-tight font-extrabold text-title tracking-tight">
         {title}
       </h1>
       {subtitle && <p className="text-[14px] font-medium text-slate-500 mt-1">{subtitle}</p>}

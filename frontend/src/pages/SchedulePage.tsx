@@ -301,7 +301,8 @@ export default function SchedulePage() {
       {canManage && (
         <div className="flex justify-end">
           <Button
-            className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white"
+            variant="brand"
+            className="flex items-center gap-2"
             onClick={() => setIsCreateOpen(true)}
           >
             <Plus className="h-4 w-4" /> Додати заняття
@@ -327,7 +328,8 @@ export default function SchedulePage() {
         >
           {canManage && (
             <Button
-              className="bg-[#C10000] hover:bg-[#A00000] text-white"
+              variant="brand"
+
               onClick={() => setIsCreateOpen(true)}
             >
               <Plus className="h-4 w-4" /> Додати заняття
@@ -385,7 +387,7 @@ export default function SchedulePage() {
                   // Вибране заняття підсвічуємо, поки відкрита модалка деталей
                   className: `${LESSON_TYPE_META[event.resource.type].event}${
                     event.resource.status === LessonStatus.CANCELLED ? ' opacity-50' : ''
-                  }${selectedLesson?.id === event.resource.id ? ' ring-2 ring-[#BA0000]' : ''}`,
+                  }${selectedLesson?.id === event.resource.id ? ' ring-2 ring-ring' : ''}`,
                 })}
                 components={{ event: LessonEvent }}
                 onSelectEvent={(event) => selectLesson(event.resource)}

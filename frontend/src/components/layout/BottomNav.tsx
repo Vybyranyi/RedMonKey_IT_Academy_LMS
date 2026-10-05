@@ -27,7 +27,7 @@ const tabClass = (isActive: boolean) =>
 
 const iconClass = (isActive: boolean) =>
   `flex items-center justify-center rounded-[12px] px-4 py-1 transition-colors ${
-    isActive ? 'bg-[#C10000] shadow-md' : ''
+    isActive ? 'bg-brand shadow-md' : ''
   }`;
 
 /**
@@ -54,7 +54,7 @@ export default function BottomNav() {
     <>
       <nav
         aria-label="Основна навігація"
-        className="focus-on-dark md:hidden fixed inset-x-0 bottom-0 z-40 bg-[#29425D] border-t border-white/10 shadow-[0_-4px_12px_rgba(0,0,0,0.12)] pb-[env(safe-area-inset-bottom)]"
+        className="focus-on-dark md:hidden fixed inset-x-0 bottom-0 z-40 bg-sidebar-bg border-t border-white/10 shadow-[0_-4px_12px_rgba(0,0,0,0.12)] pb-[env(safe-area-inset-bottom)]"
       >
         <div className="grid grid-cols-5">
           {tabs.map((item) => {
@@ -96,7 +96,7 @@ export default function BottomNav() {
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
         <SheetContent
           side="bottom"
-          className="focus-on-dark md:hidden rounded-t-[20px] bg-[#29425D] text-slate-100 border-0 p-0 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+          className="focus-on-dark md:hidden rounded-t-[20px] bg-sidebar-bg text-slate-100 border-0 p-0 pb-[calc(1rem+env(safe-area-inset-bottom))]"
         >
           <SheetHeader className="px-5 pt-5 pb-2">
             <SheetTitle className="text-white text-lg font-bold">Меню</SheetTitle>
@@ -109,13 +109,13 @@ export default function BottomNav() {
               onClick={closeMenu}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-[16px] p-3 transition-colors ${
-                  isActive ? 'bg-[#C10000]' : 'bg-[#1A3150] hover:bg-[#152744]'
+                  isActive ? 'bg-brand' : 'bg-sidebar-bg-hover hover:bg-sidebar-bg-deep'
                 }`
               }
             >
-              <Avatar className="h-10 w-10 bg-[#0070F3]">
+              <Avatar className="h-10 w-10 bg-avatar">
                 <AvatarImage src={user.avatar || undefined} />
-                <AvatarFallback className="bg-[#0070F3] text-white font-bold text-xs">
+                <AvatarFallback className="bg-avatar text-white font-bold text-xs">
                   {user.firstName[0]}
                   {user.lastName[0]}
                 </AvatarFallback>
@@ -124,7 +124,7 @@ export default function BottomNav() {
                 <p className="text-sm font-bold text-white truncate">
                   {user.firstName} {user.lastName}
                 </p>
-                <p className="text-xs font-medium text-[#A9B8CA]">{ROLE_LABELS[user.role]}</p>
+                <p className="text-xs font-medium text-sidebar-muted">{ROLE_LABELS[user.role]}</p>
               </div>
             </NavLink>
 
@@ -138,8 +138,8 @@ export default function BottomNav() {
                   className={({ isActive }) =>
                     `flex items-center gap-3.5 rounded-[12px] px-4 py-3 text-[14px] font-semibold transition-colors ${
                       isActive
-                        ? 'bg-[#C10000] text-white'
-                        : 'text-slate-300 hover:bg-[#1A3150] hover:text-white'
+                        ? 'bg-brand text-white'
+                        : 'text-slate-300 hover:bg-sidebar-bg-hover hover:text-white'
                     }`
                   }
                 >
@@ -155,7 +155,7 @@ export default function BottomNav() {
                 closeMenu();
                 void logout();
               }}
-              className="flex w-full items-center gap-3.5 rounded-[12px] px-4 py-3 text-[14px] font-semibold text-slate-300 hover:bg-[#1A3150] hover:text-white transition-colors"
+              className="flex w-full items-center gap-3.5 rounded-[12px] px-4 py-3 text-[14px] font-semibold text-slate-300 hover:bg-sidebar-bg-hover hover:text-white transition-colors"
             >
               <LogOut className="h-4.5 w-4.5" strokeWidth={2.5} />
               Вийти

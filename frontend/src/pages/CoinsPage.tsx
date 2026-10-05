@@ -290,7 +290,7 @@ export default function CoinsPage() {
         title="Груп ще немає"
         description="Рейтинг і нарахування ведуться в межах групи — спершу створіть її."
       >
-        <Button className="bg-[#C10000] hover:bg-[#A00000] text-white" asChild>
+        <Button variant="brand" asChild>
           <Link to="/groups">Перейти до груп</Link>
         </Button>
       </EmptyState>
@@ -306,7 +306,8 @@ export default function CoinsPage() {
 
           {canAward && (
             <Button
-              className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white"
+              variant="brand"
+              className="flex items-center gap-2"
               onClick={() => openForm('')}
               disabled={students.length === 0}
             >

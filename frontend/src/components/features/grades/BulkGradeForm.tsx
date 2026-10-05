@@ -186,7 +186,8 @@ export default function BulkGradeForm({
             </p>
           )}
           <Button
-            className="w-full h-11 bg-[#C10000] hover:bg-[#A00000] text-white"
+            variant="brand"
+            className="w-full h-11"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >

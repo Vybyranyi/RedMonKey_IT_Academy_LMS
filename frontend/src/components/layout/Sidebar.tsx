@@ -48,7 +48,7 @@ export default function Sidebar() {
   return (
     <aside
       // На мобайлі замість sidebar — BottomNav
-      className={`focus-on-dark ${isCollapsed ? 'w-20' : 'w-65'} bg-[#29425D] text-slate-100 h-dvh hidden md:flex flex-col shadow-xl z-20 shrink-0 transition-[width] duration-300 ease-in-out`}
+      className={`focus-on-dark ${isCollapsed ? 'w-20' : 'w-65'} bg-sidebar-bg text-slate-100 h-dvh hidden md:flex flex-col shadow-xl z-20 shrink-0 transition-[width] duration-300 ease-in-out`}
     >
       {/* Logo Section */}
       <div
@@ -89,8 +89,8 @@ export default function Sidebar() {
               className={({ isActive }) =>
                 `flex items-center rounded-[12px] text-[14px] font-semibold transition-all duration-200 ${
                   isActive
-                    ? 'bg-[#C10000] text-white shadow-md'
-                    : 'text-slate-300 hover:bg-[#1A3150] hover:text-white'
+                    ? 'bg-brand text-white shadow-md'
+                    : 'text-slate-300 hover:bg-sidebar-bg-hover hover:text-white'
                 } ${isCollapsed ? 'justify-center p-3' : 'gap-3.5 px-4 py-3'}`
               }
             >
@@ -108,7 +108,7 @@ export default function Sidebar() {
           onClick={toggleCollapsed}
           aria-label={isCollapsed ? 'Розгорнути меню' : 'Згорнути меню'}
           aria-expanded={!isCollapsed}
-          className={`flex items-center gap-2 text-[12px] font-semibold text-[#A9B8CA] hover:text-white transition-colors w-full mb-4 ${isCollapsed ? 'justify-center' : 'justify-end px-2'}`}
+          className={`flex items-center gap-2 text-[12px] font-semibold text-sidebar-muted hover:text-white transition-colors w-full mb-4 ${isCollapsed ? 'justify-center' : 'justify-end px-2'}`}
           title={isCollapsed ? 'Розгорнути' : 'Згорнути'}
         >
           {isCollapsed ? (

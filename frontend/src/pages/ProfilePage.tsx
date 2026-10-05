@@ -82,10 +82,10 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-[#1A2645] rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5 text-white shadow-sm">
+      <div className="bg-title rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5 text-white shadow-sm">
         <Avatar className="h-20 w-20 border-2 border-white/20">
           <AvatarImage src={user.avatar || undefined} />
-          <AvatarFallback className="bg-[#0070F3] text-2xl font-bold text-white">
+          <AvatarFallback className="bg-avatar text-2xl font-bold text-white">
             {user.firstName.charAt(0)}
             {user.lastName.charAt(0)}
           </AvatarFallback>

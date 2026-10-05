@@ -209,7 +209,7 @@ const GradeJournalRow = memo(function GradeJournalRow({
         <div className="flex items-center gap-3 min-w-0">
           <Avatar className="h-8 w-8">
             <AvatarImage src={student.avatar || undefined} />
-            <AvatarFallback className="bg-[#0070F3] text-white text-xs font-bold">
+            <AvatarFallback className="bg-avatar text-white text-xs font-bold">
               {student.firstName.charAt(0)}
               {student.lastName.charAt(0)}
             </AvatarFallback>

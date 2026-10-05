@@ -36,16 +36,16 @@ export default function UserProfileWidget({ isCollapsed }: UserProfileWidgetProp
         className={({ isActive }) =>
           `flex min-w-0 flex-1 items-center rounded-[16px] border transition-colors ${
             isActive
-              ? 'bg-[#C10000] border-transparent'
-              : 'bg-[#1A3150] border-transparent hover:bg-[#152744] hover:border-slate-700/50'
+              ? 'bg-brand border-transparent'
+              : 'bg-sidebar-bg-hover border-transparent hover:bg-sidebar-bg-deep hover:border-slate-700/50'
           } ${isCollapsed ? 'justify-center p-2' : 'gap-3 p-3'}`
         }
       >
         <Avatar
-          className={`ring-2 ring-[#29425D] bg-[#0070F3] ${isCollapsed ? 'h-10 w-10' : 'h-9 w-9'}`}
+          className={`ring-2 ring-sidebar-bg bg-avatar ${isCollapsed ? 'h-10 w-10' : 'h-9 w-9'}`}
         >
           <AvatarImage src={user.avatar || undefined} />
-          <AvatarFallback className="bg-[#0070F3] text-white font-bold text-xs">
+          <AvatarFallback className="bg-avatar text-white font-bold text-xs">
             {user.firstName[0]}
             {user.lastName[0]}
           </AvatarFallback>
@@ -66,7 +66,7 @@ export default function UserProfileWidget({ isCollapsed }: UserProfileWidgetProp
         onClick={() => void logout()}
         title="Вийти"
         aria-label="Вийти"
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-slate-300 hover:bg-[#1A3150] hover:text-white transition-colors"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-slate-300 hover:bg-sidebar-bg-hover hover:text-white transition-colors"
       >
         <LogOut className="h-4 w-4" />
       </button>

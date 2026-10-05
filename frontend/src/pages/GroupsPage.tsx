@@ -137,7 +137,7 @@ export default function GroupsPage() {
         {isAdmin && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="flex items-center gap-2 bg-[#C10000] hover:bg-[#A00000] text-white">
+              <Button variant="brand" className="flex items-center gap-2">
                 <Plus className="h-4 w-4" /> Нова група
               </Button>
             </DialogTrigger>
@@ -169,7 +169,8 @@ export default function GroupsPage() {
         >
           {isAdmin && (
             <Button
-              className="bg-[#C10000] hover:bg-[#A00000] text-white"
+              variant="brand"
+
               onClick={() => setIsCreateOpen(true)}
             >
               <Plus className="h-4 w-4" /> Створити першу групу

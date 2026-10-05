@@ -12,7 +12,7 @@ export default function NotFoundPage() {
       title="Такої сторінки немає"
       description="Можливо, посилання застаріло або в адресі помилка. Скористайтеся меню або поверніться на головну."
     >
-      <Button className="h-10 px-4 bg-[#C10000] hover:bg-[#A00000] text-white" asChild>
+      <Button variant="brand" className="h-10 px-4" asChild>
         <Link to="/">На головну</Link>
       </Button>
     </ErrorState>

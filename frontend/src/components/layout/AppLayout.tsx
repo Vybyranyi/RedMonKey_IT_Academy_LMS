@@ -21,7 +21,7 @@ export default function AppLayout() {
   const { pathname } = useLocation();
 
   return (
-    <div className="flex bg-[#F8F9FA] min-h-dvh font-sans">
+    <div className="flex bg-page min-h-dvh font-sans">
       <Sidebar />
       {/* min-w-0: інакше широка таблиця розтягує flex-колонку і з'являється горизонтальний скрол усієї сторінки */}
       <div className="flex-1 min-w-0 flex flex-col h-dvh overflow-hidden">

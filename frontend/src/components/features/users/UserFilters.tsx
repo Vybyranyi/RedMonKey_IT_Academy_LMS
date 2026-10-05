@@ -37,7 +37,7 @@ export default function UserFilters({
           placeholder="Пошук за іменем або email..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10 h-11 border-slate-200 rounded-md focus-visible:ring-[#BA0000]/20 focus-visible:border-[#BA0000] text-sm"
+          className="pl-10 h-11 border-slate-200 rounded-md focus-visible:ring-ring/20 focus-visible:border-ring text-sm"
         />
       </div>
       <Label htmlFor="students-group-filter" className="sr-only">
