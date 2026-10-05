@@ -13,8 +13,8 @@ vi.mock('@/components/ui/sonner', () => ({ Toaster: () => null }));
 
 beforeEach(() => {
   window.history.pushState({}, '', '/does-not-exist');
-  // Стан після перезавантаження сторінки: токен у localStorage є, профілю ще немає
-  useAuthStore.setState({ user: null, accessToken: 'token', isAuthenticated: true });
+  // Стан після перезавантаження сторінки: прапорець сесії є, токена в пам'яті й профілю — ще ні
+  useAuthStore.setState({ user: null, accessToken: null, isAuthenticated: true });
 });
 
 describe('App — відновлення сесії', () => {

@@ -21,16 +21,18 @@ describe('setAuth', () => {
     });
   });
 
-  // Токен дублюється в localStorage, щоб сесія пережила перезавантаження сторінки
-  it('дублює токен у localStorage', () => {
+  // Токен у localStorage читає будь-який XSS, тож зберігається лише прапорець сесії
+  it('не пише токен у localStorage, лише прапорець сесії', () => {
     useAuthStore.getState().setAuth(user, 'token-1');
 
-    expect(localStorage.getItem('accessToken')).toBe('token-1');
+    expect(localStorage.getItem('accessToken')).toBeNull();
+    expect(localStorage.getItem('hasSession')).toBe('1');
+    expect(JSON.stringify({ ...localStorage })).not.toContain('token-1');
   });
 });
 
 describe('clearAuth', () => {
-  it('скидає стан і прибирає токен зі сховища', () => {
+  it('скидає стан і прибирає прапорець сесії зі сховища', () => {
     useAuthStore.getState().setAuth(user, 'token-1');
 
     useAuthStore.getState().clearAuth();
@@ -40,7 +42,7 @@ describe('clearAuth', () => {
       accessToken: null,
       isAuthenticated: false,
     });
-    expect(localStorage.getItem('accessToken')).toBeNull();
+    expect(localStorage.getItem('hasSession')).toBeNull();
   });
 });
 
@@ -52,24 +54,31 @@ describe('updateAccessToken', () => {
 
     expect(useAuthStore.getState().accessToken).toBe('token-2');
     expect(useAuthStore.getState().user).toEqual(user);
-    expect(localStorage.getItem('accessToken')).toBe('token-2');
+    expect(localStorage.getItem('accessToken')).toBeNull();
   });
 });
 
 describe('відновлення сесії', () => {
-  it('піднімає isAuthenticated із токена в localStorage', async () => {
-    localStorage.setItem('accessToken', 'saved-token');
+  it('піднімає isAuthenticated із прапорця, але токена в пам\'яті ще немає', async () => {
+    localStorage.setItem('hasSession', '1');
     vi.resetModules();
 
     const { useAuthStore: freshStore } = await import('../authStore');
 
-    expect(freshStore.getState()).toMatchObject({
-      accessToken: 'saved-token',
-      isAuthenticated: true,
-    });
+    expect(freshStore.getState()).toMatchObject({ accessToken: null, isAuthenticated: true });
   });
 
-  it('без збереженого токена стартує неавторизованим', async () => {
+  it('прибирає токен, який лишила стара версія застосунку', async () => {
+    localStorage.setItem('accessToken', 'old-token');
+    vi.resetModules();
+
+    const { useAuthStore: freshStore } = await import('../authStore');
+
+    expect(localStorage.getItem('accessToken')).toBeNull();
+    expect(freshStore.getState().isAuthenticated).toBe(false);
+  });
+
+  it('без прапорця стартує неавторизованим', async () => {
     vi.resetModules();
 
     const { useAuthStore: freshStore } = await import('../authStore');

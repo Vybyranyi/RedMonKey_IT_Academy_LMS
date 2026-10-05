@@ -115,7 +115,7 @@ describe('response interceptor: оновлення токена', () => {
 
     await expect(axiosInstance.get('/users')).rejects.toBeInstanceOf(SessionExpiredError);
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
-    expect(localStorage.getItem('accessToken')).toBeNull();
+    expect(localStorage.getItem('hasSession')).toBeNull();
     expect(toast.warning).toHaveBeenCalledTimes(1);
   });
 
