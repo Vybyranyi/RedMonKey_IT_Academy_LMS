@@ -62,7 +62,7 @@ export default function ScheduleToolbar({ label, view, onView, onNavigate }: Sch
             className={`px-4 h-8 rounded-md text-sm font-semibold transition-colors ${
               view === option.value
                 ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-600'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             {option.label}

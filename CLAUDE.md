@@ -35,6 +35,7 @@ npm run build              # build --workspaces (shared → backend → frontend
 npm test                     # Vitest у всіх workspace-ах (shared → backend → frontend)
 npm run test -w backend       # тести одного workspace
 npm run test:watch -w frontend # watch-режим
+npm run test:e2e -w frontend    # Playwright e2e (desktop + mobile) + a11y/контраст; збирає frontend, API підмінено, БД не потрібна
 npm run lint                 # ESLint у shared, backend і frontend (-w <workspace> — в одному)
 npm run format               # Prettier на весь монорепо; format:check — лише перевірка, як у CI
 npm run seed -w backend      # тестові користувачі/групи (backend/src/scripts/seed.ts)
@@ -199,6 +200,7 @@ routes/  →  controllers/  →  services/  →  repositories/  →  lib/prisma.
 - `backend` API — `src/__tests__/api.test.ts`: supertest ганяє справжні маршрути, middleware, контролери й сервіси, а моки стоять на найглибшому шарі (репозиторії + `lib/prisma.js`). Тому `app` зібрано в `src/app.ts` окремо від `listen()` у `src/index.ts` — не зливай їх назад.
 - `frontend` — jsdom + React Testing Library; HTTP підміняє адаптер axios (`axiosInstance.defaults.adapter`), а не реальні запити. Для сторінок є хелпер `src/test/apiMock.ts`: `installApi({ 'POST /grades': ... })`, `deferred()` (щоб перевірити стан UI, поки «сервер» думає), `httpError()`, `callsTo()` (що сторінка не перезапитала зайве).
 - `frontend` a11y — `src/__tests__/a11y.test.tsx`: `vitest-axe` перевіряє сторінки на порушення (мітки, імена кнопок, ролі). Контраст кольорів у jsdom не міряється — його перевіряють вручну. Нова сторінка — додай її сюди.
+- `frontend` e2e — `frontend/e2e/*.spec.ts` (Playwright, Chrome локально / chromium у CI): справжня збірка (`vite preview`) у справжньому браузері, API підмінено `page.route` у `e2e/support/mockApi.ts` (форми відповідей — як у справжнього API; новий ендпоінт, який викликає сторінка, додай і в мок, інакше мок поверне 404). Проекти `desktop` (1280×800) і `mobile` (Pixel 7). `a11y.spec.ts` ганяє axe (WCAG 2.1 A/AA) по всіх сторінках, окремо **контраст кольорів** — те, чого не міряє vitest-axe в jsdom. Нова сторінка — додай у `PAGES`. Це не повноцінний full-stack e2e: backend і БД не задіяні.
 - `backend/vitest.setup.ts` виставляє фіктивні JWT-секрети: без них `config/env.ts` падає прямо на імпорті.
 - Тести виключені з `tsc`-білду через `exclude` у tsconfig-ах кожного workspace — не прибирай, інакше `npm run build` почне тягнути їх у `dist`.
 
