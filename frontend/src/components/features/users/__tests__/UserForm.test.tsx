@@ -34,7 +34,7 @@ describe('UserForm — пароль', () => {
     render(<UserForm onSubmit={onSubmit} isSubmitting={false} hideRoleSelect />);
 
     await fillRequired();
-    await userEvent.click(screen.getByRole('button', { name: 'Генерувати Пароль' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Згенерувати надійний пароль' }));
     await userEvent.click(screen.getByRole('button', { name: 'Зберегти' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));

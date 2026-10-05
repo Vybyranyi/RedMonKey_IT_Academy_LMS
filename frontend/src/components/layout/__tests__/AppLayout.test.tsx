@@ -177,3 +177,28 @@ describe('BottomNav', () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 });
+
+describe('AppLayout — клавіатура й скрінрідер', () => {
+  it('«Перейти до змісту» — перший елемент для Tab і переносить фокус на main без зміни адреси', async () => {
+    renderLayout('/');
+    await userEvent.tab();
+    const skip = screen.getByRole('link', { name: 'Перейти до змісту' });
+    expect(skip).toHaveFocus();
+
+    await userEvent.keyboard('{Enter}');
+
+    expect(screen.getByRole('main')).toHaveFocus();
+    expect(window.location.hash).toBe('');
+  });
+
+  // Без цього скрінрідер після кліку по меню мовчить: сторінка не перезавантажилась
+  it('після переходу на інший розділ фокус стає на його заголовку, а на першому рендері — ні', async () => {
+    renderLayout('/');
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading).not.toHaveFocus();
+
+    await userEvent.click(screen.getAllByRole('link', { name: /Розклад/ })[0]);
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Розклад занять' })).toHaveFocus();
+  });
+});

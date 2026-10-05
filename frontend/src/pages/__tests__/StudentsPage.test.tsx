@@ -142,7 +142,7 @@ describe('StudentsPage — бал і відвідуваність', () => {
     await userEvent.type(screen.getByLabelText("Ім'я *"), 'Богдан');
     await userEvent.type(screen.getByLabelText('Прізвище *'), 'Коваленко');
     await userEvent.type(screen.getByLabelText('Email *'), 'bohdan@academy.ua');
-    await userEvent.click(screen.getByRole('button', { name: 'Генерувати Пароль' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Згенерувати надійний пароль' }));
     await userEvent.click(screen.getByRole('button', { name: 'Зберегти' }));
 
     const row = (await screen.findByText('Богдан Коваленко')).closest('tr')!;

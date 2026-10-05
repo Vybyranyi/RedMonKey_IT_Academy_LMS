@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import { uk } from 'date-fns/locale';
@@ -81,12 +82,30 @@ export default function Header() {
   const { title, subtitle, tabTitle } = getPageMeta(location.pathname, user);
   useDocumentTitle(tabTitle ?? title);
 
+  // SPA не перезавантажує сторінку, тож скрінрідер не чує, що розділ змінився, а фокус
+  // лишається на посиланні меню. Після переходу переносимо фокус на заголовок розділу —
+  // його й озвучить скрінрідер. Перший рендер пропускаємо: на завантаженні фокус не крадемо
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    headingRef.current?.focus({ preventScroll: true });
+  }, [location.pathname]);
+
   return (
     <header className="px-4 pt-6 pb-5 md:px-8 md:pt-10 md:pb-6">
-      <h1 className="text-2xl md:text-[28px] leading-tight font-extrabold text-title tracking-tight">
+      <h1
+        ref={headingRef}
+        // Програмний фокус: заголовок не інтерактивний, тож контур йому не потрібен
+        tabIndex={-1}
+        className="outline-none text-2xl md:text-[28px] leading-tight font-extrabold text-title tracking-tight"
+      >
         {title}
       </h1>
-      {subtitle && <p className="text-[14px] font-medium text-slate-500 mt-1">{subtitle}</p>}
+      {subtitle && <p className="text-[14px] font-medium text-slate-600 mt-1">{subtitle}</p>}
     </header>
   );
 }
