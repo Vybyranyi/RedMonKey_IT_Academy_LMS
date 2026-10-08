@@ -49,7 +49,7 @@
 
 - Node.js ≥ 22 (jsdom у frontend-тестах не працює на Node 20)
 - npm ≥ 10
-- PostgreSQL: безкоштовний проєкт на [Neon](https://neon.tech) або локальний Postgres
+- PostgreSQL: локальний (`docker compose up db` — Postgres 16 на порту 5433) для розробки; прод і демо — [Supabase](https://supabase.com)
 
 ### 1. Клонувати репозиторій
 
@@ -74,8 +74,9 @@ cp backend/.env.example backend/.env
 # Відредагуй backend/.env — заповни DATABASE_URL / DIRECT_URL та JWT-секрети
 ```
 
-- **Neon:** `DATABASE_URL` — рядок із `-pooler` у host, `DIRECT_URL` — той самий без `-pooler` (приклад у `.env.example`).
-- **Локальний Postgres:** обидві змінні однакові, напр. `postgresql://postgres:postgres@localhost:5432/lms`.
+- **Локальний Postgres** (`docker compose up db`): обидві змінні однакові — `postgresql://lms:lms@localhost:5433/lms`, як у `.env.example`.
+- **Supabase:** `DATABASE_URL` — Transaction pooler (порт 6543, `?pgbouncer=true`), `DIRECT_URL` — Session pooler (порт 5432). Не Direct connection: вона лише IPv6. Проєкт один на прод і розробку — `seed` проти нього стирає прод.
+- **Аватарки (необов'язково):** `SUPABASE_URL` і `SUPABASE_SECRET_KEY` — Supabase Storage. Без них усе працює, лише завантаження фото відповідає 503. Налаштування бакета — у [docs/DEPLOY.md](./docs/DEPLOY.md#supabase-база-й-сховище-аватарок).
 - **JWT-секрети:** два різні рядки від 32 символів, інакше backend не стартує. Згенерувати: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`.
 
 **Frontend:**
