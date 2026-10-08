@@ -32,11 +32,11 @@
 | Форми | Formik + Zod |
 | State | Zustand |
 | Backend | Node.js + Express 5 |
-| База даних | PostgreSQL (хостинг [Neon](https://neon.tech)) + Prisma ORM |
+| База даних | PostgreSQL (хостинг [Supabase](https://supabase.com)) + Prisma ORM |
 | Автентифікація | Власний JWT (access + refresh tokens) |
 | Мова | TypeScript у frontend, backend і `shared` (спільні типи та Zod-схеми) |
 | Тести | Vitest, Supertest, React Testing Library |
-| Хмара (опц.) | Cloudinary (аватари) |
+| Файли | Supabase Storage (аватарки; backend стискає їх `sharp` до 256px WebP) |
 
 ---
 
@@ -50,7 +50,9 @@
 | Список студентів | ✅ | ✅ | ❌ |
 | Профіль і статистика студента | ✅ | студентів своїх груп | тільки свої |
 | Редагувати профіль будь-кого (роль, група, email, пароль) | ✅ | ❌ | ❌ |
-| Редагувати свій профіль (ім'я, телефон, аватар, пароль) | ✅ | ✅ | ✅ |
+| Редагувати свій профіль (ім'я, телефон, пароль) | ✅ | ✅ | ✅ |
+| Завантажити / видалити свою аватарку | ✅ | ✅ | ✅ |
+| Завантажити / видалити чужу аватарку | ✅ | ❌ | ❌ |
 | Створити / змінити / деактивувати групу | ✅ | ❌ | ❌ |
 | Створити заняття | ✅ (для будь-якого викладача) | тільки своє | ❌ |
 | Редагувати / скасувати / провести заняття | ✅ | тільки своє | ❌ |
@@ -83,7 +85,7 @@ model User {
   email        String
   passwordHash String
   role         UserRole // admin | teacher | student
-  avatar       String?
+  avatar       String?  // публічний URL файлу в Supabase Storage (бакет avatars)
   phone        String?
   redCoins     Int      @default(0)   // тільки для студентів
   tokenVersion Int      @default(0)   // інкремент на logout → відкликає refresh-токени
@@ -254,7 +256,7 @@ POST   /auth/login          — вхід { email, password } → { accessToken, 
 POST   /auth/refresh        — новий access-токен за refresh-cookie
 POST   /auth/logout         — вихід: відкликає refresh-токени на всіх пристроях (tokenVersion++)
 GET    /auth/me             — дані поточного користувача
-PATCH  /auth/me             — змінити свої firstName / lastName / phone / avatar
+PATCH  /auth/me             — змінити свої firstName / lastName / phone (аватарка — окремим файлом, нижче)
 PATCH  /auth/me/password    — зміна пароля: інші сесії відкликаються, поточна отримує нову пару токенів
 ```
 
@@ -271,6 +273,9 @@ GET    /users/:id           — профіль [admin | сам користув�
 GET    /users/:id/stats     — статистика: оцінки, відвідуваність, RedCoins [ті самі права, що й на профіль]
 PATCH  /users/:id           — оновити профіль, роль, групу, пароль, активність [admin]; новий пароль відкликає сесії
 DELETE /users/:id           — деактивувати [admin]
+PUT    /users/:id/avatar    — завантажити аватарку: multipart, поле avatar, JPG/PNG/WebP до 5 МБ → 256×256 WebP
+                               у Supabase Storage; відповідь — користувач з новим avatar [admin | сам користувач]
+DELETE /users/:id/avatar    — прибрати аватарку й файл [admin | сам користувач]
 ```
 
 Єдиного активного адміна не можна ні деактивувати, ні перевести в іншу роль — 400.
@@ -555,7 +560,7 @@ Bottom Navigation (телефон, до md):
 ### Тиждень 1: Основа проекту
 
 **Backend:**
-- [x] Ініціалізація Express + PostgreSQL (Neon) + Prisma
+- [x] Ініціалізація Express + PostgreSQL (Neon, згодом Supabase) + Prisma
 - [x] User Model + Auth (login/JWT access+refresh)
 - [x] Middleware: authenticate, authorize
 - [x] Group Model + CRUD
@@ -707,6 +712,7 @@ Bottom Navigation (телефон, до md):
 - [x] Тайм-зони: заняття о 18:00 не має з'їжджати в календарі й на дашборді — форма й відображення були коректні (перевірено в поясах Києва, Лос-Анджелеса й Токіо), з'їжджав seed: на сервері в UTC 18:00 ставало 21:00 за Києвом. Тепер seed рахує час в `ACADEMY_TIME_ZONE`, а тижневий календар розширює сітку 8:00–21:00 під заняття поза нею, замість притискати їх до краю
 - [x] Валідації дат: `endDate > startDate` у групі, `homeworkDueDate >= lesson.date` — обидві й у PATCH однієї дати (друга береться з БД) і у формах. Поля домашнього завдання були лише в схемі БД — додано в API, форму й деталі заняття
 - [x] Debounce на пошуку студентів — запит через 300 мс паузи в наборі (`lib/useDebouncedValue.ts`)
+- [x] Аватарки: завантаження файлу замість вставленого URL (той блокував CSP на проді), Supabase Storage; свою змінює кожен, чужу — адмін. База переїхала з Render Postgres (видаляється через 30 днів) у той самий проєкт Supabase
 - [x] Захист від «останнього адміна»: не можна деактивувати чи розжалувати єдиного адміна — 400 на `DELETE`/`PATCH /users/:id`; рядки адмінів блокуються `FOR UPDATE`, тож і двоє адмінів, що одночасно деактивують один одного, не лишать академію без адміна (перевірено на Postgres)
 
 ---
