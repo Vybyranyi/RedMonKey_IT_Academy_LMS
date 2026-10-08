@@ -58,6 +58,31 @@ const parseTrustProxy = (raw: string | undefined): number => {
   return Number(value);
 };
 
+/**
+ * Supabase Storage (аватарки). Необов'язковий: без нього тести, CI і локальний
+ * docker compose працюють, а ендпоінти аватарок відповідають 503. Половина
+ * налаштувань — майже напевно помилка в Dashboard, тож тут уже падаємо.
+ */
+const parseSupabase = () => {
+  const url = process.env.SUPABASE_URL?.trim() || null;
+  const secretKey = process.env.SUPABASE_SECRET_KEY?.trim() || null;
+  if (!url && !secretKey) return null;
+  if (!url || !secretKey) {
+    fail('SUPABASE_URL і SUPABASE_SECRET_KEY задаються разом (або жодної)');
+  }
+  let origin = '';
+  try {
+    origin = new URL(url as string).origin;
+  } catch {
+    fail(`SUPABASE_URL="${url}" не є коректним URL`);
+  }
+  return {
+    url: origin,
+    secretKey: secretKey as string,
+    avatarBucket: process.env.SUPABASE_AVATAR_BUCKET?.trim() || 'avatars',
+  };
+};
+
 const accessSecret = requireSecret('JWT_ACCESS_SECRET');
 const refreshSecret = requireSecret('JWT_REFRESH_SECRET');
 
@@ -77,6 +102,7 @@ export const env = {
   // Тека зі зібраним frontend (Docker-образ). Порожня — backend віддає лише API,
   // як у локальній розробці, де фронт крутить Vite
   staticDir: process.env.STATIC_DIR?.trim() || null,
+  supabase: parseSupabase(),
   jwt: {
     accessSecret,
     refreshSecret,

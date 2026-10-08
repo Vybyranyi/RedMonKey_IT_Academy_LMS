@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import { LessonType, UserRole } from '@redmonkey/shared';
 import { ACADEMY_TIME_ZONE } from '../config/constants.js';
@@ -6,6 +7,36 @@ import { prisma } from '../lib/prisma.js';
 import { todayIn, zonedTime } from '../utils/zonedTime.js';
 
 const SEED_PASSWORD = process.env.SEED_PASSWORD || 'Password123!';
+
+/**
+ * Seed стирає користувачів — їхні аватарки в Storage стали б файлами-сиротами.
+ * Клієнт свій, а не lib/supabase: той тягне config/env, якому потрібні JWT-секрети,
+ * а seed з ноутбука запускають лише з DATABASE_URL.
+ */
+const clearAvatarBucket = async () => {
+  const url = process.env.SUPABASE_URL?.trim();
+  const secretKey = process.env.SUPABASE_SECRET_KEY?.trim();
+  if (!url || !secretKey) return;
+
+  const bucket = createClient(url, secretKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  }).storage.from(process.env.SUPABASE_AVATAR_BUCKET?.trim() || 'avatars');
+
+  // Файли лежать як <userId>/<uuid>.webp: верхній рівень — теки користувачів
+  const { data: folders, error } = await bucket.list('', { limit: 1000 });
+  if (error) throw error;
+  const paths: string[] = [];
+  for (const folder of folders) {
+    const { data: files, error: filesError } = await bucket.list(folder.name, { limit: 1000 });
+    if (filesError) throw filesError;
+    paths.push(...files.map((file) => `${folder.name}/${file.name}`));
+  }
+  if (paths.length > 0) {
+    const { error: removeError } = await bucket.remove(paths);
+    if (removeError) throw removeError;
+  }
+  console.log(`[seed]: ${paths.length} avatar files removed from Storage.`);
+};
 
 const seedDatabase = async () => {
   if (process.env.NODE_ENV === 'production') {
@@ -25,6 +56,7 @@ const seedDatabase = async () => {
   await prisma.group.deleteMany();
   await prisma.academy.deleteMany();
   console.log('[seed]: Existing data cleared.');
+  await clearAvatarBucket();
 
   const academy = await prisma.academy.create({ data: { name: 'RedMonKey IT Academy' } });
   const academyId = academy.id;

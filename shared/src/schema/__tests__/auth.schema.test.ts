@@ -54,10 +54,6 @@ describe('updateProfileSchema', () => {
     expect(updateProfileSchema.parse({ phone: '   ' }).phone).toBeNull();
   });
 
-  it('перетворює порожній аватар на null', () => {
-    expect(updateProfileSchema.parse({ avatar: '' }).avatar).toBeNull();
-  });
-
   it('приймає коректний телефон', () => {
     expect(updateProfileSchema.safeParse({ phone: '+380 (67) 123-45-67' }).success).toBe(true);
   });
@@ -67,9 +63,11 @@ describe('updateProfileSchema', () => {
     expect(firstIssue(result)).toBe('Некоректний номер телефону');
   });
 
-  it('відхиляє аватар, який не є URL', () => {
-    const result = updateProfileSchema.safeParse({ avatar: 'avatar.png' });
-    expect(firstIssue(result)).toBe('Аватар має бути коректним URL');
+  // Інакше в БД потрапляли б сторонні URL замість файлів з нашого сховища
+  it('не пропускає avatar — його змінює лише завантаження файлу', () => {
+    expect(
+      updateProfileSchema.parse({ firstName: 'Марія', avatar: 'https://evil.example/a.png' })
+    ).toEqual({ firstName: 'Марія' });
   });
 });
 
