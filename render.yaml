@@ -1,23 +1,14 @@
-# Render Blueprint — уся інфраструктура LMS як код.
-# Dashboard → New → Blueprint → обрати репозиторій: Render прочитає цей файл
-# і створить базу й веб-сервіс, а змінні оточення зв'яже між собою сам.
-
-databases:
-  - name: redmonkey-lms-db
-    plan: free # free-база живе 30 днів, потім її треба оновити до платної або створити заново
-    region: frankfurt # найближчий до України регіон Render
-    postgresMajorVersion: '16'
-    databaseName: lms
-    user: lms
-    # ipAllowList не задано → зовнішні підключення дозволені (потрібні, щоб
-    # залити демо-дані сідом з ноутбука). `ipAllowList: []` лишить лише внутрішню мережу Render
+# Render Blueprint — веб-сервіс LMS як код.
+# Dashboard → New → Blueprint → обрати репозиторій: Render прочитає цей файл і створить сервіс.
+# База й сховище аватарок — у Supabase (docs/DEPLOY.md), не на Render: free Postgres
+# Render видаляється через 30 днів, а постійного диска для файлів на free-плані немає.
 
 services:
   - type: web
     name: redmonkey-lms
     runtime: docker
     plan: free # засинає після 15 хв без запитів, перший запит після сну — ~1 хв
-    region: frankfurt # той самий регіон, що й база: трафік іде внутрішньою мережею
+    region: frankfurt # той самий регіон, що й проєкт Supabase (Central EU, Frankfurt)
     branch: main
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -27,16 +18,19 @@ services:
     # Простіша альтернатива без Actions: `checksPass` — Render сам чекає на CI
     autoDeployTrigger: 'off'
     envVars:
-      # Internal URL — з'єднання всередині мережі Render, без виходу в інтернет.
-      # PgBouncer-а між ними немає, тож для міграцій підходить той самий рядок
+      # Supabase → Connect → ORMs → Prisma. DATABASE_URL — Transaction pooler (6543,
+      # ?pgbouncer=true), DIRECT_URL — Session pooler (5432) для `prisma migrate deploy`
+      # на старті контейнера. Не Direct connection: вона лише IPv6, а Render його не має
       - key: DATABASE_URL
-        fromDatabase:
-          name: redmonkey-lms-db
-          property: connectionString
+        sync: false
       - key: DIRECT_URL
-        fromDatabase:
-          name: redmonkey-lms-db
-          property: connectionString
+        sync: false
+      # Supabase Storage для аватарок. Секретний ключ обходить політики Storage —
+      # лише тут, ніколи у VITE_* чи в git
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
       # Випадкові 256 біт (44 символи base64) — генеруються один раз при створенні
       - key: JWT_ACCESS_SECRET
         generateValue: true
