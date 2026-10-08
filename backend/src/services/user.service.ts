@@ -170,7 +170,7 @@ export const userService = {
       .catch(rethrowAsBadRequest);
   },
 
-  // rest — лише firstName/lastName/email/phone/avatar/isActive з updateUserSchema.
+  // rest — лише firstName/lastName/email/phone/isActive з updateUserSchema.
   // redCoins, tokenVersion, passwordHash тощо схема відкинула ще в контролері.
   async updateUser(id: string, updateBody: IUpdateUserDto) {
     const { password, group, role, ...rest } = updateBody;

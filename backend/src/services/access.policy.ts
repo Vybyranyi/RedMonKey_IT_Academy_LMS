@@ -93,6 +93,11 @@ export const accessPolicy = {
     return actor.role === UserRole.TEACHER && target.teacherId === actor.userId;
   },
 
+  /** Свою аватарку змінює кожен, чужу — лише адмін. */
+  canManageAvatar(actor: TokenPayload, targetId: string): boolean {
+    return actor.role === UserRole.ADMIN || actor.userId === targetId;
+  },
+
   /** Редагувати/видаляти оцінку може адмін або той викладач, який її виставив (ТЗ 4.5). */
   canManageGrade(actor: TokenPayload, target: GradeSubject): boolean {
     if (actor.role === UserRole.ADMIN) return true;

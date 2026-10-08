@@ -95,13 +95,17 @@ describe('updateUserSchema', () => {
     expect(updateUserSchema.parse({ group: null })).toEqual({ group: null });
   });
 
+  it('не пропускає avatar — його змінює лише завантаження файлу', () => {
+    const result = updateUserSchema.safeParse({ avatar: 'https://evil.example/a.png' });
+    expect(firstIssue(result)).toBe('Не передано жодного поля для оновлення');
+  });
+
   it('дозволяє повернути деактивованого користувача', () => {
     expect(updateUserSchema.parse({ isActive: true })).toEqual({ isActive: true });
   });
 
   it.each([
     [{ isActive: 'yes' }, 'isActive має бути true або false'],
-    [{ avatar: 'not-a-url' }, 'Аватар має бути коректним URL'],
     [{ email: 'nope' }, 'Некоректний email'],
   ])('відхиляє %o', (body, message) => {
     expect(firstIssue(updateUserSchema.safeParse(body))).toBe(message);

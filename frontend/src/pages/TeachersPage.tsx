@@ -19,6 +19,7 @@ import EmptyState from '@/components/common/EmptyState';
 import ErrorState from '@/components/common/ErrorState';
 import TeacherCard from '@/components/features/users/TeacherCard';
 import UserForm from '@/components/features/users/UserForm';
+import AvatarUploader from '@/components/features/users/AvatarUploader';
 import TeacherDetailsModal from '@/components/features/users/TeacherDetailsModal';
 import { useAuthStore } from '@/store/authStore';
 import { EMPTY_TEACHER_SUMMARY, summarizeTeacherGroups } from '@/lib/teacherGroups';
@@ -101,6 +102,18 @@ export default function TeachersPage() {
     } finally {
       setIsSubmitLoading(false);
     }
+  };
+
+  // Аватарка зберігається одразу, без кнопки форми — оновлюємо картку і відкритий діалог
+  const handleTeacherAvatarChange = (updated: IUser) => {
+    setTeachers((current) =>
+      current.map((teacher) =>
+        teacher.id === updated.id ? { ...teacher, avatar: updated.avatar } : teacher
+      )
+    );
+    setEditingTeacher((current) =>
+      current?.id === updated.id ? { ...current, avatar: updated.avatar } : current
+    );
   };
 
   // DELETE /users/:id не видаляє, а деактивує: викладач більше не входить у систему
@@ -193,23 +206,30 @@ export default function TeachersPage() {
               <DialogTitle className="text-xl">Редагування картки викладача</DialogTitle>
             </DialogHeader>
             {editingTeacher && (
-              <UserForm
-                initialValues={{
-                  firstName: editingTeacher.firstName,
-                  lastName: editingTeacher.lastName,
-                  email: editingTeacher.email,
-                  phone: editingTeacher.phone || '',
-                  role: editingTeacher.role,
-                  group:
-                    editingTeacher.group && typeof editingTeacher.group === 'object'
-                      ? editingTeacher.group.id
-                      : editingTeacher.group || '',
-                }}
-                onSubmit={handleUpdateTeacher}
-                isEdit
-                isSubmitting={isSubmitLoading}
-                hideRoleSelect
-              />
+              <div className="space-y-6">
+                <AvatarUploader
+                  user={editingTeacher}
+                  onChange={handleTeacherAvatarChange}
+                  isOwn={false}
+                />
+                <UserForm
+                  initialValues={{
+                    firstName: editingTeacher.firstName,
+                    lastName: editingTeacher.lastName,
+                    email: editingTeacher.email,
+                    phone: editingTeacher.phone || '',
+                    role: editingTeacher.role,
+                    group:
+                      editingTeacher.group && typeof editingTeacher.group === 'object'
+                        ? editingTeacher.group.id
+                        : editingTeacher.group || '',
+                  }}
+                  onSubmit={handleUpdateTeacher}
+                  isEdit
+                  isSubmitting={isSubmitLoading}
+                  hideRoleSelect
+                />
+              </div>
             )}
           </DialogContent>
         </Dialog>

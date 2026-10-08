@@ -27,6 +27,7 @@ import ErrorState from '@/components/common/ErrorState';
 import UserFilters from '@/components/features/users/UserFilters';
 import StudentTable from '@/components/features/users/StudentTable';
 import UserForm from '@/components/features/users/UserForm';
+import AvatarUploader from '@/components/features/users/AvatarUploader';
 import StudentDetailsModal from '@/components/features/users/StudentDetailsModal';
 import { useAuthStore } from '@/store/authStore';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
@@ -177,6 +178,18 @@ export default function StudentsPage() {
     }
   };
 
+  // Аватарка зберігається одразу, без кнопки форми — оновлюємо рядок і відкритий діалог
+  const handleStudentAvatarChange = (updated: IUser) => {
+    setStudents((current) =>
+      current.map((student) =>
+        student.id === updated.id ? { ...student, avatar: updated.avatar } : student
+      )
+    );
+    setEditingStudent((current) =>
+      current?.id === updated.id ? { ...current, avatar: updated.avatar } : current
+    );
+  };
+
   // DELETE /users/:id деактивує: студент не входить у систему і зникає зі списків,
   // а його оцінки, явка й монети лишаються в історії
   const handleDeactivateStudent = async () => {
@@ -320,20 +333,27 @@ export default function StudentsPage() {
               <DialogTitle className="text-xl">Редагування картки студента</DialogTitle>
             </DialogHeader>
             {editingStudent && (
-              <UserForm
-                initialValues={{
-                  firstName: editingStudent.firstName,
-                  lastName: editingStudent.lastName,
-                  email: editingStudent.email,
-                  phone: editingStudent.phone || '',
-                  role: editingStudent.role,
-                  group: groupIdOf(editingStudent),
-                }}
-                onSubmit={handleUpdateStudent}
-                isEdit
-                isSubmitting={isSubmitLoading}
-                hideRoleSelect
-              />
+              <div className="space-y-6">
+                <AvatarUploader
+                  user={editingStudent}
+                  onChange={handleStudentAvatarChange}
+                  isOwn={false}
+                />
+                <UserForm
+                  initialValues={{
+                    firstName: editingStudent.firstName,
+                    lastName: editingStudent.lastName,
+                    email: editingStudent.email,
+                    phone: editingStudent.phone || '',
+                    role: editingStudent.role,
+                    group: groupIdOf(editingStudent),
+                  }}
+                  onSubmit={handleUpdateStudent}
+                  isEdit
+                  isSubmitting={isSubmitLoading}
+                  hideRoleSelect
+                />
+              </div>
             )}
           </DialogContent>
         </Dialog>

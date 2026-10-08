@@ -12,7 +12,6 @@ export interface ProfileFormValues {
   firstName: string;
   lastName: string;
   phone: string;
-  avatar: string;
 }
 
 interface ProfileFormProps {
@@ -89,25 +88,6 @@ export default function ProfileForm({ initialValues, onSubmit, isSubmitting }: P
             {errors.phone && touched.phone && (
               <p id="phone-error" className="text-xs text-destructive">
                 {errors.phone}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="avatar">Посилання на аватар</Label>
-            <Field name="avatar">
-              {({ field }: FieldProps) => (
-                <Input
-                  {...field}
-                  id="avatar"
-                  {...errorA11y('avatar', errors.avatar && touched.avatar)}
-                  placeholder="https://..."
-                />
-              )}
-            </Field>
-            {errors.avatar && touched.avatar && (
-              <p id="avatar-error" className="text-xs text-destructive">
-                {errors.avatar}
               </p>
             )}
           </div>

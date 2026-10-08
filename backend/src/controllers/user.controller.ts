@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { createUserSchema, updateUserSchema, userFiltersSchema } from '@redmonkey/shared';
+import { avatarService } from '../services/avatar.service.js';
 import { userService } from '../services/user.service.js';
 import { UnauthorizedError, handleError } from '../utils/errors.js';
 import { parseBody, parseIdParam, parseQuery } from '../utils/validation.js';
@@ -69,5 +70,27 @@ export const getUserStats = async (req: Request, res: Response): Promise<void> =
     res.status(200).json(stats);
   } catch (error) {
     handleError(res, error, 'Помилка при отриманні статистики');
+  }
+};
+
+export const uploadUserAvatar = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
+    const id = parseIdParam(req.params.id, 'Користувача не знайдено');
+    const user = await avatarService.uploadAvatar(req.user, id, req.file?.buffer);
+    res.status(200).json(user);
+  } catch (error) {
+    handleError(res, error, 'Не вдалося завантажити аватарку');
+  }
+};
+
+export const deleteUserAvatar = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) throw new UnauthorizedError('Авторизація обовʼязкова');
+    const id = parseIdParam(req.params.id, 'Користувача не знайдено');
+    const user = await avatarService.deleteAvatar(req.user, id);
+    res.status(200).json(user);
+  } catch (error) {
+    handleError(res, error, 'Не вдалося видалити аватарку');
   }
 };

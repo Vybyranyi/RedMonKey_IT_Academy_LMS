@@ -94,7 +94,6 @@ export const authService = {
       firstName: data.firstName,
       lastName: data.lastName,
       phone: data.phone,
-      avatar: data.avatar,
     });
   },
 

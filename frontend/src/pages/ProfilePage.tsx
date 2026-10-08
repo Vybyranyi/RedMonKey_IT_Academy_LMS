@@ -18,6 +18,7 @@ import { UserRole, type IChangePasswordDto } from '@redmonkey/shared';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProfileForm, { type ProfileFormValues } from '@/components/features/users/ProfileForm';
 import ChangePasswordForm from '@/components/features/users/ChangePasswordForm';
+import AvatarUploader from '@/components/features/users/AvatarUploader';
 
 const roleLabel: Record<UserRole, string> = {
   [UserRole.ADMIN]: 'Адміністратор',
@@ -119,12 +120,13 @@ export default function ProfilePage() {
             <DialogHeader>
               <DialogTitle>Редагування профілю</DialogTitle>
             </DialogHeader>
+            {/* Фото зберігається одразу, окремо від кнопки «Зберегти зміни» форми */}
+            <AvatarUploader user={user} onChange={(updated) => setUser({ ...user, ...updated })} />
             <ProfileForm
               initialValues={{
                 firstName: user.firstName,
                 lastName: user.lastName,
                 phone: user.phone || '',
-                avatar: user.avatar || '',
               }}
               onSubmit={handleUpdateProfile}
               isSubmitting={isSavingProfile}
