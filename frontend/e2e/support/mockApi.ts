@@ -126,6 +126,9 @@ const stats = {
   attendance: { total: 10, present: 9, absent: 1, late: 0, excused: 0, rate: 90 },
 };
 
+const AVATAR_DATA_URL =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+
 const json = (route: Route, body: unknown, status = 200) =>
   route.fulfill({
     status,
@@ -134,7 +137,7 @@ const json = (route: Route, body: unknown, status = 200) =>
       'access-control-allow-origin': 'http://localhost:4173',
       'access-control-allow-credentials': 'true',
       'access-control-allow-headers': 'authorization,content-type',
-      'access-control-allow-methods': 'GET,POST,PATCH,DELETE',
+      'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE',
     },
     body: JSON.stringify(body),
   });
@@ -180,6 +183,12 @@ export async function mockApi(
       return json(route, wanted === 'teacher' ? [users.teacher] : students);
     }
     if (/^\/users\/[^/]+\/stats$/.test(path)) return json(route, stats);
+    // Аватарка: справжній backend перекодовує файл і віддає URL зі Supabase Storage.
+    // Тут — 1×1 GIF у data:, щоб картинка реально завантажилась у браузері
+    if (/^\/users\/[^/]+\/avatar$/.test(path)) {
+      const avatar = request.method() === 'PUT' ? AVATAR_DATA_URL : null;
+      return json(route, { ...me, avatar });
+    }
     if (path === '/groups') return json(route, groups);
     if (path === '/lessons') return json(route, lessons);
     if (path === '/grades') return json(route, grades);
