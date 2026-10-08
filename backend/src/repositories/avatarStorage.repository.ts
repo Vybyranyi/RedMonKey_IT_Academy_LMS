@@ -13,10 +13,12 @@ export const avatarStorageRepository = {
   },
 
   async upload(path: string, data: Buffer): Promise<void> {
-    // Шлях щоразу новий, тож файл можна кешувати назавжди: зміна аватарки — новий URL
+    // Шлях щоразу новий, тож заміна аватарки кешу не боїться. Але CDN Supabase на
+    // free-плані після видалення файлу ще віддає його з кешу до кінця max-age —
+    // година замість року, щоб видалене фото не жило за старим посиланням місяцями
     const { error } = await bucket().upload(path, data, {
       contentType: 'image/webp',
-      cacheControl: '31536000',
+      cacheControl: '3600',
       upsert: false,
     });
     if (error) throw error;

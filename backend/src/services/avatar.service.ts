@@ -74,7 +74,7 @@ export const avatarService = {
     if (!file || file.length === 0) throw new BadRequestError('Файл не передано');
 
     const webp = await toAvatarWebp(file);
-    // Новий шлях на кожне завантаження: CDN і браузери кешують файл назавжди
+    // Новий шлях на кожне завантаження: CDN і браузери не покажуть стару картинку з кешу
     const path = `${targetId}/${randomUUID()}.webp`;
     await avatarStorageRepository.upload(path, webp);
 
