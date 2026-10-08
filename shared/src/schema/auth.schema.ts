@@ -2,7 +2,6 @@ import { z } from 'zod';
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
-  avatarField,
   hasAnyField,
   nameField,
   phoneField,
@@ -35,7 +34,7 @@ export const updateProfileSchema = z
     firstName: nameField('Імʼя').optional(),
     lastName: nameField('Прізвище').optional(),
     phone: phoneField.optional(),
-    avatar: avatarField.optional(),
+    // avatar тут немає: він змінюється лише завантаженням файлу (PUT /users/:id/avatar)
   })
   .refine(hasAnyField, { message: 'Не передано жодного поля для оновлення' });
 

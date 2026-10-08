@@ -259,3 +259,22 @@ describe('canManageGrade', () => {
     expect(accessPolicy.canManageGrade(student, { teacherId: student.userId })).toBe(false);
   });
 });
+
+describe('canManageAvatar', () => {
+  it('адмін керує будь-чиєю аватаркою', () => {
+    expect(accessPolicy.canManageAvatar(admin, 'teacher-9')).toBe(true);
+  });
+
+  it('кожен керує своєю аватаркою', () => {
+    expect(accessPolicy.canManageAvatar(teacher, teacher.userId)).toBe(true);
+    expect(accessPolicy.canManageAvatar(student, student.userId)).toBe(true);
+  });
+
+  it('викладач не керує аватаркою студента', () => {
+    expect(accessPolicy.canManageAvatar(teacher, student.userId)).toBe(false);
+  });
+
+  it('студент не керує чужою аватаркою', () => {
+    expect(accessPolicy.canManageAvatar(student, 'student-9')).toBe(false);
+  });
+});

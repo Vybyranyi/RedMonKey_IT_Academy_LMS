@@ -10,3 +10,6 @@ export const JSON_BODY_LIMIT = '1mb';
  * «заняття о 18:00» ставало б 18:00 UTC — 21:00 у Києві.
  */
 export const ACADEMY_TIME_ZONE = 'Europe/Kyiv';
+
+/** Сторона квадратної аватарки в пікселях (з запасом під retina для h-20). */
+export const AVATAR_SIZE = 256;

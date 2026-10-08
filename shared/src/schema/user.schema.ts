@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { UserRole } from '../enums';
-import {
-  avatarField,
-  emailField,
-  hasAnyField,
-  nameField,
-  passwordField,
-  phoneField,
-} from './fields';
+import { emailField, hasAnyField, nameField, passwordField, phoneField } from './fields';
+
+/**
+ * Аватарка — файл, а не поле JSON (PUT /users/:id/avatar, multipart). Ліміти спільні:
+ * форма відсікає завеликий файл ще до запиту, backend — ще до обробки.
+ */
+export const AVATAR_MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const AVATAR_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 /**
  * Адмінське керування користувачами: POST /users і PATCH /users/:id.
@@ -43,7 +43,6 @@ export const updateUserSchema = z
     role: role.optional(),
     password: passwordField.optional(),
     phone: phoneField.optional(),
-    avatar: avatarField.optional(),
     group: group.optional(),
     // Єдиний спосіб повернути деактивованого користувача — DELETE лише деактивує
     isActive: z.boolean({ error: 'isActive має бути true або false' }).optional(),

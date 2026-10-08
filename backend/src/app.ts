@@ -18,7 +18,17 @@ export const app = express();
 
 app.set('trust proxy', env.trustProxy);
 
-app.use(helmet());
+// Решта CSP — дефолти helmet. Аватарки лежать у Supabase Storage на іншому домені,
+// тож без нього в img-src браузер блокував би їх і показував фолбек з ініціалами
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        'img-src': ["'self'", 'data:', 'blob:', ...(env.supabase ? [env.supabase.url] : [])],
+      },
+    },
+  })
+);
 // CORS до rate-limit: preflight-запити не з'їдають ліміт, а відповідь 429
 // отримує CORS-заголовки — інакше браузер не дав би фронту прочитати її текст
 app.use(

@@ -34,6 +34,13 @@ export class NotFoundError extends AppError {
   }
 }
 
+/** Залежність сервера не налаштована (наприклад, сховище файлів без ключів). */
+export class ServiceUnavailableError extends AppError {
+  constructor(message: string) {
+    super(message, 503);
+  }
+}
+
 /**
  * Очікувані помилки віддаються клієнту, несподівані — логуються і згортаються у 500.
  * Внутрішній обʼєкт помилки ніколи не потрапляє у відповідь.

@@ -42,8 +42,3 @@ export const phoneField = z.preprocess(
   emptyToNull,
   z.string().trim().regex(PHONE_PATTERN, 'Некоректний номер телефону').nullable()
 );
-
-export const avatarField = z.preprocess(
-  emptyToNull,
-  z.url('Аватар має бути коректним URL').max(500, 'Задовге посилання на аватар').nullable()
-);
