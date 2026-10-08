@@ -1,6 +1,7 @@
 import { UserRole } from '@redmonkey/shared';
 import type { IUser } from '@redmonkey/shared';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { axe } from 'vitest-axe';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -95,5 +96,17 @@ describe('a11y — сторінки без порушень axe', () => {
     );
     await screen.findByText('Олег Петренко');
     await checkA11y(container);
+  });
+
+  // Діалог рендериться в портал — перевіряємо document.body, а не container сторінки
+  it('редагування викладача з аватаркою', async () => {
+    render(
+      <MemoryRouter>
+        <TeachersPage />
+      </MemoryRouter>
+    );
+    await userEvent.click(await screen.findByRole('button', { name: 'Редагувати: Олег Петренко' }));
+    await screen.findByRole('button', { name: /Завантажити фото/ });
+    await checkA11y(screen.getByRole('dialog'));
   });
 });

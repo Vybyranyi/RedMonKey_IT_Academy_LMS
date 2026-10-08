@@ -127,3 +127,33 @@ describe('TeachersPage — деактивація', () => {
     ).toBeInTheDocument();
   });
 });
+
+describe('TeachersPage — аватарка викладача', () => {
+  it('адмін змінює фото з діалогу редагування, і воно лишається після закриття', async () => {
+    const avatar = 'https://ref.supabase.co/storage/v1/object/public/avatars/teacher-1/new.webp';
+    URL.createObjectURL = vi.fn(() => 'blob:preview');
+    URL.revokeObjectURL = vi.fn();
+    const adapter = installApi({
+      'GET /users': () => [oleh],
+      '/groups': () => [],
+      'PUT /users/teacher-1/avatar': () => ({ ...oleh, avatar }),
+    });
+    render(<TeachersPage />);
+    await screen.findByText('Олег Петренко');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Редагувати: Олег Петренко' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.upload(
+      within(dialog).getByTestId('avatar-input'),
+      new File(['x'], 'oleh.png', { type: 'image/png' })
+    );
+
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Фото оновлено'));
+    expect(callsTo(adapter, 'PUT', '/users/teacher-1/avatar')).toHaveLength(1);
+    // Фото вже є — тепер можна і видалити; діалог показує свіжий стан, а не знімок
+    expect(within(dialog).getByRole('button', { name: /Змінити фото/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /Видалити фото/ })).toBeInTheDocument();
+    // Список не перезапитується — картку оновлено точково
+    expect(callsTo(adapter, 'GET', '/users')).toHaveLength(1);
+  });
+});

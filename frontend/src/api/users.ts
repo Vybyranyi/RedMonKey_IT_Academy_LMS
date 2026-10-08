@@ -60,3 +60,21 @@ export const apiDeleteUser = async (id: string): Promise<void> => {
   await axiosInstance.delete(`/users/${id}`);
   invalidateGroupsCache();
 };
+
+/**
+ * Свою аватарку змінює кожен, чужу — лише адмін (перевіряє backend).
+ * Content-Type з boundary axios ставить сам, побачивши FormData.
+ */
+export const apiUploadAvatar = async (id: string, file: File): Promise<IUser> => {
+  const body = new FormData();
+  body.append('avatar', file);
+  const response = await axiosInstance.put(`/users/${id}/avatar`, body);
+  invalidateGroupsCache();
+  return response.data;
+};
+
+export const apiDeleteAvatar = async (id: string): Promise<IUser> => {
+  const response = await axiosInstance.delete(`/users/${id}/avatar`);
+  invalidateGroupsCache();
+  return response.data;
+};
